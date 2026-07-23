@@ -3,6 +3,7 @@ import { authRoutes } from '@/modules/auth/routes'
 import { chatRoutes } from '@/modules/chat/routes'
 import { guideRoutes } from '@/modules/guide/routes'
 import { receiptRoutes } from '@/modules/receipt/routes'
+import { adminRoutes } from '@/modules/admin/routes'
 import { registerGuards } from './guards'
 
 /**
@@ -17,6 +18,7 @@ const router = createRouter({
         ...chatRoutes,
         ...guideRoutes,
         ...receiptRoutes,
+        ...adminRoutes,
         {
             path: '/:pathMatch(.*)*',
             name: 'not-found',

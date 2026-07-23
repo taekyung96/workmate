@@ -8,7 +8,15 @@
  */
 import { onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { BookText, LogOut, MessageSquare, Receipt, SquarePen, Trash2 } from 'lucide-vue-next'
+import {
+    BookText,
+    LogOut,
+    MessageSquare,
+    Receipt,
+    Settings,
+    SquarePen,
+    Trash2,
+} from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import {
     AlertDialog,
@@ -87,6 +95,18 @@ function openRoom(roomSeq: number): void {
             >
                 <BookText class="size-4" />
                 가이드
+            </RouterLink>
+            <!-- 관리자 메뉴 — ROLE_ADMIN에게만 노출 (F6-04). 서버 접근 차단은 별도 -->
+            <RouterLink
+                v-if="auth.isAdmin"
+                :to="{ name: 'admin-users' }"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                :class="{
+                    'bg-accent font-medium text-foreground': route.path.startsWith('/admin'),
+                }"
+            >
+                <Settings class="size-4" />
+                관리자
             </RouterLink>
         </nav>
 
