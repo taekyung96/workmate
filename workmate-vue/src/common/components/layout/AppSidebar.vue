@@ -6,7 +6,7 @@
  * 참고(모듈 경계): "최근 채팅"은 chat 데이터라 chat.store를 읽는다.
  * 채팅이 주인공인 제품의 쉘이라 상시 노출하는 의도된 결합이다(데이터 소유는 chat 모듈).
  */
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
     BookText,
@@ -39,10 +39,18 @@ const auth = useAuthStore()
 const { logout } = useAuth()
 const chat = useChatStore()
 
-onMounted(() => {
-    // 인증 상태에서만 방 목록을 불러온다 (로그아웃 상태의 불필요한 401 방지)
-    if (auth.isAuthenticated && !chat.roomsLoaded) chat.loadRooms()
-})
+// 인증 상태를 감시해 방 목록을 불러온다.
+// onMounted 1회로는 새로고침 시 사이드바가 세션 복원(가드의 /me)보다 먼저 마운트돼
+// isAuthenticated=false 인 순간을 놓쳐 목록이 비는 문제가 있다. 세션이 뒤늦게 복원돼
+// 인증 상태가 되는 순간에도 로드되도록 watch(immediate)로 처리한다.
+watch(
+    () => auth.isAuthenticated,
+    (authed) => {
+        // 인증 상태에서만 호출 (로그아웃 상태의 불필요한 401 방지)
+        if (authed && !chat.roomsLoaded) chat.loadRooms()
+    },
+    { immediate: true },
+)
 
 function newChat(): void {
     chat.startNewChat()

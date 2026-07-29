@@ -21,7 +21,10 @@ let syncingFromProp = false
 
 onMounted(() => {
     if (!container.value) return
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+    // 에디터 테마는 OS 설정(prefers-color-scheme)이 아니라 앱의 실제 테마를 따른다.
+    // 앱은 shadcn 규칙대로 <html>에 .dark 클래스가 붙을 때만 다크모드다. 그렇지 않으면
+    // 라이트인 앱에서 에디터만 검게 보이는 문제가 생긴다.
+    const isDark = document.documentElement.classList.contains('dark')
     editor = new Editor({
         el: container.value,
         height: props.height,
@@ -29,7 +32,7 @@ onMounted(() => {
         previewStyle: 'vertical',
         initialValue: props.modelValue,
         usageStatistics: false,
-        theme: prefersDark ? 'dark' : 'light',
+        theme: isDark ? 'dark' : 'light',
     })
     editor.on('change', () => {
         if (syncingFromProp) return
