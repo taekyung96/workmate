@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,11 +90,17 @@ class GuideServiceTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    // 이 테스트가 만든 가이드 seq 만 추적한다 — 공유 dev DB 의 다른 문서·RAG 코퍼스를 건드리지 않기 위함
+    private final List<Long> createdGuideSeqs = new ArrayList<>();
+
     @AfterEach
     void tearDown() {
-        // 테스트용 데이터 클렌징
-        guideRepository.deleteAll();
-        jdbcTemplate.execute("DELETE FROM vector_store");
+        // 전체 삭제(deleteAll + DELETE FROM vector_store)는 공유 DB 의 실데이터까지 지우므로 금지.
+        // 자기가 만든 가이드만 실제 삭제 경로로 제거하면 관련 벡터 청크도 함께 정리된다.
+        for (Long guideSeq : createdGuideSeqs) {
+            guideService.deleteGuide(1L, guideSeq);
+        }
+        createdGuideSeqs.clear();
     }
 
     @Test
@@ -107,15 +114,20 @@ class GuideServiceTest {
                 .isPublic(true)
                 .build();
 
+        // 공유 dev DB 에는 다른 문서가 있을 수 있으므로 절대 개수가 아니라 '증분'으로 검증한다
+        int beforeGuideCount = jdbcTemplate.queryForObject("SELECT count(*) FROM guide", Integer.class);
+        int beforeVectorCount = jdbcTemplate.queryForObject("SELECT count(*) FROM vector_store", Integer.class);
+
         // when (등록 처리 -> 내부적으로 TokenTextSplitter 분할 및 벡터 DB 저장 작동)
         GuideResponseVo response = guideService.createGuide(userSeq, request);
         assertThat(response.getGuideSeq()).isNotNull();
+        createdGuideSeqs.add(response.getGuideSeq()); // tearDown 에서 이 문서만 정리
 
-        // 가이드 원본과 벡터 청크가 실제로 DB에 적재되었는지 확인
-        int guideCount = jdbcTemplate.queryForObject("SELECT count(*) FROM guide", Integer.class);
-        int vectorCount = jdbcTemplate.queryForObject("SELECT count(*) FROM vector_store", Integer.class);
-        assertThat(guideCount).isEqualTo(1);
-        assertThat(vectorCount).isGreaterThanOrEqualTo(1);
+        // 가이드 원본과 벡터 청크가 실제로 적재되어 개수가 늘었는지 확인
+        int afterGuideCount = jdbcTemplate.queryForObject("SELECT count(*) FROM guide", Integer.class);
+        int afterVectorCount = jdbcTemplate.queryForObject("SELECT count(*) FROM vector_store", Integer.class);
+        assertThat(afterGuideCount).isEqualTo(beforeGuideCount + 1);
+        assertThat(afterVectorCount).isGreaterThan(beforeVectorCount);
 
         // then (유사도 검색 검증)
         String query = "롯데카드 결제 한도";
