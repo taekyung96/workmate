@@ -9,6 +9,8 @@ node_modules/
 
 # Vite / Vue
 workmate-vue/dist/
+# SPA 빌드 산출물이 복사되는 WEB 정적 리소스 (Gradle processResources 가 자동 생성 → 커밋 대상 아님)
+workmate-web/src/main/resources/static/
 *.local
 
 # IDE
