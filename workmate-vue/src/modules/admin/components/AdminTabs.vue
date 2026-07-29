@@ -12,6 +12,7 @@ const route = useRoute()
 const tabs = [
     { name: 'admin-users', label: '사용자 관리' },
     { name: 'admin-audit-logs', label: '감사 로그' },
+    { name: 'admin-common-codes', label: '공통코드' },
 ]
 </script>
 

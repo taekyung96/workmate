@@ -1,6 +1,14 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { AuditLogPage, ResetPasswordResult, UserPage } from '../types'
+import type {
+    AuditLogPage,
+    CommonCodeGroup,
+    CommonCodeGroupSave,
+    CommonCodeItem,
+    CommonCodeSave,
+    ResetPasswordResult,
+    UserPage,
+} from '../types'
 
 /**
  * 관리자 API (WEB의 /api/v1/admin/* 프록시 → WAS).
@@ -34,5 +42,73 @@ export const adminApi = {
             `/v1/admin/users/${userSeq}/reset-password`,
         )
         return data.result
+    },
+
+    // ----- 공통코드 관리 (F7) -----
+
+    /** 그룹 목록 (비활성 포함) */
+    async codeGroups(): Promise<CommonCodeGroup[]> {
+        const { data } = await client.get<ApiResponse<CommonCodeGroup[]>>(
+            '/v1/admin/common-codes/groups',
+        )
+        return data.result
+    },
+
+    /** 그룹 등록 */
+    async createGroup(body: CommonCodeGroupSave): Promise<CommonCodeGroup> {
+        const { data } = await client.post<ApiResponse<CommonCodeGroup>>(
+            '/v1/admin/common-codes/groups',
+            body,
+        )
+        return data.result
+    },
+
+    /** 그룹 수정 */
+    async updateGroup(groupCode: string, body: CommonCodeGroupSave): Promise<CommonCodeGroup> {
+        const { data } = await client.put<ApiResponse<CommonCodeGroup>>(
+            `/v1/admin/common-codes/groups/${groupCode}`,
+            body,
+        )
+        return data.result
+    },
+
+    /** 그룹 삭제 (하위 코드 없을 때만) */
+    async deleteGroup(groupCode: string): Promise<void> {
+        await client.delete(`/v1/admin/common-codes/groups/${groupCode}`)
+    },
+
+    /** 그룹 내 코드 목록 (비활성 포함) */
+    async codes(groupCode: string): Promise<CommonCodeItem[]> {
+        const { data } = await client.get<ApiResponse<CommonCodeItem[]>>(
+            `/v1/admin/common-codes/groups/${groupCode}/codes`,
+        )
+        return data.result
+    },
+
+    /** 코드 등록 */
+    async createCode(groupCode: string, body: CommonCodeSave): Promise<CommonCodeItem> {
+        const { data } = await client.post<ApiResponse<CommonCodeItem>>(
+            `/v1/admin/common-codes/groups/${groupCode}/codes`,
+            body,
+        )
+        return data.result
+    },
+
+    /** 코드 수정 */
+    async updateCode(
+        groupCode: string,
+        code: string,
+        body: CommonCodeSave,
+    ): Promise<CommonCodeItem> {
+        const { data } = await client.put<ApiResponse<CommonCodeItem>>(
+            `/v1/admin/common-codes/groups/${groupCode}/codes/${code}`,
+            body,
+        )
+        return data.result
+    },
+
+    /** 코드 삭제 */
+    async deleteCode(groupCode: string, code: string): Promise<void> {
+        await client.delete(`/v1/admin/common-codes/groups/${groupCode}/codes/${code}`)
     },
 }

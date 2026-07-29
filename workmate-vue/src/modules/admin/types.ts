@@ -44,3 +44,35 @@ export interface AuditLogPage {
     totalPages: number
     totalElements: number
 }
+
+/** 공통코드 그룹 (WAS CommonCodeGroupVo 대응) */
+export interface CommonCodeGroup {
+    groupCode: string
+    groupName: string
+    description: string | null
+    useYn: boolean
+}
+
+/** 공통코드 항목 (WAS CommonCodeAdminVo 대응) — 비활성 포함 */
+export interface CommonCodeItem {
+    code: string
+    codeName: string
+    sortOrder: number
+    useYn: boolean
+}
+
+/** 그룹 등록/수정 요청 (groupCode는 등록 시에만 사용) */
+export interface CommonCodeGroupSave {
+    groupCode?: string
+    groupName: string
+    description?: string | null
+    useYn: boolean
+}
+
+/** 코드 등록/수정 요청 (code는 등록 시에만 사용) */
+export interface CommonCodeSave {
+    code?: string
+    codeName: string
+    sortOrder: number
+    useYn: boolean
+}
