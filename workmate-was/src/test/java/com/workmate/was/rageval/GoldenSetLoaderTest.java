@@ -27,4 +27,15 @@ class GoldenSetLoaderTest {
         assertThatThrownBy(() -> new GoldenSetLoader().load("rageval/none.json"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("실제 골든셋도 파싱되고 15문항 이상이다")
+    void real_golden_set_parses() {
+        List<EvalQuery> queries = new GoldenSetLoader().load("rageval/queries.json");
+        assertThat(queries).hasSizeGreaterThanOrEqualTo(15);
+        assertThat(queries).allSatisfy(q -> {
+            assertThat(q.question()).isNotBlank();
+            assertThat(q.expectedTitles()).isNotEmpty();
+        });
+    }
 }

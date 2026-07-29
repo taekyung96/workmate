@@ -1,0 +1,94 @@
+[
+    {
+        "question": "도커랑 쿠버네티스 뭐가 달라?",
+        "expectedTitles": ["Docker와 Kubernetes의 차이"]
+    },
+    {
+        "question": "컨테이너 수백 개를 자동으로 배치하고 확장하려면 뭘 써?",
+        "expectedTitles": ["Docker와 Kubernetes의 차이"]
+    },
+    {
+        "question": "CI/CD가 무슨 뜻이야?",
+        "expectedTitles": ["CI/CD 파이프라인"]
+    },
+    {
+        "question": "코드 푸시하면 자동으로 빌드하고 테스트하고 배포하는 거 뭐라고 불러?",
+        "expectedTitles": ["CI/CD 파이프라인"]
+    },
+    {
+        "question": "REST랑 GraphQL 중에 뭐가 나아?",
+        "expectedTitles": ["REST와 GraphQL 비교"]
+    },
+    {
+        "question": "필요한 필드만 골라서 받아오는 API 방식이 뭐지?",
+        "expectedTitles": ["REST와 GraphQL 비교"]
+    },
+    {
+        "question": "몽고DB 같은 건 관계형 데이터베이스랑 뭐가 달라?",
+        "expectedTitles": ["관계형 DB와 NoSQL"]
+    },
+    {
+        "question": "레디스는 어디에 쓰는 거야?",
+        "expectedTitles": ["캐싱과 Redis"]
+    },
+    {
+        "question": "자주 쓰는 데이터를 빠른 저장소에 담아두는 기법이 뭐야?",
+        "expectedTitles": ["캐싱과 Redis"]
+    },
+    {
+        "question": "카프카랑 래빗엠큐 차이 알려줘",
+        "expectedTitles": ["메시지 큐 (Kafka와 RabbitMQ)"]
+    },
+    {
+        "question": "트랜스포머랑 셀프 어텐션 기반 언어 모델이 뭐야?",
+        "expectedTitles": ["LLM이란 무엇인가"]
+    },
+    {
+        "question": "임베딩이 뭐고 그걸로 어떻게 검색하는 거야?",
+        "expectedTitles": ["임베딩과 벡터 검색"]
+    },
+    {
+        "question": "코사인 유사도로 비슷한 문서 찾는 원리 설명해줘",
+        "expectedTitles": ["임베딩과 벡터 검색"]
+    },
+    {
+        "question": "RAG가 뭔지 쉽게 설명해줘",
+        "expectedTitles": ["RAG (검색 증강 생성)"]
+    },
+    {
+        "question": "LLM한테 외부 문서를 근거로 답하게 만드는 방법은?",
+        "expectedTitles": ["RAG (검색 증강 생성)"]
+    },
+    {
+        "question": "프롬프트 잘 작성하는 방법 알려줘",
+        "expectedTitles": ["프롬프트 엔지니어링"]
+    },
+    {
+        "question": "파인튜닝이랑 RAG 중에 언제 뭘 골라야 해?",
+        "expectedTitles": ["파인튜닝과 RAG 비교"]
+    },
+    {
+        "question": "랭체인은 어디에 쓰는 라이브러리야?",
+        "expectedTitles": ["LangChain이란"]
+    },
+    {
+        "question": "pgvector가 뭐하는 거야?",
+        "expectedTitles": ["벡터 데이터베이스와 pgvector"]
+    },
+    {
+        "question": "컨텍스트 윈도우랑 토큰 비용은 무슨 관계야?",
+        "expectedTitles": ["토큰과 컨텍스트 윈도우, 비용"]
+    },
+    {
+        "question": "LLM이 그럴듯하게 지어내는 거 어떻게 평가하고 줄여?",
+        "expectedTitles": ["할루시네이션과 LLM 평가"]
+    },
+    {
+        "question": "AI 에이전트가 도구를 호출한다는 게 무슨 말이야?",
+        "expectedTitles": ["AI 에이전트와 툴 콜링"]
+    },
+    {
+        "question": "MLOps는 데브옵스랑 뭐가 달라?",
+        "expectedTitles": ["MLOps 개요"]
+    }
+]
