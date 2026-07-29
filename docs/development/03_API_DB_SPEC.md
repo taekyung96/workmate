@@ -53,33 +53,37 @@ WAS REST API의 요청/응답 규격과 DB 테이블 정의를 확정한다.
 
 ## 2. 엔드포인트 목록 (전체)
 
-| #   | 메서드·경로                                         | 설명                                             | 근거     | 단계 |
-| --- | --------------------------------------------------- | ------------------------------------------------ | -------- | ---- |
-| A1  | `POST /api/v1/auth/signup`                          | 회원가입                                         | F1-01    | 1    |
-| A2  | `POST /api/v1/auth/login`                           | 자격 검증 (세션 발급은 WEB 담당)                 | F1-05    | 1    |
-| C1  | `GET /api/v1/chat/rooms`                            | 내 채팅방 목록                                   | F2-03    | 1    |
-| C2  | `GET /api/v1/chat/rooms/{roomSeq}/messages`         | 방 대화 이력                                     | F2-08    | 1    |
-| C3  | `POST /api/v1/chat/stream`                          | 메시지 전송 + SSE 스트리밍 응답 (방 없으면 생성) | F2-02~06 | 1    |
-| C4  | `POST /api/v1/chat/rooms/{roomSeq}/delete`          | 방 논리 삭제                                     | F2-04    | 1    |
-| R1  | `POST /api/v1/receipts/analyze`                     | 이미지 분석 + **이력 자동 저장**                 | F3-08    | 2    |
-| R2  | `POST /api/v1/receipts/{receiptSeq}/update`         | 추출값 수정 / 결제 건 선택 확정                  | F3-08a·b | 2    |
-| R3  | `POST /api/v1/receipts`                             | 수동 등록 (OCR 실패 폴백 경로 전용)              | F3.3     | 2    |
-| R4  | `GET /api/v1/receipts?month=YYYYMM`                 | 월별 이력 목록                                   | F3-10    | 2    |
-| R5  | `GET /api/v1/receipts/{receiptSeq}/image`           | 원본 이미지 (본인만)                             | F3-14    | 2    |
-| R6  | `GET /api/v1/receipts/csv?month=YYYYMM`             | 월별 CSV (확정 건만, UTF-8 BOM)                  | F3-12    | 2    |
-| G1  | `GET /api/v1/guides`                                | 목록 (본인+공개)                                 | F4-01·08 | 3    |
-| G2  | `GET /api/v1/guides/{guideSeq}`                     | 상세                                             | F4-01    | 3    |
-| G3  | `POST /api/v1/guides`                               | 등록 (+임베딩)                                   | F4-02    | 3    |
-| G4  | `POST /api/v1/guides/{guideSeq}/update`             | 수정 (+재임베딩)                                 | F4-02    | 3    |
-| G5  | `POST /api/v1/guides/{guideSeq}/delete`             | 삭제 (+청크 삭제)                                | F4-04    | 3    |
-| M1  | `GET /api/v1/admin/users?keyword=&page=`            | 사용자 목록·검색                                 | F6-01    | 1    |
-| M2  | `POST /api/v1/admin/users/{userSeq}/unlock`         | 잠금 해제 (+감사 기록)                           | F6-02    | 1    |
-| M3  | `POST /api/v1/admin/users/{userSeq}/reset-password` | 비번 초기화 (+감사 기록)                         | F6-03    | 1    |
-| M4  | `GET /api/v1/admin/audit-logs?page=&size=`          | 감사 로그 조회 (행위자·대상 이름 조인, 최신순)   | F8       | 5    |
-| K1  | `GET /api/common/codes/{groupCode}`                 | 공통코드 조회                                    | F7-04    | 4    |
-| H1  | `GET /api/v1/health`                                | 헬스체크 (기구현)                                | —        | —    |
+| #   | 메서드·경로                                                                    | 설명                                             | 근거     | 단계 |
+| --- | ------------------------------------------------------------------------------ | ------------------------------------------------ | -------- | ---- |
+| A1  | `POST /api/v1/auth/signup`                                                     | 회원가입                                         | F1-01    | 1    |
+| A2  | `POST /api/v1/auth/login`                                                      | 자격 검증 (세션 발급은 WEB 담당)                 | F1-05    | 1    |
+| C1  | `GET /api/v1/chat/rooms`                                                       | 내 채팅방 목록                                   | F2-03    | 1    |
+| C2  | `GET /api/v1/chat/rooms/{roomSeq}/messages`                                    | 방 대화 이력                                     | F2-08    | 1    |
+| C3  | `POST /api/v1/chat/stream`                                                     | 메시지 전송 + SSE 스트리밍 응답 (방 없으면 생성) | F2-02~06 | 1    |
+| C4  | `POST /api/v1/chat/rooms/{roomSeq}/delete`                                     | 방 논리 삭제                                     | F2-04    | 1    |
+| R1  | `POST /api/v1/receipts/analyze`                                                | 이미지 분석 + **이력 자동 저장**                 | F3-08    | 2    |
+| R2  | `POST /api/v1/receipts/{receiptSeq}/update`                                    | 추출값 수정 / 결제 건 선택 확정                  | F3-08a·b | 2    |
+| R3  | `POST /api/v1/receipts`                                                        | 수동 등록 (OCR 실패 폴백 경로 전용)              | F3.3     | 2    |
+| R4  | `GET /api/v1/receipts?month=YYYYMM`                                            | 월별 이력 목록                                   | F3-10    | 2    |
+| R5  | `GET /api/v1/receipts/{receiptSeq}/image`                                      | 원본 이미지 (본인만)                             | F3-14    | 2    |
+| R6  | `GET /api/v1/receipts/csv?month=YYYYMM`                                        | 월별 CSV (확정 건만, UTF-8 BOM)                  | F3-12    | 2    |
+| G1  | `GET /api/v1/guides`                                                           | 목록 (본인+공개)                                 | F4-01·08 | 3    |
+| G2  | `GET /api/v1/guides/{guideSeq}`                                                | 상세                                             | F4-01    | 3    |
+| G3  | `POST /api/v1/guides`                                                          | 등록 (+임베딩)                                   | F4-02    | 3    |
+| G4  | `POST /api/v1/guides/{guideSeq}/update`                                        | 수정 (+재임베딩)                                 | F4-02    | 3    |
+| G5  | `POST /api/v1/guides/{guideSeq}/delete`                                        | 삭제 (+청크 삭제)                                | F4-04    | 3    |
+| M1  | `GET /api/v1/admin/users?keyword=&page=`                                       | 사용자 목록·검색                                 | F6-01    | 1    |
+| M2  | `POST /api/v1/admin/users/{userSeq}/unlock`                                    | 잠금 해제 (+감사 기록)                           | F6-02    | 1    |
+| M3  | `POST /api/v1/admin/users/{userSeq}/reset-password`                            | 비번 초기화 (+감사 기록)                         | F6-03    | 1    |
+| M4  | `GET /api/v1/admin/audit-logs?page=&size=`                                     | 감사 로그 조회 (행위자·대상 이름 조인, 최신순)   | F8       | 5    |
+| K1  | `GET /api/common/codes/{groupCode}`                                            | 공통코드 조회 (사용중 코드만, 공개)              | F7-04    | 4    |
+| K2  | `GET/POST/PUT/DELETE /api/v1/admin/common-codes/groups[/{group}]`              | 공통코드 그룹 관리(관리자)                       | F7       | 5    |
+| K3  | `GET/POST/PUT/DELETE /api/v1/admin/common-codes/groups/{group}/codes[/{code}]` | 공통코드 관리(관리자)                            | F7       | 5    |
+| H1  | `GET /api/v1/health`                                                           | 헬스체크 (기구현)                                | —        | —    |
 
 > Tool Calling(F5)은 별도 엔드포인트가 아니라 C3 스트리밍 내부에서 Spring AI `@Tool`로 동작.
+>
+> K2·K3(공통코드 관리 화면)는 원래 "`db/init` SQL로만 관리" 설계였으나, 운영 중 코드 관리 편의를 위해 관리자 CRUD로 확장했다. 그룹 삭제는 하위 코드가 없을 때만 허용하고, `use_yn`으로 삭제 대신 비활성도 가능하다.
 
 ## 3. 주요 API 상세
 
