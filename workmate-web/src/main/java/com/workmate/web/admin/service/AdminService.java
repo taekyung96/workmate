@@ -11,6 +11,9 @@ public interface AdminService {
     /** 사용자 목록·검색 중계 (M1) */
     ResponseEntity<String> getUsers(String keyword, int page, int size);
 
+    /** 감사 로그 목록 중계 (M4) */
+    ResponseEntity<String> getAuditLogs(int page, int size);
+
     /** 잠금 해제 중계 (M2) */
     ResponseEntity<String> unlock(Long userSeq);
 

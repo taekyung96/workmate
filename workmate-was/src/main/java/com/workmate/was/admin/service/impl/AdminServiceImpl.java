@@ -6,6 +6,8 @@ import com.workmate.was.admin.util.PiiMasker;
 import com.workmate.was.admin.util.TempPasswordGenerator;
 import com.workmate.was.admin.vo.AdminAuditLog;
 import com.workmate.was.admin.vo.AdminUserVo;
+import com.workmate.was.admin.vo.AuditLogPageVo;
+import com.workmate.was.admin.vo.AuditLogVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
 import com.workmate.was.auth.dao.UserRepository;
@@ -21,8 +23,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 관리자 사용자 관리 구현체.
@@ -39,6 +45,9 @@ public class AdminServiceImpl implements AdminService {
 
     /** 계정 잠금 유지 시간 — AuthServiceImpl 과 동일 (F1-06) */
     private static final long LOCK_MINUTES = 60;
+
+    /** 감사 로그의 행위자·대상이 이미 삭제돼 이름을 찾을 수 없을 때의 대체 표기 */
+    private static final String DELETED_USER = "(삭제된 사용자)";
 
     /** {@inheritDoc} */
     @Override
@@ -64,6 +73,42 @@ public class AdminServiceImpl implements AdminService {
 
         return UserPageVo.builder()
                 .content(result.getContent().stream().map(this::toVo).toList())
+                .page(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public AuditLogPageVo getAuditLogs(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<AdminAuditLog> result = adminAuditLogRepository.findAll(pageable);
+
+        // 행위자·대상 seq를 한데 모아 이름을 한 번의 쿼리로 조회한다 (행마다 조회하는 N+1 방지)
+        Set<Long> userSeqs = new HashSet<>();
+        result.getContent().forEach(row -> {
+            userSeqs.add(row.getAdminUserSeq());
+            userSeqs.add(row.getTargetUserSeq());
+        });
+        Map<Long, String> nameMap = userRepository.findAllById(userSeqs).stream()
+                .collect(Collectors.toMap(User::getUserSeq, User::getUserName));
+
+        List<AuditLogVo> content = result.getContent().stream()
+                .map(row -> AuditLogVo.builder()
+                        .auditSeq(row.getAuditSeq())
+                        .adminUserSeq(row.getAdminUserSeq())
+                        .adminUserName(nameMap.getOrDefault(row.getAdminUserSeq(), DELETED_USER))
+                        .targetUserSeq(row.getTargetUserSeq())
+                        .targetUserName(nameMap.getOrDefault(row.getTargetUserSeq(), DELETED_USER))
+                        .action(row.getAction())
+                        .createdAt(row.getCreatedAt())
+                        .build())
+                .toList();
+
+        return AuditLogPageVo.builder()
+                .content(content)
                 .page(result.getNumber())
                 .totalPages(result.getTotalPages())
                 .totalElements(result.getTotalElements())

@@ -31,6 +31,7 @@ import {
 } from '@/common/components/ui/dialog'
 import { formatDate } from '@/common/utils/format'
 import { extractErrorMessage } from '@/common/utils/error'
+import AdminTabs from '../components/AdminTabs.vue'
 import { useAdminUsers } from '../composables/useAdminUsers'
 import type { AdminUser } from '../types'
 
@@ -121,7 +122,9 @@ function roleLabel(role: string): string {
 
 <template>
     <div class="mx-auto h-full max-w-5xl overflow-y-auto px-6 py-8">
-        <h1 class="mb-6 text-2xl font-semibold">사용자 관리</h1>
+        <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
+
+        <AdminTabs />
 
         <!-- 검색 -->
         <form class="mb-4 flex gap-2" @submit.prevent="search">

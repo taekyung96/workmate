@@ -1,6 +1,7 @@
 package com.workmate.was.admin.controller;
 
 import com.workmate.was.admin.service.AdminService;
+import com.workmate.was.admin.vo.AuditLogPageVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
 import com.workmate.was.global.response.ApiResponse;
@@ -34,6 +35,15 @@ public class AdminApiController {
             @RequestParam(value = "size", defaultValue = "20") int size) {
         log.info("관리자 사용자 목록 조회 - keyword: {}, page: {}", keyword, page);
         return ApiResponse.success(adminService.getUsers(keyword, page, size));
+    }
+
+    /** 감사 로그 목록 (M4) — 최신순 페이징, 행위자·대상 이름 포함 */
+    @GetMapping("/audit-logs")
+    public ApiResponse<AuditLogPageVo> getAuditLogs(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        log.info("관리자 감사 로그 조회 - page: {}, size: {}", page, size);
+        return ApiResponse.success(adminService.getAuditLogs(page, size));
     }
 
     /** 계정 잠금 해제 (M2) */

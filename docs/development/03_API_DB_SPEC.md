@@ -75,6 +75,7 @@ WAS REST API의 요청/응답 규격과 DB 테이블 정의를 확정한다.
 | M1  | `GET /api/v1/admin/users?keyword=&page=`            | 사용자 목록·검색                                 | F6-01    | 1    |
 | M2  | `POST /api/v1/admin/users/{userSeq}/unlock`         | 잠금 해제 (+감사 기록)                           | F6-02    | 1    |
 | M3  | `POST /api/v1/admin/users/{userSeq}/reset-password` | 비번 초기화 (+감사 기록)                         | F6-03    | 1    |
+| M4  | `GET /api/v1/admin/audit-logs?page=&size=`          | 감사 로그 조회 (행위자·대상 이름 조인, 최신순)   | F8       | 5    |
 | K1  | `GET /api/common/codes/{groupCode}`                 | 공통코드 조회                                    | F7-04    | 4    |
 | H1  | `GET /api/v1/health`                                | 헬스체크 (기구현)                                | —        | —    |
 

@@ -23,3 +23,24 @@ export interface UserPage {
 export interface ResetPasswordResult {
     tempPassword: string
 }
+
+/** 관리자 감사 로그 항목 (WAS AuditLogVo 대응) — 행위자·대상 이름 포함 */
+export interface AuditLog {
+    auditSeq: number
+    adminUserSeq: number
+    adminUserName: string
+    targetUserSeq: number
+    targetUserName: string
+    /** 'UNLOCK' | 'RESET_PASSWORD' */
+    action: string
+    createdAt: string
+}
+
+/** 감사 로그 페이지 응답 (WAS AuditLogPageVo 대응) */
+export interface AuditLogPage {
+    content: AuditLog[]
+    /** 0-based 현재 페이지 */
+    page: number
+    totalPages: number
+    totalElements: number
+}

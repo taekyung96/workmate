@@ -2,6 +2,8 @@ package com.workmate.was.admin.service.impl;
 
 import com.workmate.was.admin.dao.AdminAuditLogRepository;
 import com.workmate.was.admin.vo.AdminAuditLog;
+import com.workmate.was.admin.vo.AuditLogPageVo;
+import com.workmate.was.admin.vo.AuditLogVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
 import com.workmate.was.auth.dao.UserRepository;
@@ -15,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -114,6 +117,40 @@ class AdminServiceImplTest {
         // 저장된 비번이 발급 평문의 BCrypt 해시
         assertThat(new BCryptPasswordEncoder().matches(result.getTempPassword(), u.getPassword())).isTrue();
         verify(adminAuditLogRepository).save(any(AdminAuditLog.class));
+    }
+
+    private AdminAuditLog auditLog(Long auditSeq, Long adminSeq, Long targetSeq, String action) {
+        AdminAuditLog log = AdminAuditLog.builder()
+                .adminUserSeq(adminSeq).targetUserSeq(targetSeq).action(action).build();
+        ReflectionTestUtils.setField(log, "auditSeq", auditSeq);
+        return log;
+    }
+
+    @Test
+    @DisplayName("getAuditLogs: 행위자·대상 이름 조인 + 페이징 매핑, 삭제된 사용자는 대체 표기")
+    void getAuditLogs_joins_names() {
+        AdminAuditLog unlockLog = auditLog(10L, 1L, 5L, AdminAuditLog.ACTION_UNLOCK);
+        // 대상(99)은 이후 삭제되어 이름 조회에서 빠진다
+        AdminAuditLog resetLog = auditLog(11L, 1L, 99L, AdminAuditLog.ACTION_RESET_PASSWORD);
+        when(adminAuditLogRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(unlockLog, resetLog), PageRequest.of(0, 20), 2));
+        when(userRepository.findAllById(any()))
+                .thenReturn(List.of(
+                        user(1L, "admin@b.com", "관리자", "01000000000", null),
+                        user(5L, "a@b.com", "홍길동", "01011112222", null)));
+
+        AuditLogPageVo result = adminService.getAuditLogs(0, 20);
+
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+
+        AuditLogVo first = result.getContent().get(0);
+        assertThat(first.getAdminUserName()).isEqualTo("관리자");
+        assertThat(first.getTargetUserName()).isEqualTo("홍길동");
+        assertThat(first.getAction()).isEqualTo("UNLOCK");
+
+        // 삭제된 대상(99)은 이름을 못 찾아 대체 문구로 표기
+        assertThat(result.getContent().get(1).getTargetUserName()).isEqualTo("(삭제된 사용자)");
     }
 
     @Test

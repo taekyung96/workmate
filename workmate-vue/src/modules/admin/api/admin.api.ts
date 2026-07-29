@@ -1,6 +1,6 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { ResetPasswordResult, UserPage } from '../types'
+import type { AuditLogPage, ResetPasswordResult, UserPage } from '../types'
 
 /**
  * 관리자 API (WEB의 /api/v1/admin/* 프록시 → WAS).
@@ -11,6 +11,14 @@ export const adminApi = {
     async users(keyword: string, page: number, size = 20): Promise<UserPage> {
         const { data } = await client.get<ApiResponse<UserPage>>('/v1/admin/users', {
             params: { keyword: keyword || undefined, page, size },
+        })
+        return data.result
+    },
+
+    /** 감사 로그 목록 (M4) — 최신순 페이징, 행위자·대상 이름 포함 */
+    async auditLogs(page: number, size = 20): Promise<AuditLogPage> {
+        const { data } = await client.get<ApiResponse<AuditLogPage>>('/v1/admin/audit-logs', {
+            params: { page, size },
         })
         return data.result
     },

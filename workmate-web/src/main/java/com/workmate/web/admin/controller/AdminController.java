@@ -33,6 +33,14 @@ public class AdminController {
         return jsonPassthrough(adminService.getUsers(keyword, page, size));
     }
 
+    /** 감사 로그 목록 (M4) */
+    @GetMapping("/audit-logs")
+    public ResponseEntity<String> getAuditLogs(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        return jsonPassthrough(adminService.getAuditLogs(page, size));
+    }
+
     /** 계정 잠금 해제 (M2) */
     @PostMapping("/users/{userSeq}/unlock")
     public ResponseEntity<String> unlock(@PathVariable("userSeq") Long userSeq) {

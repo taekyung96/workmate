@@ -1,5 +1,6 @@
 package com.workmate.was.admin.service;
 
+import com.workmate.was.admin.vo.AuditLogPageVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
 
@@ -10,6 +11,9 @@ public interface AdminService {
 
     /** 사용자 목록·검색 (M1, F6-01) — 이메일·전화 마스킹 포함 */
     UserPageVo getUsers(String keyword, int page, int size);
+
+    /** 감사 로그 목록 조회 (M4, F8 — 최신순 페이징, 행위자·대상 이름 포함) */
+    AuditLogPageVo getAuditLogs(int page, int size);
 
     /** 계정 잠금 해제 + 감사 기록 (M2, F6-02) */
     void unlock(Long adminUserSeq, Long targetUserSeq);

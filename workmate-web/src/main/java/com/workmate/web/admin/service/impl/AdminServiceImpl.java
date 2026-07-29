@@ -33,6 +33,17 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public ResponseEntity<String> getAuditLogs(int page, int size) {
+        return wasRestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/admin/audit-logs")
+                        .queryParam("page", page)
+                        .queryParam("size", size)
+                        .build())
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    @Override
     public ResponseEntity<String> unlock(Long userSeq) {
         return wasRestClient.post()
                 .uri("/api/v1/admin/users/{userSeq}/unlock", userSeq)
