@@ -1,0 +1,10 @@
+[
+    {
+        "question": "도커랑 쿠버네티스 차이가 뭐야?",
+        "expectedTitles": ["Docker vs Kubernetes"]
+    },
+    {
+        "question": "RAG가 뭔지 설명해줘",
+        "expectedTitles": ["RAG란 무엇인가", "RAG 개요"]
+    }
+]
