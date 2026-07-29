@@ -16,10 +16,10 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "@lucide/vue": "^1.25.0",
+    "@lucide/vue": "^1.27.0",
     "@tailwindcss/vite": "^4.3.3",
     "@toast-ui/editor": "^3.2.2",
-    "@vueuse/core": "^14.3.0",
+    "@vueuse/core": "^14.4.0",
     "axios": "^1.18.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

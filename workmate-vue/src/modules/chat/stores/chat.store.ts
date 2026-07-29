@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { chatApi } from '../api/chat.api'
+import { commonCodeApi, type CommonCode } from '@/common/api/commonCode'
 import type { ChatMessage, ChatRoom } from '../types'
 
 /**
@@ -15,6 +16,10 @@ export const useChatStore = defineStore('chat', () => {
     const roomsLoaded = ref(false)
     // RAG 모드 — 켜면 전송 시 가이드 문서 검색 근거를 요청한다(출처 뱃지로 표시). 대화 내내 유지되는 선호값이라 store에 둔다
     const ragMode = ref(false)
+    // 선택 가능한 AI 모델 목록(공통코드 AI_MODEL)과 현재 선택값. 대화 내내 유지되는 선호값이라 store에 둔다
+    const models = ref<CommonCode[]>([])
+    const selectedModel = ref<string | null>(null)
+    const modelsLoaded = ref(false)
     // 요청제한(429) 안내 배너 메시지 (null이면 미표시)
     const rateLimited = ref<string | null>(null)
     // 재시도 대상 사용자 입력 (스트림 시작 전 거절된 마지막 메시지)
@@ -24,6 +29,15 @@ export const useChatStore = defineStore('chat', () => {
     async function loadRooms(): Promise<void> {
         rooms.value = await chatApi.rooms()
         roomsLoaded.value = true
+    }
+
+    /** 선택 가능한 AI 모델 목록 로드 (AI_MODEL 공통코드). 선택값이 없으면 첫 모델을 기본으로 */
+    async function loadModels(): Promise<void> {
+        models.value = await commonCodeApi.codes('AI_MODEL')
+        if (!selectedModel.value && models.value.length > 0) {
+            selectedModel.value = models.value[0]!.code
+        }
+        modelsLoaded.value = true
     }
 
     /** 새 채팅 시작 — 현재 방/메시지 초기화 (빈 상태) */
@@ -65,7 +79,12 @@ export const useChatStore = defineStore('chat', () => {
 
         try {
             await chatApi.stream(
-                { roomSeq: currentRoomSeq.value, message: trimmed, ragMode: ragMode.value },
+                {
+                    roomSeq: currentRoomSeq.value,
+                    message: trimmed,
+                    modelCode: selectedModel.value ?? undefined,
+                    ragMode: ragMode.value,
+                },
                 {
                     onMeta: (d) => {
                         // 새 방 생성 시: 현재 방으로 지정 + 목록 맨 위에 추가
@@ -137,10 +156,14 @@ export const useChatStore = defineStore('chat', () => {
         streaming,
         roomsLoaded,
         ragMode,
+        models,
+        selectedModel,
+        modelsLoaded,
         rateLimited,
         retryLast,
         dismissRateLimit,
         loadRooms,
+        loadModels,
         startNewChat,
         selectRoom,
         deleteRoom,

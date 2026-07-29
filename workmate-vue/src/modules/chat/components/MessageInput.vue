@@ -7,9 +7,26 @@ import { ref } from 'vue'
 import { BookText, SendHorizontal } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Textarea } from '@/common/components/ui/textarea'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/common/components/ui/select'
+import type { CommonCode } from '@/common/api/commonCode'
 
-const props = defineProps<{ disabled?: boolean; ragMode?: boolean }>()
-const emit = defineEmits<{ send: [text: string]; 'update:ragMode': [value: boolean] }>()
+const props = defineProps<{
+    disabled?: boolean
+    ragMode?: boolean
+    models?: CommonCode[]
+    selectedModel?: string | null
+}>()
+const emit = defineEmits<{
+    send: [text: string]
+    'update:ragMode': [value: boolean]
+    'update:selectedModel': [value: string]
+}>()
 
 const text = ref('')
 
@@ -32,6 +49,25 @@ function onKeydown(event: KeyboardEvent): void {
 <template>
     <div class="mx-auto w-full max-w-3xl px-4 pb-4">
         <div class="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm">
+            <!-- AI 모델 선택 (공통코드 AI_MODEL) — 목록이 있을 때만 노출. 선택값은 전송 시 modelCode 로 전달 -->
+            <Select
+                v-if="models && models.length > 0"
+                :model-value="selectedModel ?? undefined"
+                @update:model-value="(value) => emit('update:selectedModel', String(value))"
+            >
+                <SelectTrigger
+                    class="h-9 w-auto shrink-0 gap-1 self-center rounded-full border px-2.5 text-xs font-medium"
+                    title="AI 모델 선택"
+                >
+                    <SelectValue placeholder="모델" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem v-for="m in models" :key="m.code" :value="m.code">
+                        {{ m.codeName }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+
             <!-- 가이드 참고(RAG) 토글 — 켜면 답변이 가이드 문서를 검색해 출처와 함께 응답 -->
             <button
                 type="button"

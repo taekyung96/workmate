@@ -3,7 +3,7 @@
  * 채팅 화면 (/chat) — 빈 상태(방 미생성)와 대화 상태.
  * 방 목록·선택은 공통 사이드바가 담당하고, 여기선 메시지 영역 + 입력창만 그린다.
  */
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useChatStore } from '../stores/chat.store'
 import MessageList from '../components/MessageList.vue'
@@ -11,6 +11,11 @@ import MessageInput from '../components/MessageInput.vue'
 
 const chat = useChatStore()
 const isEmpty = computed(() => chat.messages.length === 0)
+
+// 모델 선택 드롭다운 구성용 AI_MODEL 공통코드 로드 (1회)
+onMounted(() => {
+    if (!chat.modelsLoaded) chat.loadModels()
+})
 
 function onSend(text: string): void {
     chat.sendMessage(text)
@@ -40,6 +45,8 @@ function onSend(text: string): void {
             <h1 class="mb-8 text-2xl font-semibold text-muted-foreground">무엇을 도와드릴까요?</h1>
             <MessageInput
                 v-model:rag-mode="chat.ragMode"
+                v-model:selected-model="chat.selectedModel"
+                :models="chat.models"
                 :disabled="chat.streaming"
                 @send="onSend"
             />
@@ -50,6 +57,8 @@ function onSend(text: string): void {
             <MessageList :messages="chat.messages" @retry="chat.retryLast" />
             <MessageInput
                 v-model:rag-mode="chat.ragMode"
+                v-model:selected-model="chat.selectedModel"
+                :models="chat.models"
                 :disabled="chat.streaming"
                 @send="onSend"
             />
