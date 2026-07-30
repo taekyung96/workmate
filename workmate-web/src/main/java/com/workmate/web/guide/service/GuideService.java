@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
  */
 public interface GuideService {
 
-    ResponseEntity<String> list();
+    ResponseEntity<String> list(String keyword, int page, int size);
 
     ResponseEntity<String> detail(Long guideSeq);
 

@@ -1,8 +1,8 @@
 package com.workmate.was.guide.service;
 
+import com.workmate.was.guide.vo.GuidePageVo;
 import com.workmate.was.guide.vo.GuideResponseVo;
 import com.workmate.was.guide.vo.GuideSaveRequestVo;
-import java.util.List;
 
 /**
  * 가이드 문서 처리 및 벡터 스토어 RAG 적재 서비스 인터페이스 (F4).
@@ -22,6 +22,6 @@ public interface GuideService {
     /** 가이드 상세 (G2) — 본인 또는 공개 문서만 */
     GuideResponseVo getGuide(Long userSeq, Long guideSeq);
 
-    /** 접근 가능 목록 (G1) — 본인 문서 + 공개 문서, 최신순 */
-    List<GuideResponseVo> getAccessibleGuides(Long userSeq);
+    /** 접근 가능 목록 (G1) — 본인 문서 + 공개 문서, 키워드 검색·페이징, 최신 수정순 */
+    GuidePageVo searchGuides(Long userSeq, String keyword, int page, int size);
 }

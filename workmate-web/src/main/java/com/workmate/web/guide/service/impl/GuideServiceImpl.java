@@ -19,8 +19,17 @@ public class GuideServiceImpl implements GuideService {
     private final RestClient wasRestClient;
 
     @Override
-    public ResponseEntity<String> list() {
-        return wasRestClient.get().uri("/api/v1/guides").retrieve().toEntity(String.class);
+    public ResponseEntity<String> list(String keyword, int page, int size) {
+        return wasRestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/guides")
+                        .queryParamIfPresent("keyword",
+                                (keyword == null || keyword.isBlank())
+                                        ? java.util.Optional.empty()
+                                        : java.util.Optional.of(keyword))
+                        .queryParam("page", page)
+                        .queryParam("size", size)
+                        .build())
+                .retrieve().toEntity(String.class);
     }
 
     @Override

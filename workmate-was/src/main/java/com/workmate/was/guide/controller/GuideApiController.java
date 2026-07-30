@@ -2,6 +2,7 @@ package com.workmate.was.guide.controller;
 
 import com.workmate.was.global.response.ApiResponse;
 import com.workmate.was.guide.service.GuideService;
+import com.workmate.was.guide.vo.GuidePageVo;
 import com.workmate.was.guide.vo.GuideResponseVo;
 import com.workmate.was.guide.vo.GuideSaveRequestVo;
 import jakarta.validation.Valid;
@@ -13,9 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * 가이드 문서 REST API (G1~G5, F4). 사용자 식별은 X-User-Seq 헤더로 한다.
@@ -28,10 +28,14 @@ public class GuideApiController {
 
     private final GuideService guideService;
 
-    /** 목록 (본인+공개, G1) */
+    /** 목록 (본인+공개, 키워드 검색·페이징, G1) */
     @GetMapping
-    public ApiResponse<List<GuideResponseVo>> list(@RequestHeader("X-User-Seq") Long userSeq) {
-        return ApiResponse.success(guideService.getAccessibleGuides(userSeq));
+    public ApiResponse<GuidePageVo> list(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "12") int size) {
+        return ApiResponse.success(guideService.searchGuides(userSeq, keyword, page, size));
     }
 
     /** 상세 (G2) */
