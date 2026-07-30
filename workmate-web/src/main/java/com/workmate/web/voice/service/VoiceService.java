@@ -12,4 +12,7 @@ import java.io.IOException;
 public interface VoiceService {
 
     ResponseEntity<String> analyze(MultipartFile file, String title) throws IOException;
+
+    /** 저장된 회의록을 사내 가이드로 등록 요청 중계 (F8-1-6). */
+    ResponseEntity<String> convertToGuide(Long recordSeq);
 }

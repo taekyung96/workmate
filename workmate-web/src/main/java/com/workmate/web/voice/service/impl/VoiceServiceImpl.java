@@ -54,4 +54,13 @@ public class VoiceServiceImpl implements VoiceService {
                 .retrieve()
                 .toEntity(String.class);
     }
+
+    @Override
+    public ResponseEntity<String> convertToGuide(Long recordSeq) {
+        log.info("회의록 → 가이드 등록 프록시 요청. recordSeq: {}", recordSeq);
+        return wasRestClient.post()
+                .uri("/api/v1/voice/{recordSeq}/to-guide", recordSeq)
+                .retrieve()
+                .toEntity(String.class);
+    }
 }

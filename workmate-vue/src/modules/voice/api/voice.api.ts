@@ -19,4 +19,10 @@ export const voiceApi = {
         )
         return data.result
     },
+
+    /** 저장된 회의록을 사내 가이드로 등록 → 생성된 가이드 식별자 반환 (F8-1-6) */
+    async convertToGuide(recordSeq: number): Promise<number> {
+        const { data } = await client.post<ApiResponse<number>>(`/v1/voice/${recordSeq}/to-guide`)
+        return data.result
+    },
 }

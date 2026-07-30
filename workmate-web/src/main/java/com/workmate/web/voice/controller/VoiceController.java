@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +39,17 @@ public class VoiceController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "title", required = false) String title) throws IOException {
         return jsonPassthrough(voiceService.analyze(file, title));
+    }
+
+    /**
+     * 회의록 → 가이드 등록 요청 중계 (F8-1-6).
+     *
+     * @param recordSeq 회의록 식별자
+     * @return WAS 응답 JSON (새 가이드 식별자)
+     */
+    @PostMapping("/{recordSeq}/to-guide")
+    public ResponseEntity<String> convertToGuide(@PathVariable Long recordSeq) {
+        return jsonPassthrough(voiceService.convertToGuide(recordSeq));
     }
 
     /** WAS 응답의 상태코드·본문을 유지하며 JSON 컨텐츠 타입으로 화면에 전달한다. */
