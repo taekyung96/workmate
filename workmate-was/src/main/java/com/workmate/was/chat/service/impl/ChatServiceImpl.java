@@ -57,7 +57,8 @@ public class ChatServiceImpl implements ChatService {
     private String modelName;
 
     private static final String SYSTEM_PROMPT =
-            "당신은 Workmate 업무 비서입니다. 사용자의 업무 관련 질문에 정확하고 간결하게 한국어로 답변하세요.";
+            "당신은 친절하고 유능한 개발 및 업무 AI 비서 Workmate입니다. "
+            + "사용자의 IT 개발, 리눅스 명령어, 아키텍처, 업무 관련 질문에 대해 명쾌하고 상세하게 한국어로 답변하세요.";
 
     /** {@inheritDoc} */
     @Override
