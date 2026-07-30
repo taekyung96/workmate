@@ -31,6 +31,7 @@ PostgreSQL 17 + pgvector
 
 - 📌 **[docs/project/PROJECT_OVERVIEW.md](docs/project/PROJECT_OVERVIEW.md)** — 프로젝트 종합 개요
 - 📌 **[docs/project/HANDOVER.md](docs/project/HANDOVER.md)** — 개발 진입점 (결정·근거·셋업)
+- 🐳 **[docs/development/05_DOCKER_WSL2_SETUP_GUIDE.md](docs/development/05_DOCKER_WSL2_SETUP_GUIDE.md)** — WSL2 Docker DB 구축 가이드
 - [아키텍처](docs/development/01_ARCHITECTURE.md) · [프론트 구조](docs/development/02_FRONTEND_STRUCTURE_GUIDE.md) · [ADR](docs/project/adr/) · [로드맵](docs/project/ROADMAP.md)
 
 ## 왜 v3인가 (아키텍처 진화 배경)
