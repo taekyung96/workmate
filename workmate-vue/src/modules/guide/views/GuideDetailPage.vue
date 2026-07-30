@@ -19,12 +19,18 @@ import {
     AlertDialogTrigger,
 } from '@/common/components/ui/alert-dialog'
 import { formatDate } from '@/common/utils/format'
+import { renderMarkdown } from '@/common/utils/markdown'
+import { useMarkdownCopy } from '@/common/composables/useMarkdownCopy'
 import { useGuideDetail } from '../composables/useGuideDetail'
 
 const route = useRoute()
 const router = useRouter()
 const guideSeq = computed(() => Number(route.params.id))
 const { guide, loading, error, load, remove } = useGuideDetail()
+
+// 본문(마크다운)을 살균된 HTML 로 렌더 + 코드블록 복사 버튼 처리(채팅과 공유)
+const renderedContent = computed(() => (guide.value ? renderMarkdown(guide.value.content) : ''))
+const { onMarkdownClick } = useMarkdownCopy()
 
 onMounted(() => load(guideSeq.value))
 
@@ -92,9 +98,12 @@ async function onDelete(): Promise<void> {
                     </div>
                 </div>
 
-                <div class="whitespace-pre-wrap rounded-lg border p-4 leading-relaxed">
-                    {{ guide.content }}
-                </div>
+                <!-- 본문: 작성 시와 동일하게 마크다운으로 렌더 (평문 대신) -->
+                <div
+                    class="markdown-body markdown-doc rounded-lg border p-6"
+                    v-html="renderedContent"
+                    @click="onMarkdownClick"
+                />
             </template>
         </div>
     </div>
