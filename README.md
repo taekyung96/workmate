@@ -1,6 +1,6 @@
 # Workmate
 
-> Spring AI 기반 **업무 비서 웹앱** — 이직 포트폴리오 프로젝트
+> Spring AI 기반 **업무 비서 웹앱**
 > **v2(Thymeleaf + Vue UMD 하이브리드) → v3(Vue3 단독 SPA)** 로 재설계한 버전
 
 ## 핵심 기능
@@ -29,11 +29,12 @@ PostgreSQL 17 + pgvector
 
 ## 문서
 
-- 📌 **[docs/project/HANDOVER.md](docs/project/HANDOVER.md)** — 여기부터 (결정·근거·셋업)
+- 📌 **[docs/project/PROJECT_OVERVIEW.md](docs/project/PROJECT_OVERVIEW.md)** — 프로젝트 종합 개요
+- 📌 **[docs/project/HANDOVER.md](docs/project/HANDOVER.md)** — 개발 진입점 (결정·근거·셋업)
 - [아키텍처](docs/development/01_ARCHITECTURE.md) · [프론트 구조](docs/development/02_FRONTEND_STRUCTURE_GUIDE.md) · [ADR](docs/project/adr/) · [로드맵](docs/project/ROADMAP.md)
 
-## 왜 v3인가 (포트폴리오 서사)
+## 왜 v3인가 (아키텍처 진화 배경)
 
 v2는 엔터프라이즈 하이브리드(SSR+Vue 조각) 구조였다. Vue3의 강점(SPA·Router·Pinia)을 제대로 살리고,
-"레거시를 이해하되 필요할 때 모던하게 전환할 줄 아는" 판단력을 보이기 위해 SPA로 재설계했다.
+기존 아키텍처의 한계를 극복하여 모던 SPA 웹앱으로 전환하기 위해 재설계했다.
 아키텍처 결정 트레이드오프는 [ADR](docs/project/adr/)에 기록.

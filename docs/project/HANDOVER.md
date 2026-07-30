@@ -12,12 +12,11 @@
 
 ## 1. 이 프로젝트가 뭔가
 
-**Workmate = Spring AI 기반 "업무 비서" 웹앱.** 이직 포트폴리오 대표작.
+**Workmate = Spring AI 기반 업무 자동화 비서 웹 애플리케이션.**
 
-- **주인공은 AI 백엔드** (Spring AI · RAG · Tool Calling). 프론트는 "제대로 된 SPA"면 충분.
-- 핵심 기능: ① 스트리밍 채팅(SSE) ② 영수증 자동 인식 ③ 문서 RAG ④ 관리자
-- **v3의 정체성**: v2(현재 운영 중인 `teakyung96/workmate`)는 **Thymeleaf SSR + Vue UMD 하이브리드**였다.
-  v3는 이를 **Vue3 단독 SPA**로 재설계한 버전. → 이 전환 자체가 포트폴리오 서사의 핵심.
+- **핵심 엔진**: Spring AI, RAG, Tool Calling 기반의 백엔드 시스템.
+- 핵심 기능: ① 스트리밍 채팅(SSE) ② 영수증 자동 인식 ③ 문서 RAG ④ 관리자 대시보드
+- **v3 고도화 목표**: 기존 Thymeleaf SSR 및 Vue UMD 하이브리드 구조를 **Vue3 단독 SPA**로 전면 재설계. 최신 프론트엔드 아키텍처 도입을 통한 유지보수성 및 사용자 경험 향상이 핵심.
 
 > 배경 상세: [PROJECT_BACKGROUND_V2.md](PROJECT_BACKGROUND_V2.md) · 기능 요구사항: [FEATURE_SPEC.md](FEATURE_SPEC.md)
 
