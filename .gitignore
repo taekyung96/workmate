@@ -21,6 +21,9 @@ workmate-web/src/main/resources/static/
 .idea/
 *.iml
 .vscode/
+# IntelliJ/Antigravity 테스트 실행 시 생성되는 classpath 인자 임시파일
+.temp-*
+*.temp-*.txt
 
 # Env & secrets
 # 비밀값(API 키·DB 비번)은 .env(git 미추적)로만. .env.example → .env 복사 방식
