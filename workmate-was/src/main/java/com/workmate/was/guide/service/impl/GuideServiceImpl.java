@@ -139,8 +139,9 @@ public class GuideServiceImpl implements GuideService {
     public GuidePageVo searchGuides(Long userSeq, String keyword, int page, int size) {
         // 최신 수정순 페이징 (관리자 목록과 동일 관용구)
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
-        // 키워드가 비면 null 로 넘겨 JPQL 의 ':keyword IS NULL' 분기(전체 조회)를 타게 한다
-        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        // 키워드가 비면 빈 문자열("")로 넘겨 JPQL 의 ':keyword = '' ' 분기(전체 조회)를 타게 한다.
+        // null 을 넘기면 PostgreSQL 이 파라미터 타입을 bytea 로 추론해 lower(bytea) 오류가 나므로 주의.
+        String kw = (keyword == null || keyword.isBlank()) ? "" : keyword.trim();
 
         Page<Guide> result = guideRepository.searchAccessible(userSeq, kw, pageable);
         return GuidePageVo.builder()
