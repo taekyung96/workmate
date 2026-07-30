@@ -12,6 +12,7 @@ import {
     BookText,
     LogOut,
     MessageSquare,
+    Mic,
     Receipt,
     Settings,
     SquarePen,
@@ -104,6 +105,16 @@ function openRoom(roomSeq: number): void {
                 <BookText class="size-4" />
                 가이드
             </RouterLink>
+            <RouterLink
+                :to="{ name: 'voice' }"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                :class="{
+                    'bg-accent font-medium text-foreground': route.path.startsWith('/voice'),
+                }"
+            >
+                <Mic class="size-4" />
+                회의록
+            </RouterLink>
             <!-- 관리자 메뉴 — ROLE_ADMIN에게만 노출 (F6-04). 서버 접근 차단은 별도 -->
             <RouterLink
                 v-if="auth.isAdmin"
@@ -119,7 +130,7 @@ function openRoom(roomSeq: number): void {
         </nav>
 
         <!-- 최근 채팅 -->
-        <div class="mt-4 min-h-0 flex-1 overflow-y-auto px-3">
+        <div class="mt-4 min-h-0 flex-1 overflow-y-auto slim-scroll px-3">
             <p class="px-2 py-1 text-xs text-muted-foreground">최근</p>
             <ul class="flex flex-col gap-0.5">
                 <li
