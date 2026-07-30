@@ -18,30 +18,32 @@ const tabs: { key: Tab; label: string }[] = [
 </script>
 
 <template>
-    <div class="mx-auto h-full max-w-4xl overflow-y-auto px-6 py-8">
-        <div class="mb-6 flex items-center gap-6">
-            <h1 class="text-2xl font-semibold">영수증</h1>
-            <div class="flex gap-1 rounded-lg bg-muted p-1">
-                <button
-                    v-for="t in tabs"
-                    :key="t.key"
-                    type="button"
-                    class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors"
-                    :class="
-                        tab === t.key
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                    "
-                    @click="tab = t.key"
-                >
-                    {{ t.label }}
-                </button>
+    <div class="slim-scroll h-full overflow-y-auto">
+        <div class="mx-auto max-w-4xl px-6 py-8">
+            <div class="mb-6 flex items-center gap-6">
+                <h1 class="text-2xl font-semibold">영수증</h1>
+                <div class="flex gap-1 rounded-lg bg-muted p-1">
+                    <button
+                        v-for="t in tabs"
+                        :key="t.key"
+                        type="button"
+                        class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors"
+                        :class="
+                            tab === t.key
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        "
+                        @click="tab = t.key"
+                    >
+                        {{ t.label }}
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- 분석 탭: 상태 유지 -->
-        <ReceiptAnalyzeTab v-show="tab === 'analyze'" @saved="tab = 'history'" />
-        <!-- 이력 탭: 방문 시 재조회 -->
-        <ReceiptHistoryTab v-if="tab === 'history'" />
+            <!-- 분석 탭: 상태 유지 -->
+            <ReceiptAnalyzeTab v-show="tab === 'analyze'" @saved="tab = 'history'" />
+            <!-- 이력 탭: 방문 시 재조회 -->
+            <ReceiptHistoryTab v-if="tab === 'history'" />
+        </div>
     </div>
 </template>
