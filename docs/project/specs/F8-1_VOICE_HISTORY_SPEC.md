@@ -110,9 +110,13 @@ ALTER TABLE voice_record ADD COLUMN IF NOT EXISTS content_type     varchar(100);
 | 대상 | 방식 |
 | :--- | :--- |
 | 목록·상세·삭제 | 기존 `wasRestClient` + `jsonPassthrough` 그대로 |
-| 오디오 | `wasWebClient` 로 무버퍼 relay + `Range` 요청 헤더 전달, 응답의 `Content-Type`·`Content-Length`·`Accept-Ranges`·`Content-Range` 유지 |
+| 오디오 | `wasRestClient.exchange()` 로 응답 `InputStream` 을 `HttpServletResponse` 출력 스트림에 직접 복사. `Range` 요청 헤더를 전달하고, 응답의 `Content-Type`·`Content-Length`·`Accept-Ranges`·`Content-Range`·상태코드(200/206)를 그대로 유지 |
 
-`wasWebClient` 는 채팅 SSE 중계(`ChatServiceImpl.java:30`)가 이미 쓰는 빈이므로 **새 의존성이 필요 없다.**
+**오디오에 `wasWebClient` 를 쓰지 않는 이유** — 채팅 SSE 는 WebClient 를 쓰지만(`ChatServiceImpl.java:30`), 오디오는 `RestClient.exchange()` 가 더 적합하다.
+
+1. `WebClientConfig.java:12-14` 주석대로 `wasWebClient` 에는 **`X-User-Seq` 자동 주입이 없다.** 리액터 스레드에서 `SecurityContextHolder` 가 비기 때문이며, 채팅은 컨트롤러가 `@AuthenticationPrincipal LoginUser` 를 받아 수동으로 헤더에 넣는다(`ChatController.java:58`). 반면 `wasRestClient` 는 인터셉터가 세션에서 자동 주입한다.
+2. `exchange()` 콜백 안에서 `StreamUtils.copy` 로 즉시 흘려보내면 전체를 메모리에 적재하지 않는다 — 스트리밍 목표는 그대로 달성된다.
+3. 서블릿 스택에서 리액티브 `Flux<DataBuffer>` 를 소비하는 복잡도를 피한다.
 
 ## 5. 프론트엔드 설계
 
@@ -189,7 +193,9 @@ modules/receipt/
 | 제목 | `title`. 클릭 시 상세로 이동 |
 | 파일 | `originFileName` · `fileSize` (`8.2MB`). 오디오 없으면 `—` |
 | 생성일 | `createdAt` (`2026.07.30`) |
-| 삭제 | 삭제 버튼 — `common/composables/useDialog` 확인창 |
+| 삭제 | 삭제 버튼 — shadcn `AlertDialog` 확인창 |
+
+> CLAUDE.md 는 확인창 로직으로 `common/composables/useDialog` 를 언급하지만 **실제로 존재하지 않는다**(`common/composables/` 에는 `useMarkdownCopy`·`usePagination` 만 있음). 이번 작업에서 새 composable 을 만들지 않고, 이미 설치된 shadcn `AlertDialog` 를 `AdminUsersPage.vue:229-243` 패턴 그대로 사용한다.
 
 빈 목록일 때 "아직 분석한 회의록이 없습니다." 를 표시한다(`ReceiptHistoryTab.vue:62-67` 패턴).
 
