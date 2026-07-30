@@ -8,6 +8,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { RotateCw } from 'lucide-vue-next'
 import { renderMarkdown } from '@/common/utils/markdown'
+import { useMarkdownCopy } from '@/common/composables/useMarkdownCopy'
 import type { ChatMessage } from '../types'
 
 const props = defineProps<{ message: ChatMessage }>()
@@ -16,40 +17,8 @@ const emit = defineEmits<{ retry: [] }>()
 const isUser = computed(() => props.message.role === 'user')
 const html = computed(() => renderMarkdown(props.message.content))
 
-/**
- * 마크다운 영역 내부 클릭 이벤트 처리 (이벤트 위임).
- * 코드 블록 복사 버튼(.copy-btn) 클릭 시 data-code 속성을 추출해 클립보드에 복사한다.
- *
- * @param event 마우스 클릭 이벤트
- */
-async function onMarkdownClick(event: MouseEvent): Promise<void> {
-    const target = event.target as HTMLElement | null
-    const btn = target?.closest('.copy-btn') as HTMLButtonElement | null
-    if (!btn) return
-
-    const rawCodeEnc = btn.getAttribute('data-code')
-    if (!rawCodeEnc) return
-
-    try {
-        const rawCode = decodeURIComponent(rawCodeEnc)
-        await navigator.clipboard.writeText(rawCode)
-
-        // 복사 성공 시 2초간 "복사됨!" 체크 피드백 표시
-        const textSpan = btn.querySelector('.copy-text')
-        if (textSpan) {
-            const originalText = textSpan.textContent
-            textSpan.textContent = '✓ 복사됨!'
-            btn.classList.add('text-green-600', 'dark:text-green-400')
-
-            setTimeout(() => {
-                textSpan.textContent = originalText ?? '복사'
-                btn.classList.remove('text-green-600', 'dark:text-green-400')
-            }, 2000)
-        }
-    } catch (err) {
-        console.error('코드 복사 실패:', err)
-    }
-}
+// 코드블록 복사 버튼 처리(이벤트 위임) — 가이드 상세 등과 공유하는 공통 컴포저블
+const { onMarkdownClick } = useMarkdownCopy()
 </script>
 
 <template>
@@ -96,42 +65,3 @@ async function onMarkdownClick(event: MouseEvent): Promise<void> {
         </div>
     </div>
 </template>
-
-<style scoped>
-/* v-html로 삽입되는 마크다운 요소 기본 스타일 (typography 플러그인 미사용) */
-.markdown-body :deep(p) {
-    margin: 0.25rem 0;
-}
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-    margin: 0.25rem 0;
-    padding-left: 1.25rem;
-    list-style: revert;
-}
-.markdown-body :deep(pre) {
-    margin: 0.5rem 0;
-    padding: 0.75rem;
-    overflow-x: auto;
-    border-radius: 0.5rem;
-    background: color-mix(in oklch, currentColor 8%, transparent);
-}
-.markdown-body :deep(code) {
-    padding: 0.1rem 0.3rem;
-    border-radius: 0.25rem;
-    background: color-mix(in oklch, currentColor 8%, transparent);
-    font-size: 0.85em;
-}
-.markdown-body :deep(pre code) {
-    padding: 0;
-    background: transparent;
-}
-.markdown-body :deep(a) {
-    text-decoration: underline;
-}
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-    margin: 0.5rem 0 0.25rem;
-    font-weight: 600;
-}
-</style>

@@ -94,6 +94,104 @@
 }
 
 /*
+ * 마크다운 렌더 결과 공통 스타일 — renderMarkdown + .markdown-body 를 쓰는 화면(채팅·가이드 상세 등)이 공유.
+ * (Tailwind typography 플러그인 미사용이라 v-html 로 삽입되는 요소를 직접 스타일링한다)
+ */
+.markdown-body p {
+    margin: 0.25rem 0;
+}
+.markdown-body ul,
+.markdown-body ol {
+    margin: 0.25rem 0;
+    padding-left: 1.25rem;
+    list-style: revert;
+}
+.markdown-body pre {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    background: color-mix(in oklch, currentColor 8%, transparent);
+}
+.markdown-body code {
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    background: color-mix(in oklch, currentColor 8%, transparent);
+    font-size: 0.85em;
+}
+.markdown-body pre code {
+    padding: 0;
+    background: transparent;
+}
+.markdown-body a {
+    text-decoration: underline;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    margin: 0.5rem 0 0.25rem;
+    font-weight: 600;
+}
+
+/*
+ * 문서형 마크다운 — 가이드 상세처럼 전체 문서를 볼 때 .markdown-body 와 함께 붙인다.
+ * 헤더 크기·행간·표/인용 여백을 문서 읽기에 맞게 키운다.
+ */
+.markdown-doc {
+    line-height: 1.7;
+}
+.markdown-doc p {
+    margin: 0.75rem 0;
+}
+.markdown-doc h1 {
+    margin: 1.25rem 0 0.6rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+.markdown-doc h2 {
+    margin: 1.1rem 0 0.5rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.markdown-doc h3 {
+    margin: 0.9rem 0 0.4rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.markdown-doc ul,
+.markdown-doc ol {
+    margin: 0.6rem 0;
+}
+.markdown-doc li {
+    margin: 0.2rem 0;
+}
+.markdown-doc blockquote {
+    margin: 0.75rem 0;
+    padding-left: 0.9rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted-foreground);
+}
+.markdown-doc table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+}
+.markdown-doc th,
+.markdown-doc td {
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.7rem;
+}
+.markdown-doc hr {
+    margin: 1.25rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+}
+.markdown-doc img {
+    max-width: 100%;
+}
+
+/*
  * 슬림 스크롤바 — 스크롤 컨테이너에 .slim-scroll 로 적용한다.
  * 얇고 은은한 회색 thumb(라이트/다크 공통), 트랙은 투명. Firefox/WebKit 모두 대응.
  */
