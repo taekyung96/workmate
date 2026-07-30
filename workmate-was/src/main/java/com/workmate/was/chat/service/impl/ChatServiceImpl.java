@@ -53,7 +53,7 @@ public class ChatServiceImpl implements ChatService {
     private static final String MODEL_GROUP = "AI_MODEL";
 
     /** 응답 생성 모델명 기록용 (F2-09). 멀티모델(마일스톤 4) 전까지는 설정된 기본 모델 고정 */
-    @Value("${spring.ai.google.genai.chat.options.model:gemini-2.5-flash}")
+    @Value("${spring.ai.google.genai.chat.options.model:gemini-flash-latest}")
     private String modelName;
 
     private static final String SYSTEM_PROMPT =

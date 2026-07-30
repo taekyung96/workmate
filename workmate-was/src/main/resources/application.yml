@@ -18,7 +18,9 @@ spring:
                 api-key: ${GEMINI_API_KEY} # .env → 환경변수 주입 (README 참고)
                 chat:
                     options:
-                        model: gemini-2.5-flash
+                        # gemini-2.5-flash 는 신규 사용자에게 404(폐기) → 항상 최신 flash 를 가리키는 별칭 사용
+                        # (chat·OCR·voice 가 공유하는 기본 모델. 특정 버전 고정이 필요하면 gemini-3.5-flash 등으로 교체)
+                        model: gemini-flash-latest
                 # 임베딩은 채팅과 자동설정이 분리되어 있어 api-key 를 별도로 요구한다
                 # (경로 주의: embedding.options.model 이 아니라 embedding.text.options.model)
                 # text-embedding-004 는 현재 genai v1beta embedContent 에서 404 → 사용 가능한

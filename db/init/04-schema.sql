@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS common_code (
 );
 
 -- 초기 데이터: AI 답변 모델 (F7-03·04, F5-05)
+-- gemini-2.5-* 는 신규 사용자에게 404(폐기)되어, 항상 최신을 가리키는 별칭 모델을 사용한다.
 INSERT INTO common_code_group (group_code, group_name) VALUES ('AI_MODEL', 'AI 답변 모델')
     ON CONFLICT (group_code) DO NOTHING;
 INSERT INTO common_code (group_code, code, code_name, sort_order) VALUES
-    ('AI_MODEL', 'gemini-2.5-flash', 'Gemini 2.5 Flash', 1),
-    ('AI_MODEL', 'gemini-2.5-pro',   'Gemini 2.5 Pro',   2)
+    ('AI_MODEL', 'gemini-flash-latest', 'Gemini Flash (latest)', 1),
+    ('AI_MODEL', 'gemini-pro-latest',   'Gemini Pro (latest)',   2)
     ON CONFLICT (group_code, code) DO NOTHING;
