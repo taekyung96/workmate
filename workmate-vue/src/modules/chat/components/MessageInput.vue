@@ -68,7 +68,8 @@ function onKeydown(event: KeyboardEvent): void {
                 </SelectContent>
             </Select>
 
-            <!-- 가이드 참고(RAG) 토글 — 켜면 답변이 가이드 문서를 검색해 출처와 함께 응답 -->
+            <!-- 가이드 참고(RAG) 토글 — 기본 켜짐. 켜면 가이드 문서를 먼저 검색해 근거가 있으면 출처와 함께 응답,
+                 없으면 순수 AI 답변으로 폴백. 끄면 항상 순수 AI로만 답한다. -->
             <button
                 type="button"
                 class="flex shrink-0 items-center gap-1 self-center rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors"
@@ -77,7 +78,11 @@ function onKeydown(event: KeyboardEvent): void {
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-transparent text-muted-foreground hover:bg-accent'
                 "
-                :title="ragMode ? '가이드 참고 켜짐' : '가이드 참고 꺼짐'"
+                :title="
+                    ragMode
+                        ? '가이드 참고 켜짐 — 가이드에서 먼저 찾고 없으면 AI가 답합니다'
+                        : '가이드 참고 꺼짐 — 순수 AI로만 답합니다'
+                "
                 :aria-pressed="ragMode"
                 @click="emit('update:ragMode', !ragMode)"
             >

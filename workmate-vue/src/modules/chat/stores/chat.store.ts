@@ -14,8 +14,10 @@ export const useChatStore = defineStore('chat', () => {
     const messages = ref<ChatMessage[]>([])
     const streaming = ref(false)
     const roomsLoaded = ref(false)
-    // RAG 모드 — 켜면 전송 시 가이드 문서 검색 근거를 요청한다(출처 뱃지로 표시). 대화 내내 유지되는 선호값이라 store에 둔다
-    const ragMode = ref(false)
+    // RAG 모드 — 기본 켜짐. 매 전송마다 가이드 문서를 먼저 검색해 관련 근거가 있으면 출처와 함께 답하고,
+    // 없으면 백엔드가 자동으로 순수 AI 답변으로 폴백한다. 잡담 등 순수 AI만 쓰고 싶으면 끌 수 있다.
+    // 대화 내내 유지되는 선호값이라 store에 둔다
+    const ragMode = ref(true)
     // 선택 가능한 AI 모델 목록(공통코드 AI_MODEL)과 현재 선택값. 대화 내내 유지되는 선호값이라 store에 둔다
     const models = ref<CommonCode[]>([])
     const selectedModel = ref<string | null>(null)
