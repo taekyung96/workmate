@@ -52,6 +52,8 @@ const {
 } = useCommonCodes()
 
 const actionError = ref<string | null>(null)
+// 저장 진행 중 플래그 — 중복 제출을 막고 버튼에 스피너를 표시한다
+const saving = ref(false)
 
 onMounted(loadGroups)
 
@@ -80,7 +82,9 @@ function openEditGroup(g: CommonCodeGroup): void {
 }
 
 async function saveGroup(): Promise<void> {
+    if (saving.value) return
     actionError.value = null
+    saving.value = true
     try {
         const body = {
             groupCode: groupForm.groupCode,
@@ -93,6 +97,8 @@ async function saveGroup(): Promise<void> {
         groupOpen.value = false
     } catch (e) {
         actionError.value = extractErrorMessage(e, '그룹 저장에 실패했습니다.')
+    } finally {
+        saving.value = false
     }
 }
 
@@ -122,7 +128,9 @@ function openEditCode(c: CommonCodeItem): void {
 }
 
 async function saveCode(): Promise<void> {
+    if (saving.value) return
     actionError.value = null
+    saving.value = true
     try {
         const body = {
             code: codeForm.code,
@@ -135,6 +143,8 @@ async function saveCode(): Promise<void> {
         codeOpen.value = false
     } catch (e) {
         actionError.value = extractErrorMessage(e, '코드 저장에 실패했습니다.')
+    } finally {
+        saving.value = false
     }
 }
 
@@ -360,8 +370,14 @@ async function confirmDeleteCode(): Promise<void> {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="groupOpen = false">취소</Button>
-                    <Button :disabled="groupForm.groupName.trim() === ''" @click="saveGroup">
+                    <Button variant="outline" :disabled="saving" @click="groupOpen = false">
+                        취소
+                    </Button>
+                    <Button
+                        :disabled="saving || groupForm.groupName.trim() === ''"
+                        @click="saveGroup"
+                    >
+                        <Spinner v-if="saving" class="mr-2 size-4" />
                         저장
                     </Button>
                 </DialogFooter>
@@ -402,8 +418,11 @@ async function confirmDeleteCode(): Promise<void> {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="codeOpen = false">취소</Button>
-                    <Button :disabled="codeForm.codeName.trim() === ''" @click="saveCode">
+                    <Button variant="outline" :disabled="saving" @click="codeOpen = false">
+                        취소
+                    </Button>
+                    <Button :disabled="saving || codeForm.codeName.trim() === ''" @click="saveCode">
+                        <Spinner v-if="saving" class="mr-2 size-4" />
                         저장
                     </Button>
                 </DialogFooter>

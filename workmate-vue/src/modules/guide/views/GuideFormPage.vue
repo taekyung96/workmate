@@ -37,37 +37,39 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-    <div class="mx-auto h-full max-w-3xl overflow-y-auto px-6 py-8">
-        <h1 class="mb-6 text-2xl font-semibold">
-            {{ isEdit ? '가이드 수정' : '새 가이드 문서' }}
-        </h1>
+    <div class="slim-scroll h-full overflow-y-auto">
+        <div class="mx-auto max-w-3xl px-6 py-8">
+            <h1 class="mb-6 text-2xl font-semibold">
+                {{ isEdit ? '가이드 수정' : '새 가이드 문서' }}
+            </h1>
 
-        <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
-            <div class="flex flex-col gap-2">
-                <Label for="title">제목</Label>
-                <Input id="title" v-model="form.title" placeholder="문서 제목" />
-            </div>
+            <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
+                <div class="flex flex-col gap-2">
+                    <Label for="title">제목</Label>
+                    <Input id="title" v-model="form.title" placeholder="문서 제목" />
+                </div>
 
-            <div class="flex flex-col gap-2">
-                <Label>본문</Label>
-                <MarkdownEditor v-model="form.content" />
-            </div>
+                <div class="flex flex-col gap-2">
+                    <Label>본문</Label>
+                    <MarkdownEditor v-model="form.content" />
+                </div>
 
-            <div class="flex items-center gap-3">
-                <Switch id="isPublic" v-model="form.isPublic" />
-                <Label for="isPublic">공개 문서로 게시</Label>
-            </div>
+                <div class="flex items-center gap-3">
+                    <Switch id="isPublic" v-model="form.isPublic" />
+                    <Label for="isPublic">공개 문서로 게시</Label>
+                </div>
 
-            <Alert v-if="error" variant="destructive">
-                <AlertDescription>{{ error }}</AlertDescription>
-            </Alert>
+                <Alert v-if="error" variant="destructive">
+                    <AlertDescription>{{ error }}</AlertDescription>
+                </Alert>
 
-            <div class="flex justify-end gap-2">
-                <Button type="button" variant="outline" @click="router.back()">취소</Button>
-                <Button type="submit" :disabled="!canSubmit">
-                    {{ loading ? '저장 중…' : '저장' }}
-                </Button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-2">
+                    <Button type="button" variant="outline" @click="router.back()">취소</Button>
+                    <Button type="submit" :disabled="!canSubmit">
+                        {{ loading ? '저장 중…' : '저장' }}
+                    </Button>
+                </div>
+            </form>
+        </div>
     </div>
 </template>
