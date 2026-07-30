@@ -6,8 +6,8 @@ spring:
         active: local # 기본은 로컬 개발, 배포 시 -Dspring.profiles.active 로 전환
     servlet:
         multipart:
-            max-file-size: 10MB # 영수증 이미지 업로드 허용 크기 (스프링 기본 1MB로는 사진 업로드 불가)
-            max-request-size: 12MB
+            max-file-size: 25MB # 업로드 허용 크기 — 영수증 이미지 + 회의 오디오(F8-1) 수용 (기본 1MB로는 부족)
+            max-request-size: 30MB
     jpa:
         hibernate:
             ddl-auto: validate # 스키마는 db/init SQL 스크립트로만 관리 (AI 임의 변경 방지)
