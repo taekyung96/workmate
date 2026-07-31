@@ -10,7 +10,14 @@ import { Badge } from '@/common/components/ui/badge'
 import { Spinner } from '@/common/components/ui/spinner'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import { formatDateTime } from '@/common/utils/format'
-import AdminTabs from '../components/AdminTabs.vue'
+import PageTabs from '@/common/components/PageTabs.vue'
+
+// 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
+const adminTabs = [
+    { name: 'admin-users', label: '사용자 관리' },
+    { name: 'admin-audit-logs', label: '감사 로그' },
+    { name: 'admin-common-codes', label: '공통코드' },
+]
 import { useAdminAuditLogs } from '../composables/useAdminAuditLogs'
 
 const { logs, page, totalPages, totalElements, loading, error, load, goToPage } =
@@ -31,7 +38,7 @@ function actionLabel(action: string): string {
         <div class="mx-auto max-w-5xl px-6 py-8">
             <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
 
-            <AdminTabs />
+            <PageTabs :tabs="adminTabs" />
 
             <Alert v-if="error" variant="destructive" class="mb-4">
                 <AlertDescription>{{ error }}</AlertDescription>

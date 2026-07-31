@@ -31,7 +31,14 @@ import {
     AlertDialogTitle,
 } from '@/common/components/ui/alert-dialog'
 import { extractErrorMessage } from '@/common/utils/error'
-import AdminTabs from '../components/AdminTabs.vue'
+import PageTabs from '@/common/components/PageTabs.vue'
+
+// 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
+const adminTabs = [
+    { name: 'admin-users', label: '사용자 관리' },
+    { name: 'admin-audit-logs', label: '감사 로그' },
+    { name: 'admin-common-codes', label: '공통코드' },
+]
 import { useCommonCodes } from '../composables/useCommonCodes'
 import type { CommonCodeGroup, CommonCodeItem } from '../types'
 
@@ -194,7 +201,7 @@ async function confirmDeleteCode(): Promise<void> {
         <div class="mx-auto max-w-5xl px-6 py-8">
             <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
 
-            <AdminTabs />
+            <PageTabs :tabs="adminTabs" />
 
             <Alert v-if="error || actionError" variant="destructive" class="mb-4">
                 <AlertDescription>{{ error || actionError }}</AlertDescription>
