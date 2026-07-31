@@ -64,7 +64,12 @@ export function useAuth() {
             await authApi.logout()
         } finally {
             store.clear()
-            await router.replace({ name: 'login' })
+            // 하드 리로드로 로그인 화면으로 이동한다.
+            // 이유: 채팅 방 목록·메시지·모델 선택 등 "사용자별" Pinia 상태가 메모리에 남아,
+            // 다른 사용자로 재로그인하면 이전 사용자의 데이터가 잠깐 노출되던 문제가 있었다.
+            // (client-side 라우팅은 스토어를 초기화하지 않아 새로고침 전까지 이전 상태가 보였다.)
+            // 전체 리로드는 모든 스토어를 새로 생성해 사용자 간 상태 누수를 원천 차단한다.
+            window.location.assign('/login')
         }
     }
 
