@@ -29,7 +29,13 @@ export const useChatStore = defineStore('chat', () => {
 
     /** 방 목록 로드 (C1) */
     async function loadRooms(): Promise<void> {
-        rooms.value = await chatApi.rooms()
+        const server = await chatApi.rooms()
+        // 조회가 진행되는 동안 새 채팅으로 낙관적으로 추가된 방(서버 스냅샷에 아직 없는 방)은
+        // 그대로 보존한다. 단순 대입(rooms.value = server)은 그 방을 덮어써 지워버려,
+        // 새로고침 전까지 최근 목록에 안 뜨던 문제가 있었다(로드와 전송 사이의 경쟁 상태).
+        const serverSeqs = new Set(server.map((r) => r.roomSeq))
+        const optimistic = rooms.value.filter((r) => !serverSeqs.has(r.roomSeq))
+        rooms.value = [...optimistic, ...server]
         roomsLoaded.value = true
     }
 
