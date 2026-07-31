@@ -54,7 +54,7 @@ Google AI Studio에서 제공하는 무료 티어(`Free Tier`) 키는 RPM(분당
 
 운영 백엔드 코드(`main`)를 더럽히지 않고, 개발 환경에서 필요할 때 실행 한 번으로 각 문서 사이에 1.5초 딜레이(+ 실패 시 5초 대기 3회 재시도)를 두고 안전하게 적재하는 방법입니다.
 
-- **클래스 위치**: [GuideEmbeddingSyncTest.java](file:///C:/ClaudeCode/workmate-v3-ws/workmate-v3/workmate-was/src/test/java/com/workmate/was/guide/GuideEmbeddingSyncTest.java)
+- **클래스 위치**: [GuideEmbeddingSyncTest.java](../../workmate-was/src/test/java/com/workmate/was/guide/GuideEmbeddingSyncTest.java)
 - **실행 방법**: IDE에서 `syncUnembeddedGuides()` 테스트 메서드 옆 초록색 `[▶]` 버튼 클릭.
 
 ```java

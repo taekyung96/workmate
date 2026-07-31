@@ -1,9 +1,8 @@
 # 05. 공통 요구사항 명세 (Common Requirements)
 
-- **작성일**: 2026-07-14
 - **상태**: 사용자 검토 대기
-- **상위 문서**: [workmate-design.md](workmate-design.md)
-- **관련 문서**: [01 기능 명세서](01_FEATURE_SPEC.md) · [04 API·DB 설계서](04_API_DB_SPEC.md)
+- **상위 문서**: [프로젝트 종합 개요](../project/PROJECT_OVERVIEW.md)
+- **관련 문서**: [기능 명세서](../project/FEATURE_SPEC.md) · [API·DB 설계서](03_API_DB_SPEC.md)
 
 특정 기능이 아니라 **전 기능에 걸쳐 적용되는(횡단) 요구사항**을 정의한다.
 F1~F7 기능별 요구사항은 01 문서에, 코딩 방식·표준(어떻게 짤 것인가)은 `docs/setup/` 개발 가이드에 있다 — 이 문서는 그 사이의 "전 기능이 공통으로 지켜야 할 무엇"을 담는다.

@@ -1,9 +1,8 @@
 # 04. API·DB 상세 설계서 (API & DB Spec)
 
-- **작성일**: 2026-07-14
 - **상태**: 사용자 검토 대기
-- **상위 문서**: [workmate-design.md](workmate-design.md)
-- **관련 문서**: [01 기능 명세서](01_FEATURE_SPEC.md) · [02 화면 설계서](02_SCREEN_DESIGN.md) · [05 공통 요구사항](05_COMMON_REQUIREMENTS.md)
+- **상위 문서**: [프로젝트 종합 개요](../project/PROJECT_OVERVIEW.md)
+- **관련 문서**: [기능 명세서](../project/FEATURE_SPEC.md) · [화면 설계서](../design/01_SCREEN_DESIGN.md) · [공통 요구사항](05_COMMON_REQUIREMENTS.md)
 
 WAS REST API의 요청/응답 규격과 DB 테이블 정의를 확정한다.
 아키텍처 원칙(3-tier·프록시·JPA만)과 코딩 표준은 `docs/setup/02_DEVELOPMENT_GUIDE_BACKEND.md`를 따른다.

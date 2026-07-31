@@ -8,7 +8,7 @@
 
 **Tech Stack:** Java 17, Spring Boot 3.5, Spring AI pgvector, JUnit5(@Tag), Jackson, AssertJ, Gradle.
 
-**설계 문서:** `docs/superpowers/specs/2026-07-29-rag-retrieval-eval-harness-design.md`
+**설계 문서:** `docs/features/rag-eval/RAG_EVAL_HARNESS_DESIGN.md`
 
 ---
 
@@ -673,7 +673,7 @@ Expected: BUILD SUCCESSFUL, `RagEvalRunner` 는 실행되지 않음(로그에 ra
 
 - [ ] **Step 2: 문서 링크 정합성 확인**
 
-설계 문서(`docs/superpowers/specs/2026-07-29-rag-retrieval-eval-harness-design.md`)의 완료 조건 체크리스트가 모두 충족됐는지 대조한다. 미충족 항목이 있으면 해당 태스크로 돌아간다.
+설계 문서(`docs/features/rag-eval/RAG_EVAL_HARNESS_DESIGN.md`)의 완료 조건 체크리스트가 모두 충족됐는지 대조한다. 미충족 항목이 있으면 해당 태스크로 돌아간다.
 
 ---
 

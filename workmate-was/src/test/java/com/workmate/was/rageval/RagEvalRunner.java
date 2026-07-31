@@ -118,7 +118,7 @@ class RagEvalRunner {
         String markdown = writer.render(results, meta);
         System.out.println(markdown);
 
-        String reportDir = System.getProperty("ragEval.reportDir", "../docs/development/rag-eval");
+        String reportDir = System.getProperty("ragEval.reportDir", "../docs/features/rag-eval");
         Path file = writer.write(markdown, Path.of(reportDir), LocalDate.now());
 
         assertThat(Files.exists(file)).isTrue();

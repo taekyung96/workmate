@@ -8,7 +8,7 @@
 
 **Tech Stack:** Spring Boot 3.5 / JPA(Hibernate 6.6) / PostgreSQL 17 · Vue 3.5 `<script setup>` / Pinia 3 / vue-router 5 / Tailwind v4 + shadcn-vue
 
-**선행 스펙:** [docs/project/specs/F8-1_VOICE_HISTORY_SPEC.md](../specs/F8-1_VOICE_HISTORY_SPEC.md)
+**선행 스펙:** [F8-1_VOICE_HISTORY_SPEC.md](F8-1_VOICE_HISTORY_SPEC.md)
 
 ## Global Constraints
 
@@ -25,13 +25,13 @@
 
 **검증 명령**
 
-| 대상 | 명령 |
-| :--- | :--- |
-| WAS 테스트 | `./gradlew :workmate-was:test` |
+| 대상            | 명령                                                              |
+| :-------------- | :---------------------------------------------------------------- |
+| WAS 테스트      | `./gradlew :workmate-was:test`                                    |
 | WAS 특정 테스트 | `./gradlew :workmate-was:test --tests "com.workmate.was.voice.*"` |
-| 프론트 타입 | `cd workmate-vue; npm run type-check` |
-| 프론트 테스트 | `cd workmate-vue; npx vitest run` |
-| 프론트 포맷 | `cd workmate-vue; npm run format` |
+| 프론트 타입     | `cd workmate-vue; npm run type-check`                             |
+| 프론트 테스트   | `cd workmate-vue; npx vitest run`                                 |
+| 프론트 포맷     | `cd workmate-vue; npm run format`                                 |
 
 ---
 
@@ -40,6 +40,7 @@
 목적 축소 결정에 따라 `to-guide` 를 전 계층에서 걷어낸다. 다른 작업이 이 코드를 건드리기 전에 먼저 지운다.
 
 **Files:**
+
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/controller/VoiceApiController.java:44-57`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/VoiceService.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/impl/VoiceServiceImpl.java:3-5,30,36,39,81-102`
@@ -52,6 +53,7 @@
 - Modify: `docs/project/specs/F8-1_VOICE_MEETING_SUMMARY_SPEC.md:30`
 
 **Interfaces:**
+
 - Consumes: 없음 (첫 작업)
 - Produces: `VoiceServiceImpl` 생성자가 3개 인자로 축소 — `VoiceServiceImpl(VoiceTranscriber, VoiceRecordRepository, ChatClient.Builder)`. `GuideService` 의존성 제거
 
@@ -62,6 +64,7 @@
 - [ ] **Step 2: WAS 서비스 인터페이스·구현에서 삭제**
 
 `VoiceService.java` 에서 `convertToGuide` 선언을 삭제한다. `VoiceServiceImpl.java` 에서:
+
 - import 3개 삭제: `com.workmate.was.guide.service.GuideService`, `com.workmate.was.guide.vo.GuideResponseVo`, `com.workmate.was.guide.vo.GuideSaveRequestVo`
 - 필드 `guideService` 삭제
 - 생성자를 아래로 교체
@@ -89,21 +92,21 @@
 `useVoiceAnalyze.ts` — `registering`·`registeredGuideSeq` ref(15-17행), `convertToGuide` 함수(32-44행), `reset` 안의 `registeredGuideSeq.value = null`(50행), 반환 객체의 해당 4개 키를 삭제한다. 결과는 아래와 같다.
 
 ```ts
-    return {
-        result,
-        loading,
-        error,
-        analyze,
-        reset,
-    }
+return {
+    result,
+    loading,
+    error,
+    analyze,
+    reset,
+};
 ```
 
 `VoicePage.vue` — `BookPlus`·`CheckCircle2` import 와 `RouterLink` import 삭제(더 이상 쓰지 않음), 구조분해에서 `registering`·`registeredGuideSeq`·`convertToGuide` 제거, 우측 패널 헤더의 `RouterLink`/`Button` 블록(195-214행)을 삭제해 제목만 남긴다.
 
 ```html
-                    <div class="flex items-center justify-between border-b px-4 py-2.5">
-                        <span class="text-sm font-semibold">AI 요약 리포트</span>
-                    </div>
+<div class="flex items-center justify-between border-b px-4 py-2.5">
+    <span class="text-sm font-semibold">AI 요약 리포트</span>
+</div>
 ```
 
 - [ ] **Step 5: 선행 스펙에 폐기 표시**
@@ -140,6 +143,7 @@ git commit -m "refactor(voice): 회의록 → 가이드 등록 기능 제거
 오디오 파일 정보를 담을 컬럼 4개를 추가하고 엔티티·VO 를 맞춘다.
 
 **Files:**
+
 - Create: `db/init/12-voice-history.sql`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/vo/VoiceRecord.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/vo/VoiceAnalysisResultVo.java`
@@ -147,12 +151,13 @@ git commit -m "refactor(voice): 회의록 → 가이드 등록 기능 제거
 - Modify: `workmate-vue/src/modules/voice/types.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1 의 축소된 `VoiceServiceImpl` 생성자
 - Produces:
-  - `VoiceRecord` 신규 getter: `getAudioFileName()`·`getOriginFileName()`·`getFileSize()`·`getContentType()`, 빌더 필드 `audioFileName`·`originFileName`·`fileSize`·`contentType`
-  - `VoiceAnalysisResultVo` 신규 getter: `getOriginFileName()`·`getFileSize()`·`isHasAudio()`
-  - `VoiceRecordSummaryVo(VoiceRecord record)` 생성자
-  - TS `VoiceRecordSummary` 인터페이스
+    - `VoiceRecord` 신규 getter: `getAudioFileName()`·`getOriginFileName()`·`getFileSize()`·`getContentType()`, 빌더 필드 `audioFileName`·`originFileName`·`fileSize`·`contentType`
+    - `VoiceAnalysisResultVo` 신규 getter: `getOriginFileName()`·`getFileSize()`·`isHasAudio()`
+    - `VoiceRecordSummaryVo(VoiceRecord record)` 생성자
+    - TS `VoiceRecordSummary` 인터페이스
 
 - [ ] **Step 1: 스키마 SQL 작성**
 
@@ -179,9 +184,11 @@ ALTER TABLE voice_record ADD COLUMN IF NOT EXISTS content_type     varchar(100);
 - [ ] **Step 2: 로컬 DB 에 적용**
 
 Run (WSL 도커 사용 시):
+
 ```bash
 docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/12-voice-history.sql
 ```
+
 Expected: `ALTER TABLE` 4회 출력
 
 확인: `docker exec -i workmate-db psql -U workmate -d workmate_db -c "\d voice_record"` 로 컬럼 4개가 보이는지.
@@ -287,29 +294,29 @@ public class VoiceRecordSummaryVo {
 ```ts
 /** 음성 회의록 분석·상세 결과 (WAS VoiceAnalysisResultVo와 대응) */
 export interface VoiceAnalysisResult {
-    recordSeq: number
-    title: string
+    recordSeq: number;
+    title: string;
     /** STT 전사 원문 */
-    sttText: string
+    sttText: string;
     /** AI 구조화 요약 (마크다운) */
-    summaryMd: string
+    summaryMd: string;
     /** 사용자가 올린 원본 파일명 (오디오 미보유 시 null) */
-    originFileName: string | null
+    originFileName: string | null;
     /** 파일 크기(바이트, 오디오 미보유 시 null) */
-    fileSize: number | null
+    fileSize: number | null;
     /** 재생 가능한 오디오 보유 여부 */
-    hasAudio: boolean
-    createdAt: string
+    hasAudio: boolean;
+    createdAt: string;
 }
 
 /** 회의록 이력 목록 항목 (WAS VoiceRecordSummaryVo와 대응) */
 export interface VoiceRecordSummary {
-    recordSeq: number
-    title: string
-    originFileName: string | null
-    fileSize: number | null
-    hasAudio: boolean
-    createdAt: string
+    recordSeq: number;
+    title: string;
+    originFileName: string | null;
+    fileSize: number | null;
+    hasAudio: boolean;
+    createdAt: string;
 }
 ```
 
@@ -338,17 +345,19 @@ git commit -m "feat(voice): 회의록 오디오 파일 정보 컬럼·VO 추가
 파일 저장·조회·삭제를 한 클래스로 묶는다. 서비스에서 분리하면 임시 디렉토리로 단위 테스트가 가능하고, 경로 조립 규칙이 한곳에 모인다.
 
 **Files:**
+
 - Create: `workmate-was/src/main/java/com/workmate/was/voice/service/VoiceAudioStore.java`
 - Create: `workmate-was/src/test/java/com/workmate/was/voice/service/VoiceAudioStoreTest.java`
 - Modify: `workmate-was/src/main/resources/application.yml`
 
 **Interfaces:**
+
 - Consumes: Task 2 의 엔티티 필드
 - Produces:
-  - `String store(MultipartFile file)` — 저장 후 생성된 파일명(`{UUID}.{ext}`) 반환
-  - `Optional<Resource> load(String fileName)` — 파일이 없으면 `Optional.empty()`
-  - `boolean delete(String fileName)` — 지웠으면 `true`, 파일이 없으면 `false`
-  - `static String extensionOf(String originalFilename)` — `.m4a` 형태 또는 빈 문자열
+    - `String store(MultipartFile file)` — 저장 후 생성된 파일명(`{UUID}.{ext}`) 반환
+    - `Optional<Resource> load(String fileName)` — 파일이 없으면 `Optional.empty()`
+    - `boolean delete(String fileName)` — 지웠으면 `true`, 파일이 없으면 `false`
+    - `static String extensionOf(String originalFilename)` — `.m4a` 형태 또는 빈 문자열
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
@@ -573,10 +582,10 @@ public class VoiceAudioStore {
 `workmate-was/src/main/resources/application.yml` 의 `app:` 블록에 아래를 추가한다 (`crypto:` 다음).
 
 ```yaml
-    # 업로드 파일 보관 위치 — 회의 오디오(F8-1). DB 에는 파일명만 저장하고 루트는 이 설정값을 쓴다
-    # (상대경로는 WAS 실행 디렉토리 기준. 배포 시 절대경로로 덮어쓴다)
-    upload:
-        voice-dir: uploads/voice
+# 업로드 파일 보관 위치 — 회의 오디오(F8-1). DB 에는 파일명만 저장하고 루트는 이 설정값을 쓴다
+# (상대경로는 WAS 실행 디렉토리 기준. 배포 시 절대경로로 덮어쓴다)
+upload:
+    voice-dir: uploads/voice
 ```
 
 - [ ] **Step 5: 테스트 통과 확인**
@@ -610,10 +619,12 @@ git commit -m "feat(voice): 회의 오디오 파일 저장소(VoiceAudioStore) �
 `analyze` 가 전사·요약만 하고 파일을 버리던 흐름에 저장 단계를 넣는다.
 
 **Files:**
+
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/impl/VoiceServiceImpl.java`
 - Create: `workmate-was/src/test/java/com/workmate/was/voice/service/impl/VoiceServiceImplTest.java`
 
 **Interfaces:**
+
 - Consumes: `VoiceAudioStore.store(MultipartFile)` (Task 3), `VoiceRecord` 빌더 신규 필드 (Task 2)
 - Produces: `VoiceServiceImpl(VoiceTranscriber, VoiceRecordRepository, VoiceAudioStore, ChatClient.Builder)` — 4개 인자 생성자
 
@@ -786,6 +797,7 @@ git commit -m "feat(voice): 분석 시 오디오 원본 저장
 ## Task 5: 이력 목록 · 상세 API
 
 **Files:**
+
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/dao/VoiceRecordRepository.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/VoiceService.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/impl/VoiceServiceImpl.java`
@@ -793,12 +805,13 @@ git commit -m "feat(voice): 분석 시 오디오 원본 저장
 - Modify: `workmate-was/src/test/java/com/workmate/was/voice/service/impl/VoiceServiceImplTest.java`
 
 **Interfaces:**
+
 - Consumes: `VoiceRecordSummaryVo(VoiceRecord)`·`VoiceAnalysisResultVo(VoiceRecord)` (Task 2)
 - Produces:
-  - `List<VoiceRecord> findByUserSeqOrderByCreatedAtDesc(Long userSeq)`
-  - `List<VoiceRecordSummaryVo> getHistory(Long userSeq)`
-  - `VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq)`
-  - `private VoiceRecord findOwnedRecord(Long userSeq, Long recordSeq)` — Task 6·7 이 재사용
+    - `List<VoiceRecord> findByUserSeqOrderByCreatedAtDesc(Long userSeq)`
+    - `List<VoiceRecordSummaryVo> getHistory(Long userSeq)`
+    - `VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq)`
+    - `private VoiceRecord findOwnedRecord(Long userSeq, Long recordSeq)` — Task 6·7 이 재사용
 
 - [ ] **Step 1: 실패하는 테스트 추가**
 
@@ -996,6 +1009,7 @@ git commit -m "feat(voice): 회의록 이력 목록·상세 조회 API
 `Range` 요청을 처리해 재생 중 구간 이동이 되게 한다.
 
 **Files:**
+
 - Create: `workmate-was/src/main/java/com/workmate/was/voice/vo/VoiceAudioVo.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/VoiceService.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/impl/VoiceServiceImpl.java`
@@ -1003,6 +1017,7 @@ git commit -m "feat(voice): 회의록 이력 목록·상세 조회 API
 - Modify: `workmate-was/src/test/java/com/workmate/was/voice/service/impl/VoiceServiceImplTest.java`
 
 **Interfaces:**
+
 - Consumes: `findOwnedRecord` (Task 5), `VoiceAudioStore.load(String)` (Task 3)
 - Produces: `VoiceAudioVo getAudio(Long userSeq, Long recordSeq)` — `getResource()`·`getContentType()` 보유
 
@@ -1162,12 +1177,14 @@ git commit -m "feat(voice): 회의록 오디오 스트리밍 API (Range 지원)
 ## Task 7: 삭제 API
 
 **Files:**
+
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/VoiceService.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/service/impl/VoiceServiceImpl.java`
 - Modify: `workmate-was/src/main/java/com/workmate/was/voice/controller/VoiceApiController.java`
 - Modify: `workmate-was/src/test/java/com/workmate/was/voice/service/impl/VoiceServiceImplTest.java`
 
 **Interfaces:**
+
 - Consumes: `findOwnedRecord` (Task 5), `VoiceAudioStore.delete(String)` (Task 3)
 - Produces: `void deleteRecord(Long userSeq, Long recordSeq)`
 
@@ -1301,15 +1318,17 @@ git commit -m "feat(voice): 회의록 삭제 API
 ## Task 8: WEB 프록시
 
 **Files:**
+
 - Modify: `workmate-web/src/main/java/com/workmate/web/voice/service/VoiceService.java`
 - Modify: `workmate-web/src/main/java/com/workmate/web/voice/service/impl/VoiceServiceImpl.java`
 - Modify: `workmate-web/src/main/java/com/workmate/web/voice/controller/VoiceController.java`
 
 **Interfaces:**
+
 - Consumes: WAS 엔드포인트 4개 (Task 5·6·7)
 - Produces:
-  - `ResponseEntity<String> history()`·`getRecord(Long)`·`delete(Long)`
-  - `void relayAudio(Long recordSeq, String rangeHeader, HttpServletResponse response)`
+    - `ResponseEntity<String> history()`·`getRecord(Long)`·`delete(Long)`
+    - `void relayAudio(Long recordSeq, String rangeHeader, HttpServletResponse response)`
 
 - [ ] **Step 1: 서비스 인터페이스 확장**
 
@@ -1486,8 +1505,9 @@ WAS·WEB 을 모두 띄운다.
 브라우저에서 로그인 후 개발자도구 콘솔에서 확인한다.
 
 ```js
-await (await fetch('/api/v1/voice', { credentials: 'include' })).json()
+await (await fetch("/api/v1/voice", { credentials: "include" })).json();
 ```
+
 Expected: `{success: true, message: "success", result: [...]}`
 
 이미 분석된 회의록이 있으면 `result` 에 항목이 보이고, MVP 기간 데이터는 `hasAudio: false` 로 나온다.
@@ -1509,6 +1529,7 @@ git commit -m "feat(voice): 회의록 이력·상세·삭제·오디오 WEB 프�
 관리자·영수증·회의록이 공유할 밑줄형 라우터 탭. 활성 판정 로직만 vitest 로 검증한다.
 
 **Files:**
+
 - Create: `workmate-vue/src/common/components/PageTabs.vue`
 - Create: `workmate-vue/src/common/components/pageTabs.ts`
 - Create: `workmate-vue/src/common/components/pageTabs.spec.ts`
@@ -1518,43 +1539,44 @@ git commit -m "feat(voice): 회의록 이력·상세·삭제·오디오 WEB 프�
 - Delete: `workmate-vue/src/modules/admin/components/AdminTabs.vue`
 
 **Interfaces:**
+
 - Consumes: 없음
 - Produces:
-  - `PageTab` 타입: `{ name: string; label: string; match?: string[] }`
-  - `isTabActive(tab: PageTab, currentRouteName: string): boolean`
-  - `PageTabs.vue` props: `tabs: PageTab[]`
+    - `PageTab` 타입: `{ name: string; label: string; match?: string[] }`
+    - `isTabActive(tab: PageTab, currentRouteName: string): boolean`
+    - `PageTabs.vue` props: `tabs: PageTab[]`
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
 Create `workmate-vue/src/common/components/pageTabs.spec.ts`:
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { isTabActive, type PageTab } from './pageTabs'
+import { describe, it, expect } from "vitest";
+import { isTabActive, type PageTab } from "./pageTabs";
 
-describe('isTabActive', () => {
-    it('라우트 이름이 탭 이름과 같으면 활성이다', () => {
-        const tab: PageTab = { name: 'voice', label: '분석' }
-        expect(isTabActive(tab, 'voice')).toBe(true)
-        expect(isTabActive(tab, 'voice-history')).toBe(false)
-    })
+describe("isTabActive", () => {
+    it("라우트 이름이 탭 이름과 같으면 활성이다", () => {
+        const tab: PageTab = { name: "voice", label: "분석" };
+        expect(isTabActive(tab, "voice")).toBe(true);
+        expect(isTabActive(tab, "voice-history")).toBe(false);
+    });
 
-    it('match 에 포함된 라우트 이름도 활성으로 본다 (상세 화면에서 목록 탭 유지)', () => {
+    it("match 에 포함된 라우트 이름도 활성으로 본다 (상세 화면에서 목록 탭 유지)", () => {
         const tab: PageTab = {
-            name: 'voice-history',
-            label: '이력',
-            match: ['voice-history', 'voice-record'],
-        }
-        expect(isTabActive(tab, 'voice-record')).toBe(true)
-        expect(isTabActive(tab, 'voice-history')).toBe(true)
-        expect(isTabActive(tab, 'voice')).toBe(false)
-    })
+            name: "voice-history",
+            label: "이력",
+            match: ["voice-history", "voice-record"],
+        };
+        expect(isTabActive(tab, "voice-record")).toBe(true);
+        expect(isTabActive(tab, "voice-history")).toBe(true);
+        expect(isTabActive(tab, "voice")).toBe(false);
+    });
 
-    it('라우트 이름이 없으면(초기 렌더) 어떤 탭도 활성이 아니다', () => {
-        const tab: PageTab = { name: 'voice', label: '분석' }
-        expect(isTabActive(tab, '')).toBe(false)
-    })
-})
+    it("라우트 이름이 없으면(초기 렌더) 어떤 탭도 활성이 아니다", () => {
+        const tab: PageTab = { name: "voice", label: "분석" };
+        expect(isTabActive(tab, "")).toBe(false);
+    });
+});
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
@@ -1570,15 +1592,15 @@ Create `workmate-vue/src/common/components/pageTabs.ts`:
 /** 공통 페이지 탭 정의 (라우터 이동형) */
 export interface PageTab {
     /** 이동할 라우트 name */
-    name: string
+    name: string;
     /** 탭에 표시할 라벨 */
-    label: string
+    label: string;
     /**
      * 이 탭을 활성으로 표시할 라우트 name 목록.
      * 하위 화면(예: 이력 상세)에서도 목록 탭이 활성으로 보이게 할 때 쓴다.
      * 미지정 시 name 자체로만 판정한다.
      */
-    match?: string[]
+    match?: string[];
 }
 
 /**
@@ -1589,9 +1611,9 @@ export interface PageTab {
  * @returns 활성 여부
  */
 export function isTabActive(tab: PageTab, currentRouteName: string): boolean {
-    if (!currentRouteName) return false
-    const names = tab.match ?? [tab.name]
-    return names.includes(currentRouteName)
+    if (!currentRouteName) return false;
+    const names = tab.match ?? [tab.name];
+    return names.includes(currentRouteName);
 }
 ```
 
@@ -1611,14 +1633,14 @@ Create `workmate-vue/src/common/components/PageTabs.vue`:
  * 관리자·영수증·회의록이 같은 모양·동작을 공유한다.
  * 탭 전환이 실제 라우트 이동이므로 새로고침·뒤로가기·링크 공유가 모두 동작한다.
  */
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { isTabActive, type PageTab } from './pageTabs'
+import { computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
+import { isTabActive, type PageTab } from "./pageTabs";
 
-const props = defineProps<{ tabs: PageTab[] }>()
+const props = defineProps<{ tabs: PageTab[] }>();
 
-const route = useRoute()
-const currentName = computed(() => (route.name ? String(route.name) : ''))
+const route = useRoute();
+const currentName = computed(() => (route.name ? String(route.name) : ""));
 </script>
 
 <template>
@@ -1645,14 +1667,14 @@ const currentName = computed(() => (route.name ? String(route.name) : ''))
 세 화면(`AdminUsersPage.vue`·`AdminAuditLogPage.vue`·`AdminCommonCodesPage.vue`)에서 `AdminTabs` import 를 아래로 바꾸고,
 
 ```ts
-import PageTabs from '@/common/components/PageTabs.vue'
+import PageTabs from "@/common/components/PageTabs.vue";
 
 // 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
 const adminTabs = [
-    { name: 'admin-users', label: '사용자 관리' },
-    { name: 'admin-audit-logs', label: '감사 로그' },
-    { name: 'admin-common-codes', label: '공통코드' },
-]
+    { name: "admin-users", label: "사용자 관리" },
+    { name: "admin-audit-logs", label: "감사 로그" },
+    { name: "admin-common-codes", label: "공통코드" },
+];
 ```
 
 템플릿의 `<AdminTabs />` 를 `<PageTabs :tabs="adminTabs" />` 로 바꾼다.
@@ -1683,6 +1705,7 @@ git commit -m "feat(common): 공통 페이지 탭 컴포넌트(PageTabs) 추가
 ## Task 10: voice 라우트 · store · 분석 화면 분리
 
 **Files:**
+
 - Modify: `workmate-vue/src/modules/voice/routes.ts`
 - Create: `workmate-vue/src/modules/voice/stores/voice.store.ts`
 - Create: `workmate-vue/src/modules/voice/views/VoiceAnalyzePage.vue`
@@ -1692,12 +1715,13 @@ git commit -m "feat(common): 공통 페이지 탭 컴포넌트(PageTabs) 추가
 - Delete: `workmate-vue/src/modules/voice/composables/useVoiceAnalyze.ts`
 
 **Interfaces:**
+
 - Consumes: `PageTab` (Task 9), `VoiceAnalysisResult` (Task 2)
 - Produces:
-  - `useVoiceStore()` — `result`·`loading`·`error`·`analyze(file, title)`·`reset()`
-  - `voiceTabs: PageTab[]` (voice 모듈에서 공유)
-  - `VoiceResultPanel` props: `record: VoiceAnalysisResult`
-  - `voiceApi.history()`·`voiceApi.getRecord(seq)`·`voiceApi.remove(seq)`·`voiceApi.audioUrl(seq)`
+    - `useVoiceStore()` — `result`·`loading`·`error`·`analyze(file, title)`·`reset()`
+    - `voiceTabs: PageTab[]` (voice 모듈에서 공유)
+    - `VoiceResultPanel` props: `record: VoiceAnalysisResult`
+    - `voiceApi.history()`·`voiceApi.getRecord(seq)`·`voiceApi.remove(seq)`·`voiceApi.audioUrl(seq)`
 
 - [ ] **Step 1: API 확장**
 
@@ -1735,43 +1759,43 @@ git commit -m "feat(common): 공통 페이지 탭 컴포넌트(PageTabs) 추가
 Create `workmate-vue/src/modules/voice/stores/voice.store.ts`:
 
 ```ts
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { extractErrorMessage } from '@/common/utils/error'
-import { voiceApi } from '../api/voice.api'
-import type { VoiceAnalysisResult } from '../types'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { extractErrorMessage } from "@/common/utils/error";
+import { voiceApi } from "../api/voice.api";
+import type { VoiceAnalysisResult } from "../types";
 
 /**
  * 회의록 분석 상태 (F8-1).
  * 탭이 라우터 이동형이라 화면을 벗어나면 컴포넌트가 파괴된다.
  * 수십 초 걸리는 분석 결과를 잃지 않도록 상태를 store 에 둔다.
  */
-export const useVoiceStore = defineStore('voice', () => {
-    const result = ref<VoiceAnalysisResult | null>(null)
-    const loading = ref(false)
-    const error = ref('')
+export const useVoiceStore = defineStore("voice", () => {
+    const result = ref<VoiceAnalysisResult | null>(null);
+    const loading = ref(false);
+    const error = ref("");
 
     /** 오디오 분석 실행 */
     async function analyze(file: File, title: string): Promise<void> {
-        loading.value = true
-        error.value = ''
+        loading.value = true;
+        error.value = "";
         try {
-            result.value = await voiceApi.analyze(file, title)
+            result.value = await voiceApi.analyze(file, title);
         } catch (e) {
-            error.value = extractErrorMessage(e, '회의록 분석에 실패했습니다.')
+            error.value = extractErrorMessage(e, "회의록 분석에 실패했습니다.");
         } finally {
-            loading.value = false
+            loading.value = false;
         }
     }
 
     /** 결과·에러 초기화 (새로 분석하기) */
     function reset(): void {
-        result.value = null
-        error.value = ''
+        result.value = null;
+        error.value = "";
     }
 
-    return { result, loading, error, analyze, reset }
-})
+    return { result, loading, error, analyze, reset };
+});
 ```
 
 - [ ] **Step 3: 라우트 확장**
@@ -1779,8 +1803,8 @@ export const useVoiceStore = defineStore('voice', () => {
 `workmate-vue/src/modules/voice/routes.ts` 를 아래로 교체한다.
 
 ```ts
-import type { RouteRecordRaw } from 'vue-router'
-import type { PageTab } from '@/common/components/pageTabs'
+import type { RouteRecordRaw } from "vue-router";
+import type { PageTab } from "@/common/components/pageTabs";
 
 /**
  * voice 모듈 라우트 (인증 필요 — 전역 가드가 보호). F8-1.
@@ -1788,27 +1812,31 @@ import type { PageTab } from '@/common/components/pageTabs'
  */
 export const voiceRoutes: RouteRecordRaw[] = [
     {
-        path: '/voice',
-        name: 'voice',
-        component: () => import('./views/VoiceAnalyzePage.vue'),
+        path: "/voice",
+        name: "voice",
+        component: () => import("./views/VoiceAnalyzePage.vue"),
     },
     {
-        path: '/voice/history',
-        name: 'voice-history',
-        component: () => import('./views/VoiceHistoryPage.vue'),
+        path: "/voice/history",
+        name: "voice-history",
+        component: () => import("./views/VoiceHistoryPage.vue"),
     },
     {
-        path: '/voice/history/:recordSeq',
-        name: 'voice-record',
-        component: () => import('./views/VoiceRecordPage.vue'),
+        path: "/voice/history/:recordSeq",
+        name: "voice-record",
+        component: () => import("./views/VoiceRecordPage.vue"),
     },
-]
+];
 
 /** 회의록 화면 공통 탭 — 상세에서도 '이력' 탭이 활성으로 보이게 match 를 준다 */
 export const voiceTabs: PageTab[] = [
-    { name: 'voice', label: '분석' },
-    { name: 'voice-history', label: '이력', match: ['voice-history', 'voice-record'] },
-]
+    { name: "voice", label: "분석" },
+    {
+        name: "voice-history",
+        label: "이력",
+        match: ["voice-history", "voice-record"],
+    },
+];
 ```
 
 - [ ] **Step 4: 결과 패널 추출**
@@ -1822,32 +1850,32 @@ Create `workmate-vue/src/modules/voice/components/VoiceResultPanel.vue`:
  * 분석 직후 화면과 이력 상세가 이 컴포넌트를 공유하므로,
  * TXT 다운로드가 과거 회의록에서도 그대로 동작한다.
  */
-import { computed } from 'vue'
-import { Download } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { renderMarkdown } from '@/common/utils/markdown'
-import { useMarkdownCopy } from '@/common/composables/useMarkdownCopy'
-import type { VoiceAnalysisResult } from '../types'
+import { computed } from "vue";
+import { Download } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { renderMarkdown } from "@/common/utils/markdown";
+import { useMarkdownCopy } from "@/common/composables/useMarkdownCopy";
+import type { VoiceAnalysisResult } from "../types";
 
-const props = defineProps<{ record: VoiceAnalysisResult }>()
-const { onMarkdownClick } = useMarkdownCopy()
+const props = defineProps<{ record: VoiceAnalysisResult }>();
+const { onMarkdownClick } = useMarkdownCopy();
 
-const summaryHtml = computed(() => renderMarkdown(props.record.summaryMd))
+const summaryHtml = computed(() => renderMarkdown(props.record.summaryMd));
 
 /** 전사문 + 요약을 .txt 로 다운로드 */
 function downloadTxt(): void {
-    const r = props.record
+    const r = props.record;
     const content =
         `# ${r.title}\n\n` +
         `===== AI 요약 =====\n${r.summaryMd}\n\n` +
-        `===== STT 전사 원문 =====\n${r.sttText}\n`
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${r.title}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+        `===== STT 전사 원문 =====\n${r.sttText}\n`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${r.title}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 </script>
 
@@ -1895,71 +1923,71 @@ Create `workmate-vue/src/modules/voice/views/VoiceAnalyzePage.vue` — 기존 `V
  * 오디오 업로드 → Gemini 전사(STT) + 3단 구조화 요약 → 결과 2분할 표시.
  * 분석 상태는 store 에 있어 이력 탭을 다녀와도 유지된다.
  */
-import { ref } from 'vue'
-import { FileAudio, Mic, RefreshCw, Upload } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { Input } from '@/common/components/ui/input'
-import { Spinner } from '@/common/components/ui/spinner'
-import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import PageTabs from '@/common/components/PageTabs.vue'
-import { useVoiceStore } from '../stores/voice.store'
-import { voiceTabs } from '../routes'
-import VoiceResultPanel from '../components/VoiceResultPanel.vue'
+import { ref } from "vue";
+import { FileAudio, Mic, RefreshCw, Upload } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { Input } from "@/common/components/ui/input";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Alert, AlertDescription } from "@/common/components/ui/alert";
+import PageTabs from "@/common/components/PageTabs.vue";
+import { useVoiceStore } from "../stores/voice.store";
+import { voiceTabs } from "../routes";
+import VoiceResultPanel from "../components/VoiceResultPanel.vue";
 
-const store = useVoiceStore()
+const store = useVoiceStore();
 
-const title = ref('')
-const selectedFile = ref<File | null>(null)
-const dragOver = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
-const localError = ref('')
+const title = ref("");
+const selectedFile = ref<File | null>(null);
+const dragOver = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+const localError = ref("");
 
 /** 최대 업로드 크기 (WAS max-file-size 와 맞춤) */
-const MAX_SIZE = 25 * 1024 * 1024
+const MAX_SIZE = 25 * 1024 * 1024;
 
 /** 파일 선택/드롭 공통 검증 처리 */
 function acceptFile(file: File | undefined): void {
-    localError.value = ''
-    if (!file) return
-    if (!file.type.startsWith('audio/')) {
-        localError.value = '오디오 파일만 업로드할 수 있습니다.'
-        return
+    localError.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("audio/")) {
+        localError.value = "오디오 파일만 업로드할 수 있습니다.";
+        return;
     }
     if (file.size > MAX_SIZE) {
-        localError.value = '파일이 너무 큽니다. 최대 25MB까지 가능합니다.'
-        return
+        localError.value = "파일이 너무 큽니다. 최대 25MB까지 가능합니다.";
+        return;
     }
-    selectedFile.value = file
+    selectedFile.value = file;
 }
 
 function onDrop(e: DragEvent): void {
-    dragOver.value = false
-    acceptFile(e.dataTransfer?.files?.[0])
+    dragOver.value = false;
+    acceptFile(e.dataTransfer?.files?.[0]);
 }
 
 function onPick(e: Event): void {
-    acceptFile((e.target as HTMLInputElement).files?.[0])
+    acceptFile((e.target as HTMLInputElement).files?.[0]);
 }
 
 /** 분석 실행 */
 async function onAnalyze(): Promise<void> {
-    if (!selectedFile.value || store.loading) return
-    await store.analyze(selectedFile.value, title.value)
+    if (!selectedFile.value || store.loading) return;
+    await store.analyze(selectedFile.value, title.value);
 }
 
 /** 새로 분석하기 — 입력·결과 초기화 */
 function onReset(): void {
-    store.reset()
-    selectedFile.value = null
-    title.value = ''
-    localError.value = ''
+    store.reset();
+    selectedFile.value = null;
+    title.value = "";
+    localError.value = "";
 }
 
 /** 사람이 읽기 좋은 파일 크기 표기 */
 function formatSize(bytes: number): string {
     return bytes < 1024 * 1024
         ? `${(bytes / 1024).toFixed(0)} KB`
-        : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+        : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 </script>
 
@@ -1975,7 +2003,9 @@ function formatSize(bytes: number): string {
 
             <!-- 업로드 섹션 -->
             <div class="rounded-lg border p-6">
-                <label class="mb-1.5 block text-sm font-medium">회의 제목 (선택)</label>
+                <label class="mb-1.5 block text-sm font-medium"
+                    >회의 제목 (선택)</label
+                >
                 <Input
                     v-model="title"
                     placeholder="예: 2026-07-30 아키텍처 회의"
@@ -1984,7 +2014,11 @@ function formatSize(bytes: number): string {
 
                 <div
                     class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors"
-                    :class="dragOver ? 'border-primary bg-primary/5' : 'border-border'"
+                    :class="
+                        dragOver
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border'
+                    "
                     @dragover.prevent="dragOver = true"
                     @dragleave.prevent="dragOver = false"
                     @drop.prevent="onDrop"
@@ -2002,38 +2036,65 @@ function formatSize(bytes: number): string {
                         <FileAudio class="mb-2 size-8 text-primary" />
                         <p class="font-medium">{{ selectedFile.name }}</p>
                         <p class="text-sm text-muted-foreground">
-                            {{ formatSize(selectedFile.size) }} · 클릭해서 다른 파일 선택
+                            {{ formatSize(selectedFile.size) }} · 클릭해서 다른
+                            파일 선택
                         </p>
                     </template>
                     <template v-else>
                         <Upload class="mb-2 size-8 text-muted-foreground" />
-                        <p class="font-medium">오디오 파일을 여기로 끌어다 놓거나 클릭해서 선택</p>
+                        <p class="font-medium">
+                            오디오 파일을 여기로 끌어다 놓거나 클릭해서 선택
+                        </p>
                         <p class="text-sm text-muted-foreground">
                             mp3 · wav · m4a · webm (최대 25MB)
                         </p>
                     </template>
                 </div>
 
-                <Alert v-if="localError || store.error" variant="destructive" class="mt-4">
-                    <AlertDescription>{{ localError || store.error }}</AlertDescription>
+                <Alert
+                    v-if="localError || store.error"
+                    variant="destructive"
+                    class="mt-4"
+                >
+                    <AlertDescription>{{
+                        localError || store.error
+                    }}</AlertDescription>
                 </Alert>
 
                 <div class="mt-4 flex items-center gap-2">
-                    <Button :disabled="!selectedFile || store.loading" @click="onAnalyze">
+                    <Button
+                        :disabled="!selectedFile || store.loading"
+                        @click="onAnalyze"
+                    >
                         <Spinner v-if="store.loading" class="mr-2 size-4" />
-                        {{ store.loading ? 'AI가 분석 중…' : 'AI 회의록 요약하기' }}
+                        {{
+                            store.loading
+                                ? "AI가 분석 중…"
+                                : "AI 회의록 요약하기"
+                        }}
                     </Button>
-                    <Button v-if="store.result || selectedFile" variant="outline" @click="onReset">
+                    <Button
+                        v-if="store.result || selectedFile"
+                        variant="outline"
+                        @click="onReset"
+                    >
                         <RefreshCw class="mr-2 size-4" />
                         새로 분석
                     </Button>
                 </div>
-                <p v-if="store.loading" class="mt-2 text-xs text-muted-foreground">
+                <p
+                    v-if="store.loading"
+                    class="mt-2 text-xs text-muted-foreground"
+                >
                     오디오 길이에 따라 수십 초 걸릴 수 있습니다.
                 </p>
             </div>
 
-            <VoiceResultPanel v-if="store.result" :record="store.result" class="mt-6" />
+            <VoiceResultPanel
+                v-if="store.result"
+                :record="store.result"
+                class="mt-6"
+            />
         </div>
     </div>
 </template>
@@ -2076,10 +2137,12 @@ git commit -m "refactor(voice): 라우터형 탭 구조로 전환 + 분석 상�
 ## Task 11: 이력 목록 화면
 
 **Files:**
+
 - Create: `workmate-vue/src/modules/voice/composables/useVoiceHistory.ts`
 - Modify: `workmate-vue/src/modules/voice/views/VoiceHistoryPage.vue` (Task 10 스텁 대체)
 
 **Interfaces:**
+
 - Consumes: `voiceApi.history()`·`voiceApi.remove()` (Task 10), `voiceTabs` (Task 10)
 - Produces: `useVoiceHistory()` — `records`·`loading`·`error`·`load()`·`remove(seq)`
 
@@ -2088,10 +2151,10 @@ git commit -m "refactor(voice): 라우터형 탭 구조로 전환 + 분석 상�
 Create `workmate-vue/src/modules/voice/composables/useVoiceHistory.ts`:
 
 ```ts
-import { ref } from 'vue'
-import { extractErrorMessage } from '@/common/utils/error'
-import { voiceApi } from '../api/voice.api'
-import type { VoiceRecordSummary } from '../types'
+import { ref } from "vue";
+import { extractErrorMessage } from "@/common/utils/error";
+import { voiceApi } from "../api/voice.api";
+import type { VoiceRecordSummary } from "../types";
 
 /**
  * 회의록 이력 화면 로직 (≈ Service).
@@ -2100,35 +2163,40 @@ import type { VoiceRecordSummary } from '../types'
  * @returns 이력 상태와 액션들
  */
 export function useVoiceHistory() {
-    const records = ref<VoiceRecordSummary[]>([])
-    const loading = ref(false)
-    const error = ref('')
+    const records = ref<VoiceRecordSummary[]>([]);
+    const loading = ref(false);
+    const error = ref("");
 
     /** 이력 목록 로드 (최신순) */
     async function load(): Promise<void> {
-        loading.value = true
-        error.value = ''
+        loading.value = true;
+        error.value = "";
         try {
-            records.value = await voiceApi.history()
+            records.value = await voiceApi.history();
         } catch (e) {
-            error.value = extractErrorMessage(e, '회의록 이력을 불러오지 못했습니다.')
+            error.value = extractErrorMessage(
+                e,
+                "회의록 이력을 불러오지 못했습니다.",
+            );
         } finally {
-            loading.value = false
+            loading.value = false;
         }
     }
 
     /** 회의록 삭제 후 목록에서 제거 */
     async function remove(recordSeq: number): Promise<void> {
-        error.value = ''
+        error.value = "";
         try {
-            await voiceApi.remove(recordSeq)
-            records.value = records.value.filter((r) => r.recordSeq !== recordSeq)
+            await voiceApi.remove(recordSeq);
+            records.value = records.value.filter(
+                (r) => r.recordSeq !== recordSeq,
+            );
         } catch (e) {
-            error.value = extractErrorMessage(e, '회의록 삭제에 실패했습니다.')
+            error.value = extractErrorMessage(e, "회의록 삭제에 실패했습니다.");
         }
     }
 
-    return { records, loading, error, load, remove }
+    return { records, loading, error, load, remove };
 }
 ```
 
@@ -2143,12 +2211,12 @@ Replace `workmate-vue/src/modules/voice/views/VoiceHistoryPage.vue`:
  * 등록된 회의록을 최신순으로 보여주고, 행을 누르면 상세로 이동한다.
  * 오디오는 1건당 최대 25MB 라 건별 삭제를 제공한다.
  */
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { Mic, Trash2 } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { Spinner } from '@/common/components/ui/spinner'
-import { Alert, AlertDescription } from '@/common/components/ui/alert'
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { Mic, Trash2 } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Alert, AlertDescription } from "@/common/components/ui/alert";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -2158,51 +2226,51 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/common/components/ui/alert-dialog'
-import PageTabs from '@/common/components/PageTabs.vue'
-import { useVoiceHistory } from '../composables/useVoiceHistory'
-import { voiceTabs } from '../routes'
+} from "@/common/components/ui/alert-dialog";
+import PageTabs from "@/common/components/PageTabs.vue";
+import { useVoiceHistory } from "../composables/useVoiceHistory";
+import { voiceTabs } from "../routes";
 
-const router = useRouter()
-const { records, loading, error, load, remove } = useVoiceHistory()
+const router = useRouter();
+const { records, loading, error, load, remove } = useVoiceHistory();
 
-const deleteOpen = ref(false)
-const deleteTarget = ref<number | null>(null)
+const deleteOpen = ref(false);
+const deleteTarget = ref<number | null>(null);
 
-onMounted(load)
+onMounted(load);
 
 /** 상세로 이동 */
 function openRecord(recordSeq: number): void {
-    router.push({ name: 'voice-record', params: { recordSeq } })
+    router.push({ name: "voice-record", params: { recordSeq } });
 }
 
 /** 삭제 확인창 열기 (행 클릭으로 상세 진입하는 것과 섞이지 않게 이벤트 전파를 막는다) */
 function askDelete(recordSeq: number): void {
-    deleteTarget.value = recordSeq
-    deleteOpen.value = true
+    deleteTarget.value = recordSeq;
+    deleteOpen.value = true;
 }
 
 /** 삭제 확정 */
 async function confirmDelete(): Promise<void> {
-    if (deleteTarget.value === null) return
-    await remove(deleteTarget.value)
-    deleteTarget.value = null
+    if (deleteTarget.value === null) return;
+    await remove(deleteTarget.value);
+    deleteTarget.value = null;
 }
 
 /** YYYY.MM.DD 표기 */
 function formatDate(iso: string): string {
-    const d = new Date(iso)
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${d.getFullYear()}.${mm}.${dd}`
+    const d = new Date(iso);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}.${mm}.${dd}`;
 }
 
 /** 사람이 읽기 좋은 파일 크기 표기 */
 function formatSize(bytes: number | null): string {
-    if (bytes === null) return ''
+    if (bytes === null) return "";
     return bytes < 1024 * 1024
         ? `${(bytes / 1024).toFixed(0)} KB`
-        : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+        : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 </script>
 
@@ -2217,7 +2285,11 @@ function formatSize(bytes: number | null): string {
             <PageTabs :tabs="voiceTabs" />
 
             <p class="mb-3 text-sm text-muted-foreground">
-                총 <span class="font-medium text-foreground">{{ records.length }}</span>건
+                총
+                <span class="font-medium text-foreground">{{
+                    records.length
+                }}</span
+                >건
             </p>
 
             <Alert v-if="error" variant="destructive" class="mb-4">
@@ -2237,7 +2309,9 @@ function formatSize(bytes: number | null): string {
 
             <div v-else class="overflow-x-auto rounded-lg border">
                 <table class="w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead
+                        class="border-b bg-muted/40 text-left text-muted-foreground"
+                    >
                         <tr>
                             <th class="px-4 py-2.5 font-medium">제목</th>
                             <th class="px-4 py-2.5 font-medium">파일</th>
@@ -2252,14 +2326,19 @@ function formatSize(bytes: number | null): string {
                             class="cursor-pointer border-b last:border-0 hover:bg-accent/40"
                             @click="openRecord(r.recordSeq)"
                         >
-                            <td class="px-4 py-2.5 font-medium">{{ r.title }}</td>
+                            <td class="px-4 py-2.5 font-medium">
+                                {{ r.title }}
+                            </td>
                             <td class="px-4 py-2.5 text-muted-foreground">
                                 <template v-if="r.hasAudio">
-                                    {{ r.originFileName }} · {{ formatSize(r.fileSize) }}
+                                    {{ r.originFileName }} ·
+                                    {{ formatSize(r.fileSize) }}
                                 </template>
                                 <span v-else>오디오 없음</span>
                             </td>
-                            <td class="px-4 py-2.5 tabular-nums">{{ formatDate(r.createdAt) }}</td>
+                            <td class="px-4 py-2.5 tabular-nums">
+                                {{ formatDate(r.createdAt) }}
+                            </td>
                             <td class="px-4 py-2.5 text-right">
                                 <Button
                                     size="sm"
@@ -2278,14 +2357,19 @@ function formatSize(bytes: number | null): string {
             <AlertDialog v-model:open="deleteOpen">
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>이 회의록을 삭제할까요?</AlertDialogTitle>
+                        <AlertDialogTitle
+                            >이 회의록을 삭제할까요?</AlertDialogTitle
+                        >
                         <AlertDialogDescription>
-                            전사문·요약과 저장된 오디오 파일이 함께 삭제되며 되돌릴 수 없습니다.
+                            전사문·요약과 저장된 오디오 파일이 함께 삭제되며
+                            되돌릴 수 없습니다.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmDelete">삭제</AlertDialogAction>
+                        <AlertDialogAction @click="confirmDelete"
+                            >삭제</AlertDialogAction
+                        >
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -2319,10 +2403,12 @@ git commit -m "feat(voice): 회의록 이력 목록 화면
 ## Task 12: 상세 화면 · 오디오 플레이어
 
 **Files:**
+
 - Create: `workmate-vue/src/modules/voice/components/VoiceAudioPlayer.vue`
 - Modify: `workmate-vue/src/modules/voice/views/VoiceRecordPage.vue` (Task 10 스텁 대체)
 
 **Interfaces:**
+
 - Consumes: `voiceApi.getRecord()`·`voiceApi.audioUrl()` (Task 10), `VoiceResultPanel` (Task 10)
 - Produces: `VoiceAudioPlayer` props: `recordSeq: number`·`originFileName: string | null`·`hasAudio: boolean`
 
@@ -2337,27 +2423,31 @@ Create `workmate-vue/src/modules/voice/components/VoiceAudioPlayer.vue`:
  * <audio> 에 스트리밍 URL 을 직접 물려 브라우저가 Range 요청으로 구간 이동하게 한다.
  * MVP 기간에 저장된 회의록은 오디오가 없어 안내 문구만 보여준다.
  */
-import { ref } from 'vue'
-import { FileAudio } from 'lucide-vue-next'
-import { voiceApi } from '../api/voice.api'
+import { ref } from "vue";
+import { FileAudio } from "lucide-vue-next";
+import { voiceApi } from "../api/voice.api";
 
 const props = defineProps<{
-    recordSeq: number
-    originFileName: string | null
-    hasAudio: boolean
-}>()
+    recordSeq: number;
+    originFileName: string | null;
+    hasAudio: boolean;
+}>();
 
-const failed = ref(false)
+const failed = ref(false);
 </script>
 
 <template>
     <div class="rounded-lg border px-4 py-3">
         <template v-if="props.hasAudio">
-            <div class="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div
+                class="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground"
+            >
                 <FileAudio class="size-4" />
                 <span>{{ props.originFileName }}</span>
             </div>
-            <p v-if="failed" class="text-sm text-destructive">오디오를 재생할 수 없습니다.</p>
+            <p v-if="failed" class="text-sm text-destructive">
+                오디오를 재생할 수 없습니다.
+            </p>
             <audio
                 v-else
                 class="w-full"
@@ -2384,39 +2474,39 @@ Replace `workmate-vue/src/modules/voice/views/VoiceRecordPage.vue`:
  * 회의록 상세 화면 (/voice/history/:recordSeq, F8-1 확장).
  * 오디오 재생 + 분석 화면과 동일한 결과 2분할을 보여준다.
  */
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Mic } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { Spinner } from '@/common/components/ui/spinner'
-import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import PageTabs from '@/common/components/PageTabs.vue'
-import { extractErrorMessage } from '@/common/utils/error'
-import { voiceApi } from '../api/voice.api'
-import { voiceTabs } from '../routes'
-import VoiceResultPanel from '../components/VoiceResultPanel.vue'
-import VoiceAudioPlayer from '../components/VoiceAudioPlayer.vue'
-import type { VoiceAnalysisResult } from '../types'
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ArrowLeft, Mic } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Alert, AlertDescription } from "@/common/components/ui/alert";
+import PageTabs from "@/common/components/PageTabs.vue";
+import { extractErrorMessage } from "@/common/utils/error";
+import { voiceApi } from "../api/voice.api";
+import { voiceTabs } from "../routes";
+import VoiceResultPanel from "../components/VoiceResultPanel.vue";
+import VoiceAudioPlayer from "../components/VoiceAudioPlayer.vue";
+import type { VoiceAnalysisResult } from "../types";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const record = ref<VoiceAnalysisResult | null>(null)
-const loading = ref(false)
-const error = ref('')
+const record = ref<VoiceAnalysisResult | null>(null);
+const loading = ref(false);
+const error = ref("");
 
-const recordSeq = computed(() => Number(route.params.recordSeq))
+const recordSeq = computed(() => Number(route.params.recordSeq));
 
 onMounted(async () => {
-    loading.value = true
+    loading.value = true;
     try {
-        record.value = await voiceApi.getRecord(recordSeq.value)
+        record.value = await voiceApi.getRecord(recordSeq.value);
     } catch (e) {
-        error.value = extractErrorMessage(e, '회의록을 불러오지 못했습니다.')
+        error.value = extractErrorMessage(e, "회의록을 불러오지 못했습니다.");
     } finally {
-        loading.value = false
+        loading.value = false;
     }
-})
+});
 </script>
 
 <template>
@@ -2429,7 +2519,12 @@ onMounted(async () => {
 
             <PageTabs :tabs="voiceTabs" />
 
-            <Button variant="ghost" size="sm" class="mb-4" @click="router.back()">
+            <Button
+                variant="ghost"
+                size="sm"
+                class="mb-4"
+                @click="router.back()"
+            >
                 <ArrowLeft class="mr-1.5 size-4" />
                 이력으로
             </Button>
@@ -2492,6 +2587,7 @@ git commit -m "feat(voice): 회의록 상세 화면 + 오디오 재생
 세 화면의 탭 동작을 한 벌로 맞춘다. UI·로직은 그대로 옮기고 껍데기만 바꾼다.
 
 **Files:**
+
 - Modify: `workmate-vue/src/modules/receipt/routes.ts`
 - Create: `workmate-vue/src/modules/receipt/stores/receipt.store.ts`
 - Create: `workmate-vue/src/modules/receipt/views/ReceiptAnalyzePage.vue`
@@ -2501,6 +2597,7 @@ git commit -m "feat(voice): 회의록 상세 화면 + 오디오 재생
 - Delete: `workmate-vue/src/modules/receipt/components/ReceiptHistoryTab.vue`
 
 **Interfaces:**
+
 - Consumes: `PageTab`·`PageTabs` (Task 9)
 - Produces: `receiptTabs: PageTab[]`, `useReceiptStore()`
 
@@ -2509,37 +2606,37 @@ git commit -m "feat(voice): 회의록 상세 화면 + 오디오 재생
 Create `workmate-vue/src/modules/receipt/stores/receipt.store.ts` — `useReceiptAnalyze.ts` 의 내용을 `defineStore` 로 감싼 것이다. 반환 키를 그대로 유지해 화면 쪽 구조분해를 바꾸지 않는다.
 
 ```ts
-import { defineStore } from 'pinia'
-import { computed, reactive, ref } from 'vue'
-import { receiptApi } from '../api/receipt.api'
-import { extractErrorMessage } from '@/common/utils/error'
-import type { ReceiptAnalysis, ReceiptSaveRequest } from '../types'
+import { defineStore } from "pinia";
+import { computed, reactive, ref } from "vue";
+import { receiptApi } from "../api/receipt.api";
+import { extractErrorMessage } from "@/common/utils/error";
+import type { ReceiptAnalysis, ReceiptSaveRequest } from "../types";
 
 /** 업로드 허용 형식·크기 (설계 F3-01) */
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_BYTES = 10 * 1024 * 1024 // 10MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 /**
  * 영수증 분석 상태.
  * 탭이 라우터 이동형이라 화면을 벗어나면 컴포넌트가 파괴된다.
  * OCR 결과와 사용자가 확인·수정 중인 값을 잃지 않도록 store 에 둔다.
  */
-export const useReceiptStore = defineStore('receipt', () => {
-    const file = ref<File | null>(null)
-    const previewUrl = ref<string | null>(null)
-    const analyzing = ref(false)
-    const saving = ref(false)
-    const saved = ref(false)
-    const error = ref<string | null>(null)
-    const analysis = ref<ReceiptAnalysis | null>(null)
+export const useReceiptStore = defineStore("receipt", () => {
+    const file = ref<File | null>(null);
+    const previewUrl = ref<string | null>(null);
+    const analyzing = ref(false);
+    const saving = ref(false);
+    const saved = ref(false);
+    const error = ref<string | null>(null);
+    const analysis = ref<ReceiptAnalysis | null>(null);
 
     // 사용자가 확인·수정하는 최종 값 (분석 결과로 초기화)
     const form = reactive({
         payAmount: null as number | null,
-        bizNo: '',
-        payDate: '',
-        cardName: '',
-    })
+        bizNo: "",
+        payDate: "",
+        cardName: "",
+    });
 
     /** 저장 가능 조건 — 금액 0 이상, 사업자번호 10자리, 결제일 8자리 (WAS 검증과 동일) */
     const canSave = computed(
@@ -2549,50 +2646,50 @@ export const useReceiptStore = defineStore('receipt', () => {
             form.payAmount >= 0 &&
             /^\d{10}$/.test(form.bizNo) &&
             /^\d{8}$/.test(form.payDate),
-    )
+    );
 
     /** 파일 선택/드롭 처리 — 형식·크기 선검증 후 미리보기 준비 */
     function selectFile(picked: File): void {
         if (!ALLOWED_TYPES.includes(picked.type)) {
-            error.value = 'jpg / png / webp 형식만 업로드할 수 있습니다.'
-            return
+            error.value = "jpg / png / webp 형식만 업로드할 수 있습니다.";
+            return;
         }
         if (picked.size > MAX_BYTES) {
-            error.value = '이미지 크기는 10MB 이하여야 합니다.'
-            return
+            error.value = "이미지 크기는 10MB 이하여야 합니다.";
+            return;
         }
-        revokePreview()
-        error.value = null
-        analysis.value = null
-        saved.value = false
-        file.value = picked
-        previewUrl.value = URL.createObjectURL(picked)
+        revokePreview();
+        error.value = null;
+        analysis.value = null;
+        saved.value = false;
+        file.value = picked;
+        previewUrl.value = URL.createObjectURL(picked);
     }
 
     /** 선택된 이미지를 분석하고 편집 폼을 채운다 */
     async function analyze(): Promise<void> {
-        if (!file.value || analyzing.value) return
-        analyzing.value = true
-        error.value = null
+        if (!file.value || analyzing.value) return;
+        analyzing.value = true;
+        error.value = null;
         try {
-            const result = await receiptApi.analyze(file.value)
-            analysis.value = result
-            form.payAmount = result.payAmount
-            form.bizNo = result.bizNo ?? ''
-            form.payDate = result.payDate ?? ''
-            form.cardName = result.cardName ?? ''
+            const result = await receiptApi.analyze(file.value);
+            analysis.value = result;
+            form.payAmount = result.payAmount;
+            form.bizNo = result.bizNo ?? "";
+            form.payDate = result.payDate ?? "";
+            form.cardName = result.cardName ?? "";
         } catch (e) {
-            error.value = extractErrorMessage(e, '영수증 분석에 실패했습니다.')
+            error.value = extractErrorMessage(e, "영수증 분석에 실패했습니다.");
         } finally {
-            analyzing.value = false
+            analyzing.value = false;
         }
     }
 
     /** 확인·수정한 값을 최종 저장 */
     async function save(): Promise<boolean> {
-        if (!analysis.value || !canSave.value) return false
-        saving.value = true
-        error.value = null
+        if (!analysis.value || !canSave.value) return false;
+        saving.value = true;
+        error.value = null;
         try {
             const payload: ReceiptSaveRequest = {
                 imagePath: analysis.value.imagePath,
@@ -2602,36 +2699,36 @@ export const useReceiptStore = defineStore('receipt', () => {
                 cardName: form.cardName || null,
                 selectType: analysis.value.selectType,
                 rawJson: analysis.value.rawJson,
-            }
-            await receiptApi.save(payload)
-            saved.value = true
-            return true
+            };
+            await receiptApi.save(payload);
+            saved.value = true;
+            return true;
         } catch (e) {
-            error.value = extractErrorMessage(e, '영수증 저장에 실패했습니다.')
-            return false
+            error.value = extractErrorMessage(e, "영수증 저장에 실패했습니다.");
+            return false;
         } finally {
-            saving.value = false
+            saving.value = false;
         }
     }
 
     /** 처음 상태로 초기화 (다른 영수증 분석) */
     function reset(): void {
-        revokePreview()
-        file.value = null
-        analysis.value = null
-        saved.value = false
-        error.value = null
-        form.payAmount = null
-        form.bizNo = ''
-        form.payDate = ''
-        form.cardName = ''
+        revokePreview();
+        file.value = null;
+        analysis.value = null;
+        saved.value = false;
+        error.value = null;
+        form.payAmount = null;
+        form.bizNo = "";
+        form.payDate = "";
+        form.cardName = "";
     }
 
     /** objectURL 메모리 해제 */
     function revokePreview(): void {
         if (previewUrl.value) {
-            URL.revokeObjectURL(previewUrl.value)
-            previewUrl.value = null
+            URL.revokeObjectURL(previewUrl.value);
+            previewUrl.value = null;
         }
     }
 
@@ -2649,8 +2746,8 @@ export const useReceiptStore = defineStore('receipt', () => {
         analyze,
         save,
         reset,
-    }
-})
+    };
+});
 ```
 
 옮긴 뒤 `workmate-vue/src/modules/receipt/composables/useReceiptAnalyze.ts` 를 삭제한다.
@@ -2660,8 +2757,8 @@ export const useReceiptStore = defineStore('receipt', () => {
 `workmate-vue/src/modules/receipt/routes.ts` 를 아래로 교체한다.
 
 ```ts
-import type { RouteRecordRaw } from 'vue-router'
-import type { PageTab } from '@/common/components/pageTabs'
+import type { RouteRecordRaw } from "vue-router";
+import type { PageTab } from "@/common/components/pageTabs";
 
 /**
  * receipt 모듈 라우트 (인증 필요 — 전역 가드가 보호).
@@ -2669,22 +2766,22 @@ import type { PageTab } from '@/common/components/pageTabs'
  */
 export const receiptRoutes: RouteRecordRaw[] = [
     {
-        path: '/receipt',
-        name: 'receipt',
-        component: () => import('./views/ReceiptAnalyzePage.vue'),
+        path: "/receipt",
+        name: "receipt",
+        component: () => import("./views/ReceiptAnalyzePage.vue"),
     },
     {
-        path: '/receipt/history',
-        name: 'receipt-history',
-        component: () => import('./views/ReceiptHistoryPage.vue'),
+        path: "/receipt/history",
+        name: "receipt-history",
+        component: () => import("./views/ReceiptHistoryPage.vue"),
     },
-]
+];
 
 /** 영수증 화면 공통 탭 */
 export const receiptTabs: PageTab[] = [
-    { name: 'receipt', label: '분석' },
-    { name: 'receipt-history', label: '이력' },
-]
+    { name: "receipt", label: "분석" },
+    { name: "receipt-history", label: "이력" },
+];
 ```
 
 - [ ] **Step 3: 분석 화면 생성**
@@ -2698,20 +2795,20 @@ Create `workmate-vue/src/modules/receipt/views/ReceiptAnalyzePage.vue` — `Rece
  * 상태·동작은 receipt store 가 보유하고, 여기선 화면 전환만 담당한다.
  * 저장에 성공하면 방금 등록한 건을 바로 보도록 이력 화면으로 이동한다.
  */
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { CheckCircle2, RotateCcw } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
-import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import PageTabs from '@/common/components/PageTabs.vue'
-import { useReceiptStore } from '../stores/receipt.store'
-import { receiptTabs } from '../routes'
-import ReceiptUpload from '../components/ReceiptUpload.vue'
-import CopyField from '../components/CopyField.vue'
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { CheckCircle2, RotateCcw } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { Badge } from "@/common/components/ui/badge";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Alert, AlertDescription } from "@/common/components/ui/alert";
+import PageTabs from "@/common/components/PageTabs.vue";
+import { useReceiptStore } from "../stores/receipt.store";
+import { receiptTabs } from "../routes";
+import ReceiptUpload from "../components/ReceiptUpload.vue";
+import CopyField from "../components/CopyField.vue";
 
-const router = useRouter()
+const router = useRouter();
 
 const {
     previewUrl,
@@ -2726,23 +2823,23 @@ const {
     analyze,
     save,
     reset,
-} = useReceiptStore()
+} = useReceiptStore();
 
 // 금액(number|null)을 CopyField(string)와 잇는 양방향 브리지 — 숫자만 남겨 저장값에 반영
 const amountStr = computed<string>({
-    get: () => (form.payAmount === null ? '' : String(form.payAmount)),
+    get: () => (form.payAmount === null ? "" : String(form.payAmount)),
     set: (v) => {
-        const digits = v.replace(/[^\d]/g, '')
-        form.payAmount = digits === '' ? null : Number(digits)
+        const digits = v.replace(/[^\d]/g, "");
+        form.payAmount = digits === "" ? null : Number(digits);
     },
-})
+});
 
 // 사업자번호 체크섬 실패 여부 (분석 결과 기준)
-const bizNoInvalid = computed(() => analysis.value?.bizNoValid === false)
+const bizNoInvalid = computed(() => analysis.value?.bizNoValid === false);
 
 async function onSave(): Promise<void> {
-    const ok = await save()
-    if (ok) router.push({ name: 'receipt-history' })
+    const ok = await save();
+    if (ok) router.push({ name: "receipt-history" });
 }
 </script>
 
@@ -2762,7 +2859,10 @@ async function onSave(): Promise<void> {
                 <ReceiptUpload v-if="!previewUrl" @select="selectFile" />
 
                 <!-- 2) 이미지 선택됨 · 분석 결과 -->
-                <div v-else class="flex flex-col gap-4 md:flex-row md:items-start">
+                <div
+                    v-else
+                    class="flex flex-col gap-4 md:flex-row md:items-start"
+                >
                     <!-- 원본 이미지 미리보기 -->
                     <div class="md:w-2/5">
                         <img
@@ -2778,26 +2878,38 @@ async function onSave(): Promise<void> {
                         <template v-if="!analysis">
                             <div class="flex gap-2">
                                 <Button :disabled="analyzing" @click="analyze">
-                                    <Spinner v-if="analyzing" class="mr-2 size-4" />
-                                    {{ analyzing ? '분석 중…' : '분석하기' }}
+                                    <Spinner
+                                        v-if="analyzing"
+                                        class="mr-2 size-4"
+                                    />
+                                    {{ analyzing ? "분석 중…" : "분석하기" }}
                                 </Button>
-                                <Button variant="outline" :disabled="analyzing" @click="reset">
+                                <Button
+                                    variant="outline"
+                                    :disabled="analyzing"
+                                    @click="reset"
+                                >
                                     다시 선택
                                 </Button>
                             </div>
                             <p class="text-sm text-muted-foreground">
-                                분석하면 결과가 이력에 자동 저장되며, 아래에서 값을 확인·수정할 수
-                                있습니다.
+                                분석하면 결과가 이력에 자동 저장되며, 아래에서
+                                값을 확인·수정할 수 있습니다.
                             </p>
                         </template>
 
                         <!-- 분석 후: 확인 폼 -->
                         <template v-else>
                             <div class="flex items-center gap-2">
-                                <Badge v-if="analysis.selectType === 'AUTO'" variant="default">
+                                <Badge
+                                    v-if="analysis.selectType === 'AUTO'"
+                                    variant="default"
+                                >
                                     ✅ 카드 자동 선택
                                 </Badge>
-                                <Badge v-else variant="secondary">✋ 수동 선택 필요</Badge>
+                                <Badge v-else variant="secondary"
+                                    >✋ 수동 선택 필요</Badge
+                                >
                                 <span
                                     v-if="analysis.cardName"
                                     class="text-sm text-muted-foreground"
@@ -2819,8 +2931,12 @@ async function onSave(): Promise<void> {
                                 numeric
                             >
                                 <template #hint>
-                                    <p v-if="bizNoInvalid" class="text-xs text-destructive">
-                                        ⚠ 체크섬 검증 실패 — 번호를 확인해 주세요.
+                                    <p
+                                        v-if="bizNoInvalid"
+                                        class="text-xs text-destructive"
+                                    >
+                                        ⚠ 체크섬 검증 실패 — 번호를 확인해
+                                        주세요.
                                     </p>
                                 </template>
                             </CopyField>
@@ -2838,8 +2954,11 @@ async function onSave(): Promise<void> {
 
                             <div class="flex items-center gap-2">
                                 <Button :disabled="!canSave" @click="onSave">
-                                    <Spinner v-if="saving" class="mr-2 size-4" />
-                                    {{ saving ? '저장 중…' : '저장' }}
+                                    <Spinner
+                                        v-if="saving"
+                                        class="mr-2 size-4"
+                                    />
+                                    {{ saving ? "저장 중…" : "저장" }}
                                 </Button>
                                 <Button variant="outline" @click="reset">
                                     <RotateCcw class="mr-2 size-4" />
@@ -2864,12 +2983,20 @@ async function onSave(): Promise<void> {
 > **주의: store 를 구조분해할 때** Pinia setup store 의 반환값을 위처럼 그대로 구조분해하면 `ref` 는 반응성을 잃는다. `useReceiptStore()` 는 반환된 `ref` 를 자동 unwrap 하므로, 위 코드처럼 `previewUrl` 을 `.value` 없이 쓰되 **구조분해 대신 `const store = useReceiptStore()` 후 `store.previewUrl` 로 접근**하거나 `storeToRefs` 를 써야 한다. 이 화면은 값을 읽고 쓰는 곳이 많으므로 아래처럼 바꾼다.
 >
 > ```ts
-> import { storeToRefs } from 'pinia'
+> import { storeToRefs } from "pinia";
 >
-> const store = useReceiptStore()
-> const { previewUrl, analyzing, saving, saved, error, analysis, form, canSave } =
->     storeToRefs(store)
-> const { selectFile, analyze, save, reset } = store
+> const store = useReceiptStore();
+> const {
+>     previewUrl,
+>     analyzing,
+>     saving,
+>     saved,
+>     error,
+>     analysis,
+>     form,
+>     canSave,
+> } = storeToRefs(store);
+> const { selectFile, analyze, save, reset } = store;
 > ```
 >
 > `storeToRefs` 로 꺼낸 상태는 템플릿에서 그대로 쓰고, `<script>` 안에서는 `analysis.value` 처럼 접근한다. `form` 은 `reactive` 객체라 `storeToRefs` 결과에서 `form.value.payAmount` 가 되므로, `amountStr` 브리지와 템플릿의 `form.bizNo` 를 `form.value.bizNo` / `form.bizNo` 로 맞춰 `npm run type-check` 가 통과하는 형태로 정리한다.
@@ -2884,35 +3011,35 @@ Create `workmate-vue/src/modules/receipt/views/ReceiptHistoryPage.vue` — `Rece
  * 영수증 [이력] 화면 (/receipt/history) — 등록 목록(최신순) + CSV 다운로드.
  * 목록은 결제일·금액·사업자번호·검증상태를 보여준다.
  */
-import { onMounted } from 'vue'
-import { Download } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
-import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
-import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import PageTabs from '@/common/components/PageTabs.vue'
-import { useReceiptHistory } from '../composables/useReceiptHistory'
-import { receiptTabs } from '../routes'
+import { onMounted } from "vue";
+import { Download } from "lucide-vue-next";
+import { Button } from "@/common/components/ui/button";
+import { Badge } from "@/common/components/ui/badge";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Alert, AlertDescription } from "@/common/components/ui/alert";
+import PageTabs from "@/common/components/PageTabs.vue";
+import { useReceiptHistory } from "../composables/useReceiptHistory";
+import { receiptTabs } from "../routes";
 
-const { receipts, loading, error, load, downloadCsv } = useReceiptHistory()
+const { receipts, loading, error, load, downloadCsv } = useReceiptHistory();
 
-onMounted(load)
+onMounted(load);
 
 /** YYYYMMDD → YYYY.MM.DD */
 function formatDate(yyyymmdd: string): string {
-    if (!/^\d{8}$/.test(yyyymmdd)) return yyyymmdd
-    return `${yyyymmdd.slice(0, 4)}.${yyyymmdd.slice(4, 6)}.${yyyymmdd.slice(6, 8)}`
+    if (!/^\d{8}$/.test(yyyymmdd)) return yyyymmdd;
+    return `${yyyymmdd.slice(0, 4)}.${yyyymmdd.slice(4, 6)}.${yyyymmdd.slice(6, 8)}`;
 }
 
 /** 10자리 사업자번호 → 123-45-67890 */
 function formatBizNo(bizNo: string): string {
-    if (!/^\d{10}$/.test(bizNo)) return bizNo
-    return `${bizNo.slice(0, 3)}-${bizNo.slice(3, 5)}-${bizNo.slice(5)}`
+    if (!/^\d{10}$/.test(bizNo)) return bizNo;
+    return `${bizNo.slice(0, 3)}-${bizNo.slice(3, 5)}-${bizNo.slice(5)}`;
 }
 
 /** 금액 천단위 콤마 */
 function formatAmount(amount: number): string {
-    return amount.toLocaleString('ko-KR')
+    return amount.toLocaleString("ko-KR");
 }
 </script>
 
@@ -2926,7 +3053,10 @@ function formatAmount(amount: number): string {
             <div class="flex flex-col gap-4">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-muted-foreground">
-                        총 <span class="font-medium text-foreground">{{ receipts.length }}</span
+                        총
+                        <span class="font-medium text-foreground">{{
+                            receipts.length
+                        }}</span
                         >건
                     </p>
                     <Button
@@ -2957,11 +3087,17 @@ function formatAmount(amount: number): string {
 
                 <div v-else class="overflow-x-auto rounded-lg border">
                     <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                        <thead
+                            class="border-b bg-muted/40 text-left text-muted-foreground"
+                        >
                             <tr>
                                 <th class="px-4 py-2.5 font-medium">결제일</th>
-                                <th class="px-4 py-2.5 text-right font-medium">금액</th>
-                                <th class="px-4 py-2.5 font-medium">사업자번호</th>
+                                <th class="px-4 py-2.5 text-right font-medium">
+                                    금액
+                                </th>
+                                <th class="px-4 py-2.5 font-medium">
+                                    사업자번호
+                                </th>
                                 <th class="px-4 py-2.5 font-medium">카드사</th>
                                 <th class="px-4 py-2.5 font-medium">검증</th>
                             </tr>
@@ -2972,17 +3108,27 @@ function formatAmount(amount: number): string {
                                 :key="r.receiptSeq"
                                 class="border-b last:border-0 hover:bg-accent/40"
                             >
-                                <td class="px-4 py-2.5">{{ formatDate(r.payDate) }}</td>
+                                <td class="px-4 py-2.5">
+                                    {{ formatDate(r.payDate) }}
+                                </td>
                                 <td class="px-4 py-2.5 text-right tabular-nums">
                                     {{ formatAmount(r.payAmount) }}원
                                 </td>
                                 <td class="px-4 py-2.5 tabular-nums">
                                     {{ formatBizNo(r.bizNo) }}
                                 </td>
-                                <td class="px-4 py-2.5">{{ r.cardName || '—' }}</td>
                                 <td class="px-4 py-2.5">
-                                    <Badge v-if="r.bizNoValid" variant="secondary">✅ 정상</Badge>
-                                    <Badge v-else variant="destructive">⚠ 확인필요</Badge>
+                                    {{ r.cardName || "—" }}
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    <Badge
+                                        v-if="r.bizNoValid"
+                                        variant="secondary"
+                                        >✅ 정상</Badge
+                                    >
+                                    <Badge v-else variant="destructive"
+                                        >⚠ 확인필요</Badge
+                                    >
                                 </td>
                             </tr>
                         </tbody>
@@ -3023,10 +3169,12 @@ git commit -m "refactor(receipt): 라우터형 탭 구조로 전환
 ## Task 14: 문서 갱신
 
 **Files:**
+
 - Modify: `docs/project/specs/F8-1_VOICE_MEETING_SUMMARY_SPEC.md`
 - Modify: `docs/development/03_API_DB_SPEC.md`
 
 **Interfaces:**
+
 - Consumes: Task 1~13 의 최종 구현
 - Produces: 없음 (문서)
 
@@ -3044,12 +3192,12 @@ git commit -m "refactor(receipt): 라우터형 탭 구조로 전환
 
 `docs/development/03_API_DB_SPEC.md` 에서 voice 관련 절을 찾아 아래 4개를 추가하고, 제거된 `POST /api/v1/voice/{recordSeq}/to-guide` 를 삭제한다. voice 절이 없으면 문서 형식에 맞춰 새 절을 만든다.
 
-| 메서드 | 경로 | 설명 |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/voice` | 내 회의록 이력 (최신순, 본문 제외) |
-| `GET` | `/api/v1/voice/{recordSeq}` | 회의록 상세 (전사문·요약 전문) |
-| `GET` | `/api/v1/voice/{recordSeq}/audio` | 오디오 스트리밍 (Range → 206) |
-| `POST` | `/api/v1/voice/{recordSeq}/delete` | 회의록 삭제 (DB 행 + 오디오 파일) |
+| 메서드 | 경로                               | 설명                               |
+| :----- | :--------------------------------- | :--------------------------------- |
+| `GET`  | `/api/v1/voice`                    | 내 회의록 이력 (최신순, 본문 제외) |
+| `GET`  | `/api/v1/voice/{recordSeq}`        | 회의록 상세 (전사문·요약 전문)     |
+| `GET`  | `/api/v1/voice/{recordSeq}/audio`  | 오디오 스트리밍 (Range → 206)      |
+| `POST` | `/api/v1/voice/{recordSeq}/delete` | 회의록 삭제 (DB 행 + 오디오 파일)  |
 
 `voice_record` 테이블 정의에 컬럼 4개(`audio_file_name`·`origin_file_name`·`file_size`·`content_type`)를 추가한다.
 
@@ -3081,13 +3229,13 @@ git commit -m "docs(voice): 회의록 이력·오디오 보관 반영
 
 ## 완료 기준
 
-| # | 확인 항목 |
-| :-- | :--- |
-| 1 | `/voice` 에서 분석 → `이력` 탭에 방금 건이 파일명·크기와 함께 보인다 |
-| 2 | 이력에서 회의록을 열면 오디오가 재생되고 **재생 바 구간 이동이 된다**(Network 에 206) |
-| 3 | 상세 URL 을 새 탭에 붙여넣어도 화면이 열리고 "이력" 탭이 활성이다 |
-| 4 | 삭제하면 목록에서 사라지고 `uploads/voice` 의 파일도 없어진다 |
-| 5 | MVP 기간 회의록은 "오디오 없음"·"저장된 오디오가 없습니다" 로 표시되고 조회·삭제가 정상이다 |
-| 6 | 관리자·영수증·회의록 세 화면의 탭 모양·동작이 같다 |
-| 7 | 회의록 화면에 "가이드로 등록" 이 존재하지 않는다 |
-| 8 | `./gradlew :workmate-was:test` 와 `npx vitest run` 이 모두 통과한다 |
+| #   | 확인 항목                                                                                   |
+| :-- | :------------------------------------------------------------------------------------------ |
+| 1   | `/voice` 에서 분석 → `이력` 탭에 방금 건이 파일명·크기와 함께 보인다                        |
+| 2   | 이력에서 회의록을 열면 오디오가 재생되고 **재생 바 구간 이동이 된다**(Network 에 206)       |
+| 3   | 상세 URL 을 새 탭에 붙여넣어도 화면이 열리고 "이력" 탭이 활성이다                           |
+| 4   | 삭제하면 목록에서 사라지고 `uploads/voice` 의 파일도 없어진다                               |
+| 5   | MVP 기간 회의록은 "오디오 없음"·"저장된 오디오가 없습니다" 로 표시되고 조회·삭제가 정상이다 |
+| 6   | 관리자·영수증·회의록 세 화면의 탭 모양·동작이 같다                                          |
+| 7   | 회의록 화면에 "가이드로 등록" 이 존재하지 않는다                                            |
+| 8   | `./gradlew :workmate-was:test` 와 `npx vitest run` 이 모두 통과한다                         |
