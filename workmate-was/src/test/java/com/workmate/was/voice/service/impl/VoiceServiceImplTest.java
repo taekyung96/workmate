@@ -67,6 +67,44 @@ class VoiceServiceImplTest {
         assertThat(saved.getContentType()).isEqualTo("audio/mp4");
     }
 
+    @Test
+    @DisplayName("이력 목록은 사용자 소유분만 최신순으로 요약 VO 로 반환한다")
+    void getHistory_returnsSummaries() {
+        VoiceServiceImpl service = service();
+        when(repository.findByUserSeqOrderByCreatedAtDesc(7L)).thenReturn(java.util.List.of(
+                VoiceRecord.builder().userSeq(7L).title("회의A").sttText("s").summaryMd("m")
+                        .audioFileName("uuid-a.m4a").originFileName("a.m4a").fileSize(100L).build(),
+                VoiceRecord.builder().userSeq(7L).title("회의B").sttText("s").summaryMd("m").build()));
+
+        var history = service.getHistory(7L);
+
+        assertThat(history).hasSize(2);
+        assertThat(history.get(0).getTitle()).isEqualTo("회의A");
+        assertThat(history.get(0).isHasAudio()).isTrue();
+        assertThat(history.get(1).isHasAudio()).isFalse();
+    }
+
+    @Test
+    @DisplayName("타인의 회의록 상세 조회는 거부된다")
+    void getRecord_otherUser_throws() {
+        VoiceServiceImpl service = service();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(
+                VoiceRecord.builder().userSeq(99L).title("남의 회의").sttText("s").summaryMd("m").build()));
+
+        assertThat(catchIllegalArgument(() -> service.getRecord(7L, 5L)))
+                .contains("본인의 회의록만");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 회의록 조회는 거부된다")
+    void getRecord_notFound_throws() {
+        VoiceServiceImpl service = service();
+        when(repository.findById(404L)).thenReturn(java.util.Optional.empty());
+
+        assertThat(catchIllegalArgument(() -> service.getRecord(7L, 404L)))
+                .contains("존재하지 않는 회의록");
+    }
+
     /** 예외 메시지만 꺼내는 보조 — assertThatThrownBy 체인을 짧게 쓰기 위함 */
     private String catchIllegalArgument(Runnable action) {
         try {

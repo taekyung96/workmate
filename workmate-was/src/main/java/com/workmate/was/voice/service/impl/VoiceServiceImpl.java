@@ -6,6 +6,7 @@ import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.service.VoiceTranscriber;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
 import com.workmate.was.voice.vo.VoiceRecord;
+import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 음성 회의록 서비스 구현체 (F8-1).
@@ -81,6 +83,40 @@ public class VoiceServiceImpl implements VoiceService {
 
         log.info("음성 회의록 저장 완료 - recordSeq: {}", saved.getRecordSeq());
         return new VoiceAnalysisResultVo(saved);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public List<VoiceRecordSummaryVo> getHistory(Long userSeq) {
+        return voiceRecordRepository.findByUserSeqOrderByCreatedAtDesc(userSeq).stream()
+                .map(VoiceRecordSummaryVo::new)
+                .toList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq) {
+        return new VoiceAnalysisResultVo(findOwnedRecord(userSeq, recordSeq));
+    }
+
+    /**
+     * 본인 소유의 회의록을 찾는다. 없거나 타인 소유면 예외.
+     * 상세·오디오·삭제가 공유하는 검증 지점이다.
+     *
+     * @param userSeq   요청자 식별자
+     * @param recordSeq 회의록 식별자
+     * @return 검증된 회의록
+     */
+    private VoiceRecord findOwnedRecord(Long userSeq, Long recordSeq) {
+        VoiceRecord record = voiceRecordRepository.findById(recordSeq)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회의록입니다."));
+        if (!record.getUserSeq().equals(userSeq)) {
+            log.warn("회의록 접근 거부 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
+            throw new IllegalArgumentException("본인의 회의록만 조회할 수 있습니다.");
+        }
+        return record;
     }
 
     /** 전사문을 3단 구조 마크다운 회의록으로 요약한다 */

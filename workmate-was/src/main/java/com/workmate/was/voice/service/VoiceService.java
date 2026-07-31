@@ -1,7 +1,10 @@
 package com.workmate.was.voice.service;
 
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
+import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * 음성 회의록 서비스 (F8-1).
@@ -18,4 +21,21 @@ public interface VoiceService {
      * @return 전사 원문 + 마크다운 요약 결과
      */
     VoiceAnalysisResultVo analyze(Long userSeq, String title, MultipartFile file);
+
+    /**
+     * 사용자의 회의록 이력을 최신순으로 조회한다.
+     *
+     * @param userSeq 사용자 식별자
+     * @return 목록 요약 VO (전사문·요약 본문 제외)
+     */
+    List<VoiceRecordSummaryVo> getHistory(Long userSeq);
+
+    /**
+     * 회의록 상세를 조회한다 (본인 소유만).
+     *
+     * @param userSeq   사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @return 전사문·요약 전문을 포함한 상세
+     */
+    VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq);
 }
