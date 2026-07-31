@@ -1,6 +1,6 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { VoiceAnalysisResult } from '../types'
+import type { VoiceAnalysisResult, VoiceRecordSummary } from '../types'
 
 /**
  * 음성 회의록 API (WEB의 /api/v1/voice/* 프록시 호출 → WAS).
@@ -18,5 +18,32 @@ export const voiceApi = {
             form,
         )
         return data.result
+    },
+
+    /** 내 회의록 이력 (최신순) */
+    async history(): Promise<VoiceRecordSummary[]> {
+        const { data } = await client.get<ApiResponse<VoiceRecordSummary[]>>('/v1/voice')
+        return data.result
+    },
+
+    /** 회의록 상세 (전사문·요약 전문) */
+    async getRecord(recordSeq: number): Promise<VoiceAnalysisResult> {
+        const { data } = await client.get<ApiResponse<VoiceAnalysisResult>>(
+            `/v1/voice/${recordSeq}`,
+        )
+        return data.result
+    },
+
+    /** 회의록 삭제 (DB 행 + 오디오 파일) */
+    async remove(recordSeq: number): Promise<void> {
+        await client.post<ApiResponse<void>>(`/v1/voice/${recordSeq}/delete`)
+    },
+
+    /**
+     * 오디오 스트리밍 URL. <audio src> 에 직접 넣어 브라우저가 Range 요청을 하게 한다
+     * (axios 로 받아 Blob 으로 만들면 구간 이동이 안 되므로 URL 을 그대로 쓴다).
+     */
+    audioUrl(recordSeq: number): string {
+        return `/api/v1/voice/${recordSeq}/audio`
     },
 }

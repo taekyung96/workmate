@@ -1,13 +1,15 @@
+import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { extractErrorMessage } from '@/common/utils/error'
 import { voiceApi } from '../api/voice.api'
 import type { VoiceAnalysisResult } from '../types'
 
 /**
- * 음성 회의록 분석 화면 로직 (≈ Service).
- * 오디오 업로드 → 전사+요약 결과 상태를 관리한다.
+ * 회의록 분석 상태 (F8-1).
+ * 탭이 라우터 이동형이라 화면을 벗어나면 컴포넌트가 파괴된다.
+ * 수십 초 걸리는 분석 결과를 잃지 않도록 상태를 store 에 둔다.
  */
-export function useVoiceAnalyze() {
+export const useVoiceStore = defineStore('voice', () => {
     const result = ref<VoiceAnalysisResult | null>(null)
     const loading = ref(false)
     const error = ref('')
@@ -31,11 +33,5 @@ export function useVoiceAnalyze() {
         error.value = ''
     }
 
-    return {
-        result,
-        loading,
-        error,
-        analyze,
-        reset,
-    }
-}
+    return { result, loading, error, analyze, reset }
+})
