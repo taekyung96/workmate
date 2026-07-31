@@ -79,6 +79,11 @@ WAS REST API의 요청/응답 규격과 DB 테이블 정의를 확정한다.
 | K1  | `GET /api/common/codes/{groupCode}`                                            | 공통코드 조회 (사용중 코드만, 공개)              | F7-04    | 4    |
 | K2  | `GET/POST/PUT/DELETE /api/v1/admin/common-codes/groups[/{group}]`              | 공통코드 그룹 관리(관리자)                       | F7       | 5    |
 | K3  | `GET/POST/PUT/DELETE /api/v1/admin/common-codes/groups/{group}/codes[/{code}]` | 공통코드 관리(관리자)                            | F7       | 5    |
+| V1  | `POST /api/v1/voice/analyze`                                                   | 오디오 분석(전사+요약) + **이력 자동 저장**      | F8-1     | 5    |
+| V2  | `GET /api/v1/voice`                                                            | 내 회의록 이력 (최신순, 본문 제외)               | F8-1     | 5    |
+| V3  | `GET /api/v1/voice/{recordSeq}`                                                | 회의록 상세 (전사문·요약 전문)                   | F8-1     | 5    |
+| V4  | `GET /api/v1/voice/{recordSeq}/audio`                                          | 오디오 스트리밍 (Range → 206, 본인만)            | F8-1     | 5    |
+| V5  | `POST /api/v1/voice/{recordSeq}/delete`                                        | 회의록 삭제 (DB 행 + 오디오 파일)                | F8-1     | 5    |
 | H1  | `GET /api/v1/health`                                                           | 헬스체크 (기구현)                                | —        | —    |
 
 > Tool Calling(F5)은 별도 엔드포인트가 아니라 C3 스트리밍 내부에서 Spring AI `@Tool`로 동작.
@@ -249,6 +254,25 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 - INSERT만 하는 불변(append-only) 테이블 — UPDATE/DELETE 하지 않는다 (감사 무결성).
 - M2·M3 처리와 **같은 트랜잭션**에서 기록 (기록 실패 시 행위도 롤백).
 
+### 4.7 voice_record (마일스톤 5 — 신규, F8-1 회의록)
+
+| 컬럼             | 타입            | 제약                 | 설명                                      |
+| ---------------- | --------------- | -------------------- | ----------------------------------------- |
+| record_seq       | bigint identity | PK                   |                                           |
+| user_seq         | bigint          | NOT NULL FK          | 작성자 (admin_user)                       |
+| title            | varchar(255)    | NOT NULL             | 회의 제목                                 |
+| stt_text         | text            | NOT NULL             | STT 전사 원문                             |
+| summary_md       | text            | NOT NULL             | AI 3단 구조화 요약 (마크다운)             |
+| audio_file_name  | varchar(200)    | NULL                 | 서버 저장 파일명(UUID.ext). 경로는 설정값 |
+| origin_file_name | varchar(255)    | NULL                 | 사용자가 올린 원본 파일명                 |
+| file_size        | bigint          | NULL                 | 오디오 파일 크기(바이트)                  |
+| content_type     | varchar(100)    | NULL                 | 오디오 MIME 타입 (재생 응답 Content-Type) |
+| created_at       | timestamp       | NOT NULL DEFAULT now |                                           |
+
+- 오디오 4개 컬럼은 nullable — MVP 기간(2026-07-30 이전) 분석분은 오디오를 저장하지 않아 비어 있다.
+- 오디오 원본은 DB가 아니라 `app.upload.voice-dir`(기본 `uploads/voice`)에 파일로 보관하고, DB에는 파일명만 남긴다.
+- `idx_voice_record_user`(user_seq)로 사용자별 최신순 목록을 커버.
+
 ## 5. 테이블 ↔ 마일스톤 요약
 
 | 마일스톤 | DB 작업                                                                         |
@@ -257,3 +281,4 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 | 2        | `receipt` 컬럼 변경 (§4.3)                                                      |
 | 3        | 없음 (guide·vector_store 기존)                                                  |
 | 4        | `common_code_group`·`common_code` 신규 + AI_MODEL 초기 데이터                   |
+| 5        | `voice_record` 신규(09) + 오디오 컬럼 4개 추가(12) (§4.7)                       |
