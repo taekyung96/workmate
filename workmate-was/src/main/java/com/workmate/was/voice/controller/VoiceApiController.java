@@ -112,4 +112,20 @@ public class VoiceApiController {
                 .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                 .body(region);
     }
+
+    /**
+     * 회의록을 삭제한다 (본인 소유만). DB 행과 오디오 파일을 함께 지운다.
+     *
+     * @param userSeq   인증 세션에서 WEB 인터셉터가 주입한 사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @return 성공 응답
+     */
+    @PostMapping("/{recordSeq}/delete")
+    public ApiResponse<Void> delete(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @PathVariable Long recordSeq) {
+        log.info("회의록 삭제 API 호출 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
+        voiceService.deleteRecord(userSeq, recordSeq);
+        return ApiResponse.success();
+    }
 }

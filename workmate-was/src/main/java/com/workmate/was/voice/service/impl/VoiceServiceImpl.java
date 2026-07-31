@@ -119,6 +119,19 @@ public class VoiceServiceImpl implements VoiceService {
         return new VoiceAudioVo(resource, contentType, record.getOriginFileName());
     }
 
+    /** {@inheritDoc} */
+    @Override
+    @Transactional
+    public void deleteRecord(Long userSeq, Long recordSeq) {
+        VoiceRecord record = findOwnedRecord(userSeq, recordSeq);
+        // 파일이 이미 없어도(수동 삭제·유실) DB 행 삭제는 진행한다 — store 가 경고 로그만 남긴다
+        if (record.getAudioFileName() != null) {
+            audioStore.delete(record.getAudioFileName());
+        }
+        voiceRecordRepository.delete(record);
+        log.info("회의록 삭제 완료 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
+    }
+
     /**
      * 본인 소유의 회의록을 찾는다. 없거나 타인 소유면 예외.
      * 상세·오디오·삭제가 공유하는 검증 지점이다.

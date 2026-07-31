@@ -48,4 +48,12 @@ public interface VoiceService {
      * @return 리소스 + Content-Type + 원본 파일명
      */
     VoiceAudioVo getAudio(Long userSeq, Long recordSeq);
+
+    /**
+     * 회의록을 삭제한다 (본인 소유만). DB 행과 오디오 파일을 함께 지운다.
+     *
+     * @param userSeq   사용자 식별자
+     * @param recordSeq 회의록 식별자
+     */
+    void deleteRecord(Long userSeq, Long recordSeq);
 }

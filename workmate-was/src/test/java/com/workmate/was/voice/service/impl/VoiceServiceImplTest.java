@@ -129,6 +129,47 @@ class VoiceServiceImplTest {
                 .contains("오디오 파일을 찾을 수 없습니다");
     }
 
+    @Test
+    @DisplayName("삭제 시 DB 행과 오디오 파일을 함께 지운다")
+    void deleteRecord_removesRowAndFile() {
+        VoiceServiceImpl service = service();
+        VoiceRecord record = VoiceRecord.builder().userSeq(7L).title("회의").sttText("s")
+                .summaryMd("m").audioFileName("uuid-x.m4a").build();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(record));
+        when(audioStore.delete("uuid-x.m4a")).thenReturn(true);
+
+        service.deleteRecord(7L, 5L);
+
+        org.mockito.Mockito.verify(audioStore).delete("uuid-x.m4a");
+        org.mockito.Mockito.verify(repository).delete(record);
+    }
+
+    @Test
+    @DisplayName("오디오가 없는 과거 회의록도 예외 없이 삭제된다")
+    void deleteRecord_noAudio_deletesRowOnly() {
+        VoiceServiceImpl service = service();
+        VoiceRecord record = VoiceRecord.builder().userSeq(7L).title("옛 회의").sttText("s")
+                .summaryMd("m").build();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(record));
+
+        service.deleteRecord(7L, 5L);
+
+        org.mockito.Mockito.verify(audioStore, org.mockito.Mockito.never()).delete(any());
+        org.mockito.Mockito.verify(repository).delete(record);
+    }
+
+    @Test
+    @DisplayName("타인의 회의록 삭제는 거부된다")
+    void deleteRecord_otherUser_throws() {
+        VoiceServiceImpl service = service();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(
+                VoiceRecord.builder().userSeq(99L).title("남의 회의").sttText("s").summaryMd("m").build()));
+
+        assertThat(catchIllegalArgument(() -> service.deleteRecord(7L, 5L)))
+                .contains("본인의 회의록만");
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).delete(any());
+    }
+
     /** 예외 메시지만 꺼내는 보조 — assertThatThrownBy 체인을 짧게 쓰기 위함 */
     private String catchIllegalArgument(Runnable action) {
         try {
