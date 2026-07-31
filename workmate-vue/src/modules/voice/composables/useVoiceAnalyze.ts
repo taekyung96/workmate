@@ -12,10 +12,6 @@ export function useVoiceAnalyze() {
     const loading = ref(false)
     const error = ref('')
 
-    // 가이드 등록 상태 (F8-1-6) — 등록 진행/완료(생성된 guideSeq)
-    const registering = ref(false)
-    const registeredGuideSeq = ref<number | null>(null)
-
     /** 오디오 분석 실행 */
     async function analyze(file: File, title: string): Promise<void> {
         loading.value = true
@@ -29,35 +25,17 @@ export function useVoiceAnalyze() {
         }
     }
 
-    /** 현재 회의록을 사내 가이드로 등록 (F8-1-6). 성공 시 생성된 guideSeq 를 보관한다. */
-    async function convertToGuide(): Promise<void> {
-        if (!result.value) return
-        registering.value = true
-        error.value = ''
-        try {
-            registeredGuideSeq.value = await voiceApi.convertToGuide(result.value.recordSeq)
-        } catch (e) {
-            error.value = extractErrorMessage(e, '가이드 등록에 실패했습니다.')
-        } finally {
-            registering.value = false
-        }
-    }
-
     /** 결과·에러 초기화 (새로 분석하기) */
     function reset(): void {
         result.value = null
         error.value = ''
-        registeredGuideSeq.value = null
     }
 
     return {
         result,
         loading,
         error,
-        registering,
-        registeredGuideSeq,
         analyze,
-        convertToGuide,
         reset,
     }
 }

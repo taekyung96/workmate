@@ -5,16 +5,7 @@
  * (실시간 녹음·이력·공유는 다음 단계)
  */
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import {
-    FileAudio,
-    Download,
-    Mic,
-    RefreshCw,
-    Upload,
-    BookPlus,
-    CheckCircle2,
-} from 'lucide-vue-next'
+import { FileAudio, Download, Mic, RefreshCw, Upload } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Spinner } from '@/common/components/ui/spinner'
@@ -23,8 +14,7 @@ import { renderMarkdown } from '@/common/utils/markdown'
 import { useMarkdownCopy } from '@/common/composables/useMarkdownCopy'
 import { useVoiceAnalyze } from '../composables/useVoiceAnalyze'
 
-const { result, loading, error, registering, registeredGuideSeq, analyze, convertToGuide, reset } =
-    useVoiceAnalyze()
+const { result, loading, error, analyze, reset } = useVoiceAnalyze()
 const { onMarkdownClick } = useMarkdownCopy()
 
 const title = ref('')
@@ -192,26 +182,6 @@ function downloadTxt(): void {
                 <div class="rounded-lg border">
                     <div class="flex items-center justify-between border-b px-4 py-2.5">
                         <span class="text-sm font-semibold">AI 요약 리포트</span>
-                        <!-- 회의록 요약을 사내 가이드로 등록 → RAG 검색 대상 편입 (F8-1-6) -->
-                        <RouterLink
-                            v-if="registeredGuideSeq"
-                            :to="{ name: 'guide-detail', params: { id: registeredGuideSeq } }"
-                            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                        >
-                            <CheckCircle2 class="size-4" />
-                            가이드에서 보기
-                        </RouterLink>
-                        <Button
-                            v-else
-                            size="sm"
-                            variant="outline"
-                            :disabled="registering"
-                            @click="convertToGuide"
-                        >
-                            <Spinner v-if="registering" class="mr-1.5 size-4" />
-                            <BookPlus v-else class="mr-1.5 size-4" />
-                            {{ registering ? '등록 중…' : '가이드로 등록' }}
-                        </Button>
                     </div>
                     <div
                         class="markdown-body markdown-doc slim-scroll max-h-[60vh] overflow-y-auto px-4 py-3"

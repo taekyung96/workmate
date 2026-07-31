@@ -1,8 +1,5 @@
 package com.workmate.was.voice.service.impl;
 
-import com.workmate.was.guide.service.GuideService;
-import com.workmate.was.guide.vo.GuideResponseVo;
-import com.workmate.was.guide.vo.GuideSaveRequestVo;
 import com.workmate.was.voice.dao.VoiceRecordRepository;
 import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.service.VoiceTranscriber;
@@ -27,16 +24,13 @@ public class VoiceServiceImpl implements VoiceService {
 
     private final VoiceTranscriber transcriber;
     private final VoiceRecordRepository voiceRecordRepository;
-    private final GuideService guideService;
     private final ChatClient chatClient;
 
     public VoiceServiceImpl(VoiceTranscriber transcriber,
                             VoiceRecordRepository voiceRecordRepository,
-                            GuideService guideService,
                             ChatClient.Builder chatClientBuilder) {
         this.transcriber = transcriber;
         this.voiceRecordRepository = voiceRecordRepository;
-        this.guideService = guideService;
         this.chatClient = chatClientBuilder.build();
     }
 
@@ -76,29 +70,6 @@ public class VoiceServiceImpl implements VoiceService {
 
         log.info("음성 회의록 저장 완료 - recordSeq: {}", saved.getRecordSeq());
         return new VoiceAnalysisResultVo(saved);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    @Transactional
-    public Long convertToGuide(Long userSeq, Long recordSeq) {
-        // 본인 소유의 회의록만 가이드로 등록 가능 (타인 회의록 등록 차단)
-        VoiceRecord record = voiceRecordRepository.findById(recordSeq)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회의록입니다."));
-        if (!record.getUserSeq().equals(userSeq)) {
-            log.warn("회의록 접근 거부 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
-            throw new IllegalArgumentException("본인의 회의록만 가이드로 등록할 수 있습니다.");
-        }
-
-        // 요약 마크다운을 가이드 본문으로 등록 — 기본은 비공개(본인만). 등록 즉시 RAG 임베딩 대상이 된다.
-        GuideResponseVo guide = guideService.createGuide(userSeq, GuideSaveRequestVo.builder()
-                .title(record.getTitle())
-                .content(record.getSummaryMd())
-                .isPublic(false)
-                .build());
-
-        log.info("회의록을 가이드로 등록 완료 - recordSeq: {} → guideSeq: {}", recordSeq, guide.getGuideSeq());
-        return guide.getGuideSeq();
     }
 
     /** 전사문을 3단 구조 마크다운 회의록으로 요약한다 */
