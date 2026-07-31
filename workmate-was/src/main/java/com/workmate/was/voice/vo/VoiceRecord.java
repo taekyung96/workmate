@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 음성 회의록 엔티티 (F8-1).
- * 회의 오디오를 Gemini 로 전사·요약한 결과를 보관한다. 오디오 원본은 저장하지 않는다(프라이버시).
+ * 회의 오디오를 Gemini 로 전사·요약한 결과를 보관한다. 이력 재생을 위해 오디오 파일 정보도 함께 남긴다.
  */
 @Entity
 @Table(name = "voice_record")
@@ -46,6 +46,22 @@ public class VoiceRecord {
     /** AI 구조화 요약 (마크다운) */
     @Column(name = "summary_md", nullable = false, columnDefinition = "text")
     private String summaryMd;
+
+    /** 서버에 저장된 오디오 파일명 (UUID.확장자). 저장 경로는 설정값이라 파일명만 남긴다 */
+    @Column(name = "audio_file_name", length = 200)
+    private String audioFileName;
+
+    /** 사용자가 업로드한 원본 파일명 — 이력 목록에 표시 */
+    @Column(name = "origin_file_name", length = 255)
+    private String originFileName;
+
+    /** 오디오 파일 크기 (바이트) */
+    @Column(name = "file_size")
+    private Long fileSize;
+
+    /** 오디오 MIME 타입 — 재생 응답의 Content-Type 으로 사용 */
+    @Column(name = "content_type", length = 100)
+    private String contentType;
 
     /** 생성 일시 */
     @Builder.Default
