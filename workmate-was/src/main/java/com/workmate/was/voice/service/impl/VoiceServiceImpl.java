@@ -1,6 +1,7 @@
 package com.workmate.was.voice.service.impl;
 
 import com.workmate.was.voice.dao.VoiceRecordRepository;
+import com.workmate.was.voice.service.VoiceAudioStore;
 import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.service.VoiceTranscriber;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
@@ -15,7 +16,7 @@ import java.time.LocalDate;
 
 /**
  * 음성 회의록 서비스 구현체 (F8-1).
- * (1) VoiceTranscriber 로 전사(STT) → (2) Gemini 텍스트로 구조화 요약 → (3) 이력 저장.
+ * (1) VoiceTranscriber 로 전사(STT) → (2) Gemini 텍스트로 구조화 요약 → (3) 오디오 저장 → (4) 이력 저장.
  * 전사와 요약을 분리해, STT 품질이 병목이면 VoiceTranscriber 구현체만 교체하면 된다.
  */
 @Slf4j
@@ -24,13 +25,16 @@ public class VoiceServiceImpl implements VoiceService {
 
     private final VoiceTranscriber transcriber;
     private final VoiceRecordRepository voiceRecordRepository;
+    private final VoiceAudioStore audioStore;
     private final ChatClient chatClient;
 
     public VoiceServiceImpl(VoiceTranscriber transcriber,
                             VoiceRecordRepository voiceRecordRepository,
+                            VoiceAudioStore audioStore,
                             ChatClient.Builder chatClientBuilder) {
         this.transcriber = transcriber;
         this.voiceRecordRepository = voiceRecordRepository;
+        this.audioStore = audioStore;
         this.chatClient = chatClientBuilder.build();
     }
 
@@ -60,12 +64,19 @@ public class VoiceServiceImpl implements VoiceService {
         // 2) 구조화 요약 — 전사문을 Gemini 텍스트 모델로 3단 마크다운 요약
         String summaryMd = summarize(sttText);
 
-        // 3) 저장 (오디오 원본은 저장하지 않음 — 텍스트만)
+        // 3) 오디오 원본 저장 — 이력에서 다시 재생할 수 있어야 하므로 파일을 보관한다
+        String audioFileName = audioStore.store(file);
+
+        // 4) 회의록 저장 (DB 에는 파일명만, 저장 루트는 설정값)
         VoiceRecord saved = voiceRecordRepository.save(VoiceRecord.builder()
                 .userSeq(userSeq)
                 .title(resolveTitle(title))
                 .sttText(sttText)
                 .summaryMd(summaryMd)
+                .audioFileName(audioFileName)
+                .originFileName(file.getOriginalFilename())
+                .fileSize(file.getSize())
+                .contentType(file.getContentType())
                 .build());
 
         log.info("음성 회의록 저장 완료 - recordSeq: {}", saved.getRecordSeq());
@@ -73,7 +84,7 @@ public class VoiceServiceImpl implements VoiceService {
     }
 
     /** 전사문을 3단 구조 마크다운 회의록으로 요약한다 */
-    private String summarize(String sttText) {
+    protected String summarize(String sttText) {
         String md = chatClient.prompt()
                 .system(SUMMARY_SYSTEM_PROMPT)
                 .user(sttText)
