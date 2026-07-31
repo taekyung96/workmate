@@ -45,8 +45,9 @@ Thumbs.db
 # Logs
 *.log
 
-# 런타임 업로드 산출물 (영수증 이미지 등)
+# 런타임 업로드 산출물 (영수증 이미지 · 회의 오디오 등)
 workmate-was/uploads/
+uploads/
 
 # 로컬 테스트용 오디오 (음성 회의록 F8-1 테스트)
 *.wav

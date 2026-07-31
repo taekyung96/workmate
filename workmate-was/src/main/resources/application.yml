@@ -43,6 +43,10 @@ app:
     crypto:
         aes-key: ${AES_SECRET_KEY}
         aes-iv: ${AES_SECRET_IV}
+    # 업로드 파일 보관 위치 — 회의 오디오(F8-1). DB 에는 파일명만 저장하고 루트는 이 설정값을 쓴다
+    # (상대경로는 WAS 실행 디렉토리 기준. 배포 시 절대경로로 덮어쓴다)
+    upload:
+        voice-dir: uploads/voice
     # 채팅(F2) 설정 — 프롬프트에 포함할 직전 대화 개수(F2-10)·분당 요청 제한(F2-11)
     #                + RAG 유사도 상위 K개·최소 임계값(F4-06)
     chat:
