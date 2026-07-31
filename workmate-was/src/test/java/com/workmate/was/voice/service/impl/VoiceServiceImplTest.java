@@ -105,6 +105,30 @@ class VoiceServiceImplTest {
                 .contains("존재하지 않는 회의록");
     }
 
+    @Test
+    @DisplayName("오디오가 없는 회의록의 재생 요청은 거부된다")
+    void getAudio_noAudio_throws() {
+        VoiceServiceImpl service = service();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(
+                VoiceRecord.builder().userSeq(7L).title("옛 회의").sttText("s").summaryMd("m").build()));
+
+        assertThat(catchIllegalArgument(() -> service.getAudio(7L, 5L)))
+                .contains("오디오가 없습니다");
+    }
+
+    @Test
+    @DisplayName("파일이 사라진 회의록의 재생 요청은 거부된다")
+    void getAudio_fileMissing_throws() {
+        VoiceServiceImpl service = service();
+        when(repository.findById(5L)).thenReturn(java.util.Optional.of(
+                VoiceRecord.builder().userSeq(7L).title("회의").sttText("s").summaryMd("m")
+                        .audioFileName("gone.m4a").contentType("audio/mp4").build()));
+        when(audioStore.load("gone.m4a")).thenReturn(java.util.Optional.empty());
+
+        assertThat(catchIllegalArgument(() -> service.getAudio(7L, 5L)))
+                .contains("오디오 파일을 찾을 수 없습니다");
+    }
+
     /** 예외 메시지만 꺼내는 보조 — assertThatThrownBy 체인을 짧게 쓰기 위함 */
     private String catchIllegalArgument(Runnable action) {
         try {

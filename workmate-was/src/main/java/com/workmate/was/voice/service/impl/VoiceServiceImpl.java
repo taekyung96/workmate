@@ -5,10 +5,12 @@ import com.workmate.was.voice.service.VoiceAudioStore;
 import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.service.VoiceTranscriber;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
+import com.workmate.was.voice.vo.VoiceAudioVo;
 import com.workmate.was.voice.vo.VoiceRecord;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -99,6 +101,22 @@ public class VoiceServiceImpl implements VoiceService {
     @Transactional(readOnly = true)
     public VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq) {
         return new VoiceAnalysisResultVo(findOwnedRecord(userSeq, recordSeq));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public VoiceAudioVo getAudio(Long userSeq, Long recordSeq) {
+        VoiceRecord record = findOwnedRecord(userSeq, recordSeq);
+        if (record.getAudioFileName() == null) {
+            throw new IllegalArgumentException("이 회의록에는 저장된 오디오가 없습니다.");
+        }
+        Resource resource = audioStore.load(record.getAudioFileName())
+                .orElseThrow(() -> new IllegalArgumentException("오디오 파일을 찾을 수 없습니다."));
+        // Content-Type 이 비어 있던 과거 업로드는 범용 바이너리로 내려 브라우저가 판단하게 한다
+        String contentType = record.getContentType() != null
+                ? record.getContentType() : "application/octet-stream";
+        return new VoiceAudioVo(resource, contentType, record.getOriginFileName());
     }
 
     /**

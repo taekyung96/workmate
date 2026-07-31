@@ -3,9 +3,17 @@ package com.workmate.was.voice.controller;
 import com.workmate.was.global.response.ApiResponse;
 import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
+import com.workmate.was.voice.vo.VoiceAudioVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourceRegion;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -71,5 +80,36 @@ public class VoiceApiController {
             @PathVariable Long recordSeq) {
         log.info("회의록 상세 조회 API 호출 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
         return ApiResponse.success(voiceService.getRecord(userSeq, recordSeq));
+    }
+
+    /**
+     * 회의록 오디오를 스트리밍한다 (본인 소유만).
+     * Range 요청이 오면 206 Partial Content 로 해당 구간만 내려 재생 중 구간 이동을 지원한다.
+     *
+     * @param userSeq   인증 세션에서 WEB 인터셉터가 주입한 사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @param headers   요청 헤더 (Range 확인용)
+     * @return 전체(200) 또는 요청 구간(206) 오디오
+     * @throws IOException 리소스 길이 조회 실패 시
+     */
+    @GetMapping("/{recordSeq}/audio")
+    public ResponseEntity<ResourceRegion> audio(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @PathVariable Long recordSeq,
+            @RequestHeader HttpHeaders headers) throws IOException {
+        VoiceAudioVo audio = voiceService.getAudio(userSeq, recordSeq);
+        Resource resource = audio.getResource();
+        long total = resource.contentLength();
+
+        List<HttpRange> ranges = headers.getRange();
+        boolean partial = !ranges.isEmpty();
+        ResourceRegion region = partial
+                ? ranges.get(0).toResourceRegion(resource)
+                : new ResourceRegion(resource, 0, total);
+
+        return ResponseEntity.status(partial ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK)
+                .contentType(MediaType.parseMediaType(audio.getContentType()))
+                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                .body(region);
     }
 }

@@ -1,6 +1,7 @@
 package com.workmate.was.voice.service;
 
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
+import com.workmate.was.voice.vo.VoiceAudioVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,4 +39,13 @@ public interface VoiceService {
      * @return 전사문·요약 전문을 포함한 상세
      */
     VoiceAnalysisResultVo getRecord(Long userSeq, Long recordSeq);
+
+    /**
+     * 회의록의 오디오 리소스를 가져온다 (본인 소유만).
+     *
+     * @param userSeq   사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @return 리소스 + Content-Type + 원본 파일명
+     */
+    VoiceAudioVo getAudio(Long userSeq, Long recordSeq);
 }
