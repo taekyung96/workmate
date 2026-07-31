@@ -1,6 +1,5 @@
 # 🐳 WSL2 & Docker Engine 기반 PostgreSQL (pgvector) DB 환경 구축 가이드
 
-- **작성일**: 2026-07-30
 - **상태**: 작성 완료
 - **상위 문서**: [01_ARCHITECTURE.md](01_ARCHITECTURE.md) · [HANDOVER.md](../project/HANDOVER.md)
 

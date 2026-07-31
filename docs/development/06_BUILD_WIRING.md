@@ -1,6 +1,5 @@
 # 06. 빌드 연결 — Vue(SPA) 산출물을 WEB에 붙이기
 
-- **작성일**: 2026-07-21
 - **관련**: HANDOVER 4단계(빌드 연결), [01_ARCHITECTURE](01_ARCHITECTURE.md), [05_WEB_BFF_RECONSTRUCTION](05_WEB_BFF_RECONSTRUCTION.md)
 
 > 이 문서는 "Vue3 SPA를 빌드해서 WEB(8080)에 얹어 **8080 하나로** 서비스하는" 배선을 설명한다.

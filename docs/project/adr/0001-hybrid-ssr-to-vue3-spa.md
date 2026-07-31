@@ -1,6 +1,6 @@
 # ADR-0001. 하이브리드 SSR → Vue3 SPA + 얇은 WEB(BFF) + 세션 인증
 
-- **상태**: 채택 (2026-07-21)
+- **상태**: 채택
 - **맥락 문서**: [HANDOVER](../HANDOVER.md) · [아키텍처](../../development/01_ARCHITECTURE.md)
 
 ## 맥락 (Context)

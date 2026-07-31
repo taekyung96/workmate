@@ -1,6 +1,6 @@
 # ADR-0002. 프론트 구조(기능별 모듈 + 공통 모듈) & UI(shadcn-vue + Tailwind)
 
-- **상태**: 채택 (2026-07-21)
+- **상태**: 채택
 - **맥락 문서**: [프론트 구조 가이드](../../development/02_FRONTEND_STRUCTURE_GUIDE.md)
 
 ## 맥락 (Context)

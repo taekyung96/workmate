@@ -1,6 +1,5 @@
 # 01. 아키텍처 설계 (v3 SPA)
 
-- **작성일**: 2026-07-21
 - **상태**: 설계 확정 (구현 대기)
 - **상위**: [HANDOVER](../project/HANDOVER.md) · **결정 근거**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)
 

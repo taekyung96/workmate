@@ -1,6 +1,5 @@
 # 02. 프론트엔드 구조 가이드 (Vue3 SPA)
 
-- **작성일**: 2026-07-21
 - **상태**: 확정 (구현 표준)
 - **결정 근거**: [ADR-0002](../project/adr/0002-frontend-structure-and-ui.md)
 
