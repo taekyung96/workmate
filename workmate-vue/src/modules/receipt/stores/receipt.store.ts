@@ -1,3 +1,4 @@
+import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { receiptApi } from '../api/receipt.api'
 import { extractErrorMessage } from '@/common/utils/error'
@@ -8,12 +9,11 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_BYTES = 10 * 1024 * 1024 // 10MB
 
 /**
- * 영수증 [분석] 탭 상태·동작.
- * 파일 선택 → 미리보기(objectURL) → 분석(AI) → 편집 폼 → 최종 저장 흐름을 관리한다.
- *
- * @returns 분석 탭에서 쓰는 상태와 액션들
+ * 영수증 분석 상태.
+ * 탭이 라우터 이동형이라 화면을 벗어나면 컴포넌트가 파괴된다.
+ * OCR 결과와 사용자가 확인·수정 중인 값을 잃지 않도록 store 에 둔다.
  */
-export function useReceiptAnalyze() {
+export const useReceiptStore = defineStore('receipt', () => {
     const file = ref<File | null>(null)
     const previewUrl = ref<string | null>(null)
     const analyzing = ref(false)
@@ -139,4 +139,4 @@ export function useReceiptAnalyze() {
         save,
         reset,
     }
-}
+})
