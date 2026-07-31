@@ -1,14 +1,17 @@
 package com.workmate.web.voice.service.impl;
 
 import com.workmate.web.voice.service.VoiceService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,5 +56,68 @@ public class VoiceServiceImpl implements VoiceService {
                 .body(body)
                 .retrieve()
                 .toEntity(String.class);
+    }
+
+    @Override
+    public ResponseEntity<String> history() {
+        return wasRestClient.get()
+                .uri("/api/v1/voice")
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    @Override
+    public ResponseEntity<String> getRecord(Long recordSeq) {
+        return wasRestClient.get()
+                .uri("/api/v1/voice/{recordSeq}", recordSeq)
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    @Override
+    public ResponseEntity<String> delete(Long recordSeq) {
+        log.info("회의록 삭제 프록시 요청. recordSeq: {}", recordSeq);
+        return wasRestClient.post()
+                .uri("/api/v1/voice/{recordSeq}/delete", recordSeq)
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>WebClient 대신 RestClient.exchange() 를 쓴다. wasWebClient 는 X-User-Seq 자동 주입이
+     * 없고(WebClientConfig 주석 참고) 리액티브 스트림 소비가 서블릿 스택에서 번거롭기 때문이다.
+     * exchange 콜백 안에서 곧바로 복사하므로 파일 전체가 메모리에 올라가지 않는다.</p>
+     */
+    @Override
+    public void relayAudio(Long recordSeq, String rangeHeader, HttpServletResponse response) {
+        wasRestClient.get()
+                .uri("/api/v1/voice/{recordSeq}/audio", recordSeq)
+                .headers(headers -> {
+                    if (rangeHeader != null && !rangeHeader.isBlank()) {
+                        headers.set(HttpHeaders.RANGE, rangeHeader);
+                    }
+                })
+                .exchange((request, wasResponse) -> {
+                    response.setStatus(wasResponse.getStatusCode().value());
+                    copyHeader(wasResponse, response, HttpHeaders.CONTENT_TYPE);
+                    copyHeader(wasResponse, response, HttpHeaders.CONTENT_LENGTH);
+                    copyHeader(wasResponse, response, HttpHeaders.ACCEPT_RANGES);
+                    copyHeader(wasResponse, response, HttpHeaders.CONTENT_RANGE);
+                    StreamUtils.copy(wasResponse.getBody(), response.getOutputStream());
+                    return null;
+                });
+        // exchange 는 상태 핸들러를 적용하지 않으므로 4xx·5xx 도 예외 없이 그대로 중계된다.
+        // 응답 스트림은 콜백 안에서 전부 소비하며, exchange 가 반환 시 자동으로 닫는다.
+    }
+
+    /** WAS 응답 헤더 하나를 브라우저 응답으로 옮긴다 (없으면 아무것도 하지 않음). */
+    private void copyHeader(org.springframework.http.client.ClientHttpResponse wasResponse,
+                            HttpServletResponse response, String name) {
+        String value = wasResponse.getHeaders().getFirst(name);
+        if (value != null) {
+            response.setHeader(name, value);
+        }
     }
 }
