@@ -13,11 +13,11 @@ public interface GuideService {
     /** 가이드 등록 (+임베딩, G3) */
     GuideResponseVo createGuide(Long userSeq, GuideSaveRequestVo request);
 
-    /** 가이드 수정 (+재임베딩, G4) — 본인 문서만 */
-    GuideResponseVo updateGuide(Long userSeq, Long guideSeq, GuideSaveRequestVo request);
+    /** 가이드 수정 (+재임베딩, G4) — 본인 문서만 (관리자는 타인 문서도 허용) */
+    GuideResponseVo updateGuide(Long userSeq, boolean isAdmin, Long guideSeq, GuideSaveRequestVo request);
 
-    /** 가이드 삭제 (+청크 삭제, G5) — 본인 문서만 */
-    void deleteGuide(Long userSeq, Long guideSeq);
+    /** 가이드 삭제 (+청크 삭제, G5) — 본인 문서만 (관리자는 타인 문서도 허용) */
+    void deleteGuide(Long userSeq, boolean isAdmin, Long guideSeq);
 
     /** 가이드 상세 (G2) — 본인 또는 공개 문서만 */
     GuideResponseVo getGuide(Long userSeq, Long guideSeq);

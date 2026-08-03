@@ -98,7 +98,7 @@ class GuideServiceTest {
         // 전체 삭제(deleteAll + DELETE FROM vector_store)는 공유 DB 의 실데이터까지 지우므로 금지.
         // 자기가 만든 가이드만 실제 삭제 경로로 제거하면 관련 벡터 청크도 함께 정리된다.
         for (Long guideSeq : createdGuideSeqs) {
-            guideService.deleteGuide(1L, guideSeq);
+            guideService.deleteGuide(1L, false, guideSeq);
         }
         createdGuideSeqs.clear();
     }

@@ -71,10 +71,10 @@ public class GuideServiceImpl implements GuideService {
      */
     @Override
     @Transactional
-    public GuideResponseVo updateGuide(Long userSeq, Long guideSeq, GuideSaveRequestVo request) {
-        log.info("가이드 문서 수정 요청. GuideSeq: {}, UserSeq: {}", guideSeq, userSeq);
+    public GuideResponseVo updateGuide(Long userSeq, boolean isAdmin, Long guideSeq, GuideSaveRequestVo request) {
+        log.info("가이드 문서 수정 요청. GuideSeq: {}, UserSeq: {}, isAdmin: {}", guideSeq, userSeq, isAdmin);
 
-        Guide guide = findOwnedGuide(userSeq, guideSeq);
+        Guide guide = findEditableGuide(userSeq, isAdmin, guideSeq);
 
         guide.update(request.getTitle(), request.getContent(), request.getIsPublic());
 
@@ -94,10 +94,10 @@ public class GuideServiceImpl implements GuideService {
      */
     @Override
     @Transactional
-    public void deleteGuide(Long userSeq, Long guideSeq) {
-        log.info("가이드 문서 삭제 요청. GuideSeq: {}, UserSeq: {}", guideSeq, userSeq);
+    public void deleteGuide(Long userSeq, boolean isAdmin, Long guideSeq) {
+        log.info("가이드 문서 삭제 요청. GuideSeq: {}, UserSeq: {}, isAdmin: {}", guideSeq, userSeq, isAdmin);
 
-        Guide guide = findOwnedGuide(userSeq, guideSeq);
+        Guide guide = findEditableGuide(userSeq, isAdmin, guideSeq);
 
         // 벡터 스토어 임베딩 데이터 제거
         deleteEmbeddings(guideSeq);
@@ -187,11 +187,15 @@ public class GuideServiceImpl implements GuideService {
         return plain.length() <= EXCERPT_LENGTH ? plain : plain.substring(0, EXCERPT_LENGTH).trim() + "…";
     }
 
-    /** 본인 소유 가이드를 조회한다. 없거나 타인 문서면 예외 (F4-01) */
-    private Guide findOwnedGuide(Long userSeq, Long guideSeq) {
+    /**
+     * 수정·삭제 대상 가이드를 조회한다. 없으면 예외 (F4-01).
+     * 일반 사용자는 본인 문서만, 관리자(isAdmin)는 타인 문서도 허용한다.
+     */
+    private Guide findEditableGuide(Long userSeq, boolean isAdmin, Long guideSeq) {
         Guide guide = guideRepository.findById(guideSeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 가이드 문서를 찾을 수 없습니다. ID: " + guideSeq));
-        if (!guide.getUserSeq().equals(userSeq)) {
+        // 관리자는 모든 문서를 수정·삭제할 수 있고, 일반 사용자는 본인 문서만 가능하다.
+        if (!isAdmin && !guide.getUserSeq().equals(userSeq)) {
             throw new IllegalArgumentException("본인의 가이드 문서만 수정·삭제할 수 있습니다.");
         }
         return guide;

@@ -54,21 +54,28 @@ public class GuideApiController {
         return ApiResponse.success(guideService.createGuide(userSeq, request));
     }
 
-    /** 수정 (G4) */
+    /** 수정 (G4) — 본인 문서만, 관리자는 타인 문서도 허용 */
     @PostMapping("/{guideSeq}/update")
     public ApiResponse<GuideResponseVo> update(
             @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
             @PathVariable("guideSeq") Long guideSeq,
             @Valid @RequestBody GuideSaveRequestVo request) {
-        return ApiResponse.success(guideService.updateGuide(userSeq, guideSeq, request));
+        return ApiResponse.success(guideService.updateGuide(userSeq, isAdmin(role), guideSeq, request));
     }
 
-    /** 삭제 (G5) */
+    /** 삭제 (G5) — 본인 문서만, 관리자는 타인 문서도 허용 */
     @PostMapping("/{guideSeq}/delete")
     public ApiResponse<Void> delete(
             @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
             @PathVariable("guideSeq") Long guideSeq) {
-        guideService.deleteGuide(userSeq, guideSeq);
+        guideService.deleteGuide(userSeq, isAdmin(role), guideSeq);
         return ApiResponse.success();
+    }
+
+    /** 권한 문자열이 관리자('ADMIN' 또는 'ROLE_ADMIN')인지 판별한다 (프론트 auth 스토어와 동일 기준). */
+    private static boolean isAdmin(String role) {
+        return "ADMIN".equals(role) || "ROLE_ADMIN".equals(role);
     }
 }

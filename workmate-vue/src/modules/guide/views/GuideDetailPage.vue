@@ -4,6 +4,9 @@
  */
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
+import { useAuthStore } from '@/modules/auth/stores/auth.store'
+import { extractErrorMessage } from '@/common/utils/error'
 import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
 import { Skeleton } from '@/common/components/ui/skeleton'
@@ -25,8 +28,14 @@ import { useGuideDetail } from '../composables/useGuideDetail'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const guideSeq = computed(() => Number(route.params.id))
 const { guide, loading, error, load, remove } = useGuideDetail()
+
+// 수정·삭제 권한: 문서 소유자 본인이거나 관리자일 때만 버튼을 노출한다(백엔드도 동일 기준으로 방어).
+const canManage = computed(
+    () => !!guide.value && (guide.value.userSeq === authStore.user?.userSeq || authStore.isAdmin),
+)
 
 // 본문(마크다운)을 살균된 HTML 로 렌더 + 코드블록 복사 버튼 처리(채팅과 공유)
 const renderedContent = computed(() => (guide.value ? renderMarkdown(guide.value.content) : ''))
@@ -34,10 +43,16 @@ const { onMarkdownClick } = useMarkdownCopy()
 
 onMounted(() => load(guideSeq.value))
 
-/** 삭제 확정 → 삭제 후 목록으로 */
+/** 삭제 확정 → 성공 시 목록으로, 실패 시 사유를 토스트로 알린다 */
 async function onDelete(): Promise<void> {
-    await remove(guideSeq.value)
-    router.replace({ name: 'guide-list' })
+    try {
+        await remove(guideSeq.value)
+        toast.success('가이드를 삭제했습니다.')
+        router.replace({ name: 'guide-list' })
+    } catch (e) {
+        // 권한 없음 등 서버 오류 — 화면 이동 없이 사유를 알린다
+        toast.error(extractErrorMessage(e, '가이드 삭제에 실패했습니다.'))
+    }
 }
 </script>
 
@@ -69,7 +84,7 @@ async function onDelete(): Promise<void> {
                             <span>수정 {{ formatDate(guide.updatedAt) }}</span>
                         </div>
                     </div>
-                    <div class="flex shrink-0 gap-2">
+                    <div v-if="canManage" class="flex shrink-0 gap-2">
                         <Button
                             variant="outline"
                             @click="
