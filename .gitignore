@@ -51,3 +51,7 @@ uploads/
 
 # 로컬 테스트용 오디오 (음성 회의록 F8-1 테스트)
 *.wav
+
+# 로컬 전용 스크립트 (DB 자격증명 하드코딩 등) — 스크린샷 캡처 스크립트만 추적
+scripts/*
+!scripts/capture-all-perfect.js
