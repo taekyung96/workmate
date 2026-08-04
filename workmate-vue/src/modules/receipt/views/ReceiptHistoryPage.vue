@@ -44,11 +44,7 @@ function formatAmount(amount: number): string {
             <PageTabs :tabs="receiptTabs" />
 
             <div class="flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                    <p class="text-sm text-muted-foreground">
-                        총 <span class="font-medium text-foreground">{{ totalElements }}</span
-                        >건
-                    </p>
+                <div class="flex items-center justify-end">
                     <Button
                         variant="outline"
                         size="sm"
@@ -112,25 +108,28 @@ function formatAmount(amount: number): string {
                 <!-- 페이징 -->
                 <div
                     v-if="!loading && totalElements > 0"
-                    class="flex items-center justify-end gap-3 text-sm text-muted-foreground"
+                    class="flex items-center justify-between text-sm text-muted-foreground"
                 >
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page <= 0"
-                        @click="goToPage(page - 1)"
-                    >
-                        이전
-                    </Button>
-                    <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page >= totalPages - 1"
-                        @click="goToPage(page + 1)"
-                    >
-                        다음
-                    </Button>
+                    <span>총 {{ totalElements }}건</span>
+                    <div class="flex items-center gap-3">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            :disabled="page <= 0"
+                            @click="goToPage(page - 1)"
+                        >
+                            이전
+                        </Button>
+                        <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            :disabled="page >= totalPages - 1"
+                            @click="goToPage(page + 1)"
+                        >
+                            다음
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
