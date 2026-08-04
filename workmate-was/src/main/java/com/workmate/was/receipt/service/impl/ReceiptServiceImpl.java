@@ -10,8 +10,8 @@ import com.workmate.was.receipt.vo.ReceiptPageVo;
 import com.workmate.was.receipt.vo.ReceiptSaveRequestVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -39,17 +39,24 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ReceiptServiceImpl implements ReceiptService {
 
     private final OcrService ocrService;
     private final ReceiptRepository receiptRepository;
 
-    private static final String UPLOAD_DIR = Paths.get(System.getProperty("user.dir"), "uploads").toString();
+    /** 영수증 이미지 저장 루트 — 설정값(app.upload.receipt-dir). 회의 오디오(VoiceAudioStore)와 동일하게 외부화 */
+    private final Path rootDir;
+
+    public ReceiptServiceImpl(OcrService ocrService, ReceiptRepository receiptRepository,
+                              @Value("${app.upload.receipt-dir}") String receiptDir) {
+        this.ocrService = ocrService;
+        this.receiptRepository = receiptRepository;
+        this.rootDir = Paths.get(receiptDir).toAbsolutePath().normalize();
+    }
 
     @Override
     public ReceiptAnalysisResponseVo analyzeUploadedReceipt(MultipartFile file) throws IOException {
-        Path uploadPath = Paths.get(UPLOAD_DIR);
+        Path uploadPath = rootDir;
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }

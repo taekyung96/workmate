@@ -43,10 +43,11 @@ app:
     crypto:
         aes-key: ${AES_SECRET_KEY}
         aes-iv: ${AES_SECRET_IV}
-    # 업로드 파일 보관 위치 — 회의 오디오(F8-1). DB 에는 파일명만 저장하고 루트는 이 설정값을 쓴다
+    # 업로드 파일 보관 위치 — 회의 오디오(F8-1)·영수증 이미지. 루트는 이 설정값을 쓴다
     # (상대경로는 WAS 실행 디렉토리 기준. 배포 시 절대경로로 덮어쓴다)
     upload:
         voice-dir: uploads/voice
+        receipt-dir: uploads/receipt
     # 로그인 잠금 정책(F1-06) — 연속 실패 max-fail-count 회 도달 시 lock-minutes 분간 잠금
     auth:
         max-fail-count: 5

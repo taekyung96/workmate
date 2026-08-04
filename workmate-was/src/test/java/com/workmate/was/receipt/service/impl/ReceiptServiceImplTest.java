@@ -8,8 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ReceiptServiceImplTest {
 
-    // 순수 로직 테스트라 OcrService·ReceiptRepository 의존성은 null로 충분 (호출되지 않음)
-    private final ReceiptServiceImpl service = new ReceiptServiceImpl(null, null);
+    // 순수 로직 테스트라 OcrService·ReceiptRepository 의존성은 null로 충분 (호출되지 않음).
+    // 저장 루트는 파일 IO 를 타지 않는 테스트라 임의 경로 문자열이면 된다.
+    private final ReceiptServiceImpl service = new ReceiptServiceImpl(null, null, "uploads/receipt");
 
     @Test
     @DisplayName("유효한 한국 사업자등록번호(삼성전자)는 체크섬 검증을 통과한다")
