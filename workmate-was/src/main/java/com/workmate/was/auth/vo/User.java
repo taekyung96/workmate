@@ -69,10 +69,15 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    /** 로그인 실패 1회 누적 — 5회 도달 시 잠금 시각 기록 (F1-06) */
-    public void increaseFailCount() {
+    /**
+     * 로그인 실패 1회 누적 — 임계 횟수 도달 시 잠금 시각 기록 (F1-06).
+     * 엔티티는 설정을 주입받을 수 없으므로 임계값을 호출자(LoginFailRecorder)가 넘긴다.
+     *
+     * @param maxFailCount 계정을 잠글 연속 실패 임계 횟수 (app.auth.max-fail-count)
+     */
+    public void increaseFailCount(int maxFailCount) {
         this.loginFailCount++;
-        if (this.loginFailCount >= 5) {
+        if (this.loginFailCount >= maxFailCount) {
             this.lockedAt = LocalDateTime.now();
         }
     }

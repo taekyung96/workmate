@@ -6,6 +6,7 @@ import com.workmate.was.admin.vo.AuditLogPageVo;
 import com.workmate.was.admin.vo.AuditLogVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
+import com.workmate.was.auth.config.AuthLockProperties;
 import com.workmate.was.auth.dao.UserRepository;
 import com.workmate.was.auth.util.PasswordPolicyValidator;
 import com.workmate.was.auth.vo.User;
@@ -48,7 +49,8 @@ class AdminServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        adminService = new AdminServiceImpl(userRepository, adminAuditLogRepository, new BCryptPasswordEncoder());
+        adminService = new AdminServiceImpl(userRepository, adminAuditLogRepository, new BCryptPasswordEncoder(),
+                new AuthLockProperties(5, 60));
     }
 
     private User user(Long userSeq, String email, String name, String phone, LocalDateTime lockedAt) {

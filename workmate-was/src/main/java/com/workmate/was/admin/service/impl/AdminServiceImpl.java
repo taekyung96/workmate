@@ -10,6 +10,7 @@ import com.workmate.was.admin.vo.AuditLogPageVo;
 import com.workmate.was.admin.vo.AuditLogVo;
 import com.workmate.was.admin.vo.ResetPasswordResultVo;
 import com.workmate.was.admin.vo.UserPageVo;
+import com.workmate.was.auth.config.AuthLockProperties;
 import com.workmate.was.auth.dao.UserRepository;
 import com.workmate.was.auth.vo.User;
 import lombok.RequiredArgsConstructor;
@@ -42,9 +43,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final PasswordEncoder passwordEncoder;
-
-    /** 계정 잠금 유지 시간 — AuthServiceImpl 과 동일 (F1-06) */
-    private static final long LOCK_MINUTES = 60;
+    private final AuthLockProperties authLockProperties;
 
     /** 감사 로그의 행위자·대상이 이미 삭제돼 이름을 찾을 수 없을 때의 대체 표기 */
     private static final String DELETED_USER = "(삭제된 사용자)";
@@ -165,9 +164,9 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    /** 현재 잠금 상태 — 잠금 시각이 있고 60분 이내면 잠금 (F1-06 과 동일 판정) */
+    /** 현재 잠금 상태 — 잠금 시각이 있고 잠금 유지 시간 이내면 잠금 (F1-06 과 동일 판정) */
     private boolean isLocked(User user) {
         return user.getLockedAt() != null
-                && user.getLockedAt().plusMinutes(LOCK_MINUTES).isAfter(LocalDateTime.now());
+                && user.getLockedAt().plusMinutes(authLockProperties.getLockMinutes()).isAfter(LocalDateTime.now());
     }
 }

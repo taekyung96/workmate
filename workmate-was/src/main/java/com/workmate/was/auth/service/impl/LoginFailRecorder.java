@@ -1,5 +1,6 @@
 package com.workmate.was.auth.service.impl;
 
+import com.workmate.was.auth.config.AuthLockProperties;
 import com.workmate.was.auth.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoginFailRecorder {
 
     private final UserRepository userRepository;
+    private final AuthLockProperties authLockProperties;
 
     /**
      * 실패 카운트를 1 증가시켜 별도 트랜잭션으로 커밋한다.
+     * 잠금 임계 횟수(app.auth.max-fail-count)는 엔티티에 넘겨 잠금 여부를 판정하게 한다.
      *
      * @param userSeq 실패한 사용자 식별자
      * @return 증가 후 누적 실패 횟수 (사용자 미존재 시 0)
@@ -31,7 +34,7 @@ public class LoginFailRecorder {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int recordFailedAttempt(Long userSeq) {
         return userRepository.findById(userSeq).map(user -> {
-            user.increaseFailCount();
+            user.increaseFailCount(authLockProperties.getMaxFailCount());
             userRepository.save(user);
             return user.getLoginFailCount();
         }).orElse(0);

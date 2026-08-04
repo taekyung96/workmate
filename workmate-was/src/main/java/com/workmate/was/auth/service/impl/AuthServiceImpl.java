@@ -1,5 +1,6 @@
 package com.workmate.was.auth.service.impl;
 
+import com.workmate.was.auth.config.AuthLockProperties;
 import com.workmate.was.auth.dao.UserRepository;
 import com.workmate.was.auth.service.AuthService;
 import com.workmate.was.auth.util.EmailNormalizer;
@@ -28,9 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final LoginFailRecorder loginFailRecorder;
-
-    /** 계정 잠금 유지 시간 (F1-06) */
-    private static final long LOCK_MINUTES = 60;
+    private final AuthLockProperties authLockProperties;
 
     /**
      * {@inheritDoc}
@@ -97,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
         if (user.getLockedAt() == null) {
             return;
         }
-        java.time.LocalDateTime unlockAt = user.getLockedAt().plusMinutes(LOCK_MINUTES);
+        java.time.LocalDateTime unlockAt = user.getLockedAt().plusMinutes(authLockProperties.getLockMinutes());
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         if (now.isBefore(unlockAt)) {
             long remaining = java.time.Duration.between(now, unlockAt).toMinutes() + 1;

@@ -1,5 +1,6 @@
 package com.workmate.was.auth.service.impl;
 
+import com.workmate.was.auth.config.AuthLockProperties;
 import com.workmate.was.auth.vo.User;
 import com.workmate.was.auth.dao.UserRepository;
 import com.workmate.was.auth.vo.SignupRequestVo;
@@ -33,6 +34,10 @@ class AuthServiceImplTest {
     // 실제 DB 커밋(롤백 생존)은 AuthServiceImplIntegrationTest 가 담당한다.
     @Mock
     private LoginFailRecorder loginFailRecorder;
+
+    // 잠금 정책은 실제 기본값(실패 5회·60분)을 그대로 쓰면 되므로 Spy 실객체로 주입한다
+    @Spy
+    private AuthLockProperties authLockProperties = new AuthLockProperties(5, 60);
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -82,7 +87,7 @@ class AuthServiceImplTest {
     @Test
     void 자격이_맞으면_사용자_정보를_반환하고_실패_카운트를_초기화한다() {
         User user = savedUser();
-        user.increaseFailCount(); // 기존 실패 1회 있던 상태
+        user.increaseFailCount(5); // 기존 실패 1회 있던 상태
         when(userRepository.findByEmail("user@example.com")).thenReturn(java.util.Optional.of(user));
 
         com.workmate.was.auth.vo.LoginRequestVo request = new com.workmate.was.auth.vo.LoginRequestVo();
@@ -115,7 +120,7 @@ class AuthServiceImplTest {
     void 잠긴_계정은_올바른_비밀번호여도_남은_시간을_안내하며_거부한다() {
         User user = savedUser();
         for (int i = 0; i < 5; i++) {
-            user.increaseFailCount(); // 5회 누적 → lockedAt 설정 (F1-06)
+            user.increaseFailCount(5); // 5회 누적 → lockedAt 설정 (F1-06)
         }
         assertThat(user.getLockedAt()).isNotNull();
         when(userRepository.findByEmail("user@example.com")).thenReturn(java.util.Optional.of(user));
