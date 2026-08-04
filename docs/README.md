@@ -19,10 +19,11 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 
 ### 아키텍처 결정 기록 (ADR)
 
-| 문서                                                                              | 설명                                                |
-| :-------------------------------------------------------------------------------- | :-------------------------------------------------- |
-| [ADR-0001. 하이브리드 SSR → Vue3 SPA](project/adr/0001-hybrid-ssr-to-vue3-spa.md) | SPA 전환 + 얇은 WEB(BFF) + 세션 인증 결정           |
-| [ADR-0002. 프론트 구조 & UI](project/adr/0002-frontend-structure-and-ui.md)       | 기능별 모듈 + 공통 모듈, shadcn-vue + Tailwind 채택 |
+| 문서                                                                                                     | 설명                                                |
+| :------------------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
+| [ADR-0001. 하이브리드 SSR → Vue3 SPA](project/adr/0001-hybrid-ssr-to-vue3-spa.md)                        | SPA 전환 + 얇은 WEB(BFF) + 세션 인증 결정           |
+| [ADR-0002. 프론트 구조 & UI](project/adr/0002-frontend-structure-and-ui.md)                              | 기능별 모듈 + 공통 모듈, shadcn-vue + Tailwind 채택 |
+| [ADR-0003. WAS 수정 허용 & 가이드 관리자 권한](project/adr/0003-was-modifiable-and-guide-admin-authz.md) | WAS 무변경 원칙 완화, 가이드 수정·삭제 관리자 허용  |
 
 ---
 
