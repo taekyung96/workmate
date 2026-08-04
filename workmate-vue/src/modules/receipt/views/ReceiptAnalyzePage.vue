@@ -38,11 +38,12 @@ const { previewUrl, analyzing, saving, saved, error, analysis, canSave } = store
 const { selectFile, analyze, save, reset } = store
 // form 은 reactive 객체 — store.form 으로 직접 접근해 반응성을 유지한다
 
-// 금액(number|null)을 입력창(string)과 잇는 양방향 브리지 — 화면엔 천단위 콤마, 저장값은 숫자만
+// 금액(number|null)을 입력창(string)과 잇는 양방향 브리지 — 화면엔 천단위 콤마, 저장값은 숫자만.
+// WAS payAmount 가 int(최대 약 21억)라 9자리(최대 9.99억)로 제한해 오버플로를 막는다.
 const amountStr = computed<string>({
     get: () => (store.form.payAmount === null ? '' : store.form.payAmount.toLocaleString('ko-KR')),
     set: (v) => {
-        const digits = v.replace(/[^\d]/g, '')
+        const digits = v.replace(/[^\d]/g, '').slice(0, 9)
         store.form.payAmount = digits === '' ? null : Number(digits)
     },
 })
@@ -227,6 +228,7 @@ async function onSave(): Promise<void> {
                                         <input
                                             v-model="amountStr"
                                             inputmode="numeric"
+                                            maxlength="11"
                                             aria-label="결제 금액"
                                             class="w-full bg-transparent text-3xl font-bold tabular-nums outline-none"
                                         />
@@ -241,6 +243,7 @@ async function onSave(): Promise<void> {
                                         <Input
                                             v-model="bizNoStr"
                                             inputmode="numeric"
+                                            maxlength="12"
                                             placeholder="000-00-00000"
                                         />
                                         <p
@@ -261,6 +264,7 @@ async function onSave(): Promise<void> {
                                         <Input
                                             v-model="payDateStr"
                                             inputmode="numeric"
+                                            maxlength="10"
                                             placeholder="YYYY.MM.DD"
                                         />
                                     </div>
