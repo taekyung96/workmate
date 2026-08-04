@@ -206,16 +206,26 @@ public class ReceiptServiceImpl implements ReceiptService {
         return checksum == d10Val;
     }
 
-    /** 카드사 목록 중 롯데법인카드 포함 여부에 따라 카드 매핑 타입을 결정한다. */
+    /**
+     * OCR 이 검출한 카드명으로 매핑 타입을 결정한다.
+     * 특정 카드사를 하드코딩하지 않고, 검출된 카드가 (중복 제거 후) 정확히 한 종류면 AUTO 로 자동 선택,
+     * 0종이거나 2종 이상이면 MANUAL 로 두어 사용자가 드롭다운에서 고르게 한다.
+     *
+     * @param cardNames OCR 결과에서 뽑은 카드명 목록 (null·공백 항목 허용)
+     * @return 매핑 타입(AUTO/MANUAL)과 자동 선택된 카드명(AUTO 일 때만)
+     */
     CardMatchResult matchCard(List<String> cardNames) {
-        if (cardNames == null || cardNames.isEmpty()) {
+        if (cardNames == null) {
             return new CardMatchResult("MANUAL", null);
         }
-        List<String> matchedLotteCards = cardNames.stream()
-                .filter(name -> name != null && name.contains("롯데법인카드"))
+        // null·공백 제거 후 중복 제거 — 같은 카드가 여러 항목에 나와도 한 종류로 센다
+        List<String> distinctCards = cardNames.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::trim)
+                .distinct()
                 .collect(Collectors.toList());
-        if (matchedLotteCards.size() == 1) {
-            return new CardMatchResult("AUTO", matchedLotteCards.get(0));
+        if (distinctCards.size() == 1) {
+            return new CardMatchResult("AUTO", distinctCards.get(0));
         }
         return new CardMatchResult("MANUAL", null);
     }

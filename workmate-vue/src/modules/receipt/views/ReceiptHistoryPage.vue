@@ -10,6 +10,7 @@ import { Badge } from '@/common/components/ui/badge'
 import { Spinner } from '@/common/components/ui/spinner'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import PageTabs from '@/common/components/PageTabs.vue'
+import { formatBizNo } from '@/common/utils/format'
 import { useReceiptHistory } from '../composables/useReceiptHistory'
 import { receiptTabs } from '../routes'
 
@@ -22,12 +23,6 @@ onMounted(load)
 function formatDate(yyyymmdd: string): string {
     if (!/^\d{8}$/.test(yyyymmdd)) return yyyymmdd
     return `${yyyymmdd.slice(0, 4)}.${yyyymmdd.slice(4, 6)}.${yyyymmdd.slice(6, 8)}`
-}
-
-/** 10자리 사업자번호 → 123-45-67890 */
-function formatBizNo(bizNo: string): string {
-    if (!/^\d{10}$/.test(bizNo)) return bizNo
-    return `${bizNo.slice(0, 3)}-${bizNo.slice(3, 5)}-${bizNo.slice(5)}`
 }
 
 /** 금액 천단위 콤마 */

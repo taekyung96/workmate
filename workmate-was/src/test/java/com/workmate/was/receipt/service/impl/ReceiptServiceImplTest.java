@@ -34,26 +34,33 @@ class ReceiptServiceImplTest {
     }
 
     @Test
-    @DisplayName("롯데법인카드인 내역이 단 1건 존재하면 자동으로 AUTO 매핑된다")
-    void matchCard_oneLotteCorporateCard_returnsAuto() {
-        var result = service.matchCard(List.of("국민카드", "롯데법인카드", "신한카드"));
+    @DisplayName("검출된 카드가 한 종류면 자동으로 AUTO 매핑된다")
+    void matchCard_singleCard_returnsAuto() {
+        var result = service.matchCard(List.of("롯데법인카드"));
         assertThat(result.getSelectType()).isEqualTo("AUTO");
         assertThat(result.getCardName()).isEqualTo("롯데법인카드");
     }
 
     @Test
-    @DisplayName("롯데법인카드인 내역이 존재하지 않으면 MANUAL 매핑된다")
-    void matchCard_noLotteCorporateCard_returnsManual() {
-        var result = service.matchCard(List.of("국민카드", "현대카드", "신한카드"));
+    @DisplayName("같은 카드가 여러 항목에 중복 검출돼도 한 종류로 보고 AUTO 매핑된다")
+    void matchCard_sameCardDuplicated_returnsAuto() {
+        var result = service.matchCard(List.of("롯데법인카드", "롯데법인카드"));
+        assertThat(result.getSelectType()).isEqualTo("AUTO");
+        assertThat(result.getCardName()).isEqualTo("롯데법인카드");
+    }
+
+    @Test
+    @DisplayName("서로 다른 카드가 2종 이상 검출되면 MANUAL 매핑된다(사용자가 드롭다운에서 선택)")
+    void matchCard_multipleDistinctCards_returnsManual() {
+        var result = service.matchCard(List.of("국민카드", "롯데법인카드", "신한카드"));
         assertThat(result.getSelectType()).isEqualTo("MANUAL");
         assertThat(result.getCardName()).isNull();
     }
 
     @Test
-    @DisplayName("롯데법인카드인 내역이 2건 이상 존재하면 MANUAL 매핑된다")
-    void matchCard_multipleLotteCorporateCards_returnsManual() {
-        var result = service.matchCard(List.of("롯데법인카드", "현대카드", "롯데법인카드"));
-        assertThat(result.getSelectType()).isEqualTo("MANUAL");
-        assertThat(result.getCardName()).isNull();
+    @DisplayName("검출된 카드가 없으면(빈 목록·공백만) MANUAL 매핑된다")
+    void matchCard_noCard_returnsManual() {
+        assertThat(service.matchCard(List.of()).getSelectType()).isEqualTo("MANUAL");
+        assertThat(service.matchCard(List.of("", "  ")).getSelectType()).isEqualTo("MANUAL");
     }
 }

@@ -12,7 +12,16 @@ import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
 import { Spinner } from '@/common/components/ui/spinner'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
+import { Label } from '@/common/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/common/components/ui/select'
 import PageTabs from '@/common/components/PageTabs.vue'
+import { formatBizNo } from '@/common/utils/format'
 import { useReceiptStore } from '../stores/receipt.store'
 import { receiptTabs } from '../routes'
 import ReceiptUpload from '../components/ReceiptUpload.vue'
@@ -35,8 +44,26 @@ const amountStr = computed<string>({
     },
 })
 
+// 사업자번호를 화면엔 하이픈(XXX-XX-XXXXX)으로 보여주되, 저장값(store.form.bizNo)은 숫자 10자리만 유지하는 브리지.
+// WAS 체크섬 검증이 숫자 10자리를 요구하므로 하이픈은 표시용으로만 둔다.
+const bizNoStr = computed<string>({
+    get: () => formatBizNo(store.form.bizNo),
+    set: (v) => {
+        store.form.bizNo = v.replace(/\D/g, '').slice(0, 10)
+    },
+})
+
 // 사업자번호 체크섬 실패 여부 (분석 결과 기준)
 const bizNoInvalid = computed(() => analysis.value?.bizNoValid === false)
+
+// 카드사 드롭다운 후보 — OCR 이 검출한 카드명을 (등장 순서 유지·중복 제거) 목록화.
+// 첫 번째 후보는 서버가 이미 form.cardName 에 제안값으로 채워두어 자동 선택된 상태로 보인다.
+const cardOptions = computed<string[]>(() => {
+    const names = (analysis.value?.items ?? [])
+        .map((item) => item.cardName?.trim())
+        .filter((name): name is string => !!name)
+    return [...new Set(names)]
+})
 
 async function onSave(): Promise<void> {
     const ok = await save()
@@ -111,9 +138,9 @@ async function onSave(): Promise<void> {
                                 numeric
                             />
                             <CopyField
-                                v-model="store.form.bizNo"
+                                v-model="bizNoStr"
                                 label="사업자등록번호"
-                                placeholder="하이픈 없는 10자리"
+                                placeholder="000-00-00000"
                                 numeric
                             >
                                 <template #hint>
@@ -128,10 +155,30 @@ async function onSave(): Promise<void> {
                                 placeholder="YYYYMMDD"
                                 numeric
                             />
+                            <!-- 카드사 — OCR 검출 후보 드롭다운. 후보가 있으면 첫 번째가 자동 선택된 상태로 뜨고,
+                                 하나도 못 잡았을 때만 직접 입력으로 폴백한다 -->
+                            <div v-if="cardOptions.length > 0" class="flex flex-col gap-1.5">
+                                <Label>카드사</Label>
+                                <Select v-model="store.form.cardName">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="카드사 선택" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="name in cardOptions"
+                                            :key="name"
+                                            :value="name"
+                                        >
+                                            {{ name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <CopyField
+                                v-else
                                 v-model="store.form.cardName"
                                 label="카드사"
-                                placeholder="예: 롯데법인카드"
+                                placeholder="카드사 직접 입력"
                             />
 
                             <div class="flex items-center gap-2">
