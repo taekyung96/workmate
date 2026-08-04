@@ -130,15 +130,19 @@ public class GuideServiceImpl implements GuideService {
      *
      * @param userSeq 요청 사용자 식별자
      * @param keyword 검색어 (null·공백이면 전체)
-     * @param page    0-based 페이지 번호
-     * @param size    페이지 크기
+     * @param page    0-based 페이지 번호 (null 이면 전체 조회)
+     * @param size    페이지 크기 (null 이면 전체 조회)
      * @return 가이드 목록 페이지 VO (카드 표시용 요약 + 페이징 메타)
      */
     @Override
     @Transactional(readOnly = true)
-    public GuidePageVo searchGuides(Long userSeq, String keyword, int page, int size) {
-        // 최신 수정순 페이징 (관리자 목록과 동일 관용구)
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
+    public GuidePageVo searchGuides(Long userSeq, String keyword, Integer page, Integer size) {
+        // 최신 수정순 정렬. page·size 가 모두 오면 그 값으로 페이징하고,
+        // 하나라도 없으면 전체를 한 페이지로 담아 반환한다(영수증·회의록 이력과 동일 정책).
+        Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
+        Pageable pageable = (page != null && size != null)
+                ? PageRequest.of(page, size, sort)
+                : Pageable.unpaged(sort);
         // 키워드가 비면 빈 문자열("")로 넘겨 JPQL 의 ':keyword = '' ' 분기(전체 조회)를 타게 한다.
         // null 을 넘기면 PostgreSQL 이 파라미터 타입을 bytea 로 추론해 lower(bytea) 오류가 나므로 주의.
         String kw = (keyword == null || keyword.isBlank()) ? "" : keyword.trim();

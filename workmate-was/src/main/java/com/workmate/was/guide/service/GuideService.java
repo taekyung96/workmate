@@ -22,6 +22,6 @@ public interface GuideService {
     /** 가이드 상세 (G2) — 본인 또는 공개 문서만 */
     GuideResponseVo getGuide(Long userSeq, Long guideSeq);
 
-    /** 접근 가능 목록 (G1) — 본인 문서 + 공개 문서, 키워드 검색·페이징, 최신 수정순 */
-    GuidePageVo searchGuides(Long userSeq, String keyword, int page, int size);
+    /** 접근 가능 목록 (G1) — 본인 문서 + 공개 문서, 키워드 검색·페이징, 최신 수정순. page·size 가 null 이면 전체 조회 */
+    GuidePageVo searchGuides(Long userSeq, String keyword, Integer page, Integer size);
 }

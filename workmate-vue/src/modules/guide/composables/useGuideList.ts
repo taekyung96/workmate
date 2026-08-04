@@ -22,6 +22,7 @@ export function useGuideList() {
             guides.value = result.content
             return result
         },
+        9,
     )
 
     /** loading·error 처리를 공통으로 감싸는 실행 래퍼 */

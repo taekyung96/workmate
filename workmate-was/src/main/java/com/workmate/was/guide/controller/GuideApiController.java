@@ -28,13 +28,13 @@ public class GuideApiController {
 
     private final GuideService guideService;
 
-    /** 목록 (본인+공개, 키워드 검색·페이징, G1) */
+    /** 목록 (본인+공개, 키워드 검색·페이징, G1). page·size 미전송 시 전체 조회(영수증·회의록 이력과 동일) */
     @GetMapping
     public ApiResponse<GuidePageVo> list(
             @RequestHeader("X-User-Seq") Long userSeq,
             @RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "12") int size) {
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
         return ApiResponse.success(guideService.searchGuides(userSeq, keyword, page, size));
     }
 
