@@ -20,14 +20,14 @@ workmate-web (:8080) ── 얇은 BFF
    │   • 최소 정적 에러 폴백(500/503) — "SPA가 못 뜰 때"용
    │  REST + 스트리밍 relay (내부망)
 workmate-was (:8081) ── 비즈니스 로직 · JPA/MyBatis · Spring AI (Gemini 2.5 Flash)
-   │   ★ v2에서 복사, AI 로직 무변경. 내부망 — 브라우저에 직접 노출 안 됨
+   │   ★ v2에서 복사(초기), 필요 시 수정 가능. 내부망 — 브라우저에 직접 노출 안 됨
    │  JDBC
 PostgreSQL 17 + pgvector
 ```
 
 **핵심 원칙**
 
-1. **WAS 무변경** — 주인공(AI 백엔드) 보호. v3 변화는 프론트(신규 SPA) + WEB(얇은 BFF 전환)에 국한.
+1. **WAS 최소 변경** — 주인공(AI 백엔드) 보호가 우선. 초기엔 v2 그대로 복사하고, 기능상 필요하면 수정 가능. v3 변화의 무게중심은 프론트(신규 SPA) + WEB(얇은 BFF 전환).
 2. **WEB은 화면을 안 그림** — Thymeleaf 페이지 로직 제거, BFF(서빙+세션+프록시+SSE)만 담당.
 3. **브라우저는 8080만** — WAS 내부망 은닉으로 공격 표면 축소.
 4. **3-tier 유지** — 표현(Vue SPA) / 로직(WAS) / 데이터(PostgreSQL). 표현 계층이 서버렌더 → 클라이언트렌더로 이동한 것.
@@ -83,6 +83,6 @@ PostgreSQL 17 + pgvector
 | WEB 역할  | HTML 페이지 렌더             | **얇은 BFF** (정적서빙+프록시+세션+SSE) |
 | 화면 이동 | 서버 왕복(멀티페이지)        | 클라이언트 라우팅                       |
 | 스타일    | 순수 CSS(common.css)         | **Tailwind v4 + shadcn-vue**            |
-| WAS       | REST+Spring AI               | **동일 (무변경)**                       |
+| WAS       | REST+Spring AI               | **대체로 동일 (필요 시 수정)**          |
 | 인증      | 세션                         | **동일 (세션 유지)**                    |
 | DB        | PostgreSQL+pgvector          | **동일**                                |

@@ -20,7 +20,7 @@ Spring AI 기반 "업무 비서" 웹앱의 **v3 (Vue3 단독 SPA)**. v2의 Thyme
 
 ## 아키텍처 요약
 
-- 모노레포: `workmate-was`(:8081, REST+JPA+MyBatis+Spring AI, **내부망·v2에서 복사 무변경**) / `workmate-web`(:8080, **얇은 BFF** — SPA 서빙+세션+프록시+SSE 중계) / `workmate-vue`(Vue3 SPA)
+- 모노레포: `workmate-was`(:8081, REST+JPA+MyBatis+Spring AI, **내부망·v2에서 복사(초기), 이후 필요 시 수정 가능**) / `workmate-web`(:8080, **얇은 BFF** — SPA 서빙+세션+프록시+SSE 중계) / `workmate-vue`(Vue3 SPA)
 - 브라우저는 **8080만** 바라봄. WEB은 DB 직접 접근 금지 — `/api` 프록시로만 WAS 호출
 - 인증: **세션(Spring Security, httpOnly 쿠키, CSRF on)** — JWT 아님
 - 3-tier 유지: 표현(Vue SPA) / 로직(WAS) / 데이터(PostgreSQL 17 + pgvector)

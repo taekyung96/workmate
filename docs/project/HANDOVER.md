@@ -28,7 +28,7 @@
    │  HTTP(세션 쿠키) + SSE
 workmate-web (:8080) — 얇은 BFF: SPA 정적파일 서빙 + 세션 인증(Spring Security) + /api 프록시 + SSE 중계
    │  REST + 스트리밍 relay (내부망)
-workmate-was (:8081) — 비즈니스 로직 · JPA/MyBatis · Spring AI (Gemini 2.5 Flash)   ← v2에서 복사, 무변경
+workmate-was (:8081) — 비즈니스 로직 · JPA/MyBatis · Spring AI (Gemini 2.5 Flash)   ← v2에서 복사(초기), 필요 시 수정 가능
    │  JDBC
 PostgreSQL 17 + pgvector
 ```
@@ -59,7 +59,7 @@ PostgreSQL 17 + pgvector
 현재 이 폴더엔 **문서만** 있다. 코드는 아래 순서로 세팅한다:
 
 - [ ] **1. WAS 복사** — **원본 위치: `C:\ClaudeCode\workmate-ws\workmate`** (v2 저장소). 여기서 아래를 이 저장소(`workmate-v3`)로 복사
-    - `workmate-was/` (AI 로직 무변경)
+    - `workmate-was/` (AI 로직 대체로 유지, 필요 시 수정)
     - `db/init/*.sql` (스키마 — `ddl-auto: validate`)
     - `docker-compose.yml`, gradle 루트(`settings.gradle`·`build.gradle`·`gradlew*`·`gradle/`), `gradle.properties`
     - `.env.example` (실제 `.env`는 새로 작성, git 미추적)
