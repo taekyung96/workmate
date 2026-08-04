@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { CheckCircle2, RotateCcw, ClipboardCopy } from 'lucide-vue-next'
+import { CheckCircle2, RotateCcw, ClipboardCopy, Receipt, Upload, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
 import { Spinner } from '@/common/components/ui/spinner'
@@ -24,6 +24,7 @@ import {
     SelectValue,
 } from '@/common/components/ui/select'
 import PageTabs from '@/common/components/PageTabs.vue'
+import HowItWorks from '@/common/components/HowItWorks.vue'
 import { formatBizNo, formatYmd } from '@/common/utils/format'
 import { useReceiptStore } from '../stores/receipt.store'
 import { receiptTabs } from '../routes'
@@ -31,6 +32,13 @@ import type { ReceiptOcrItem } from '../types'
 import ReceiptUpload from '../components/ReceiptUpload.vue'
 
 const router = useRouter()
+
+// 빈 화면 "이렇게 동작해요" 3단계 — 영수증 처리 흐름
+const howSteps = [
+    { icon: Upload, title: '업로드', desc: '영수증 사진을 놓거나 선택합니다.' },
+    { icon: Sparkles, title: 'AI 인식', desc: '금액·사업자번호·카드사를 자동 추출합니다.' },
+    { icon: CheckCircle2, title: '확인·저장', desc: '값을 검토·수정하고 저장·복사합니다.' },
+]
 
 const store = useReceiptStore()
 // ref 상태는 storeToRefs 로 꺼내 반응성을 유지한다 (setup store 를 그냥 구조분해하면 반응성이 끊긴다)
@@ -128,7 +136,19 @@ async function onSave(): Promise<void> {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-4xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">영수증</h1>
+            <div class="mb-6 flex items-center gap-3">
+                <div
+                    class="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"
+                >
+                    <Receipt class="size-5" />
+                </div>
+                <div>
+                    <h1 class="text-2xl leading-tight font-semibold">영수증</h1>
+                    <p class="text-sm text-muted-foreground">
+                        사진 한 장이면 금액·사업자번호·카드사를 AI가 읽어 정리합니다.
+                    </p>
+                </div>
+            </div>
 
             <PageTabs :tabs="receiptTabs" />
 
@@ -137,8 +157,11 @@ async function onSave(): Promise<void> {
                     <AlertDescription>{{ error }}</AlertDescription>
                 </Alert>
 
-                <!-- 1) 업로드 전 -->
-                <ReceiptUpload v-if="!previewUrl" @select="selectFile" />
+                <!-- 1) 업로드 전 (빈 화면) — 업로드 존 + 동작 안내 -->
+                <div v-if="!previewUrl" class="flex flex-col gap-5">
+                    <ReceiptUpload @select="selectFile" />
+                    <HowItWorks :steps="howSteps" />
+                </div>
 
                 <!-- 2) 이미지 선택됨 · 분석 결과 -->
                 <div v-else class="flex flex-col gap-4 md:flex-row md:items-start">

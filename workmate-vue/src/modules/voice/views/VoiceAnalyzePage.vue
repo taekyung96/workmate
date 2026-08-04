@@ -5,17 +5,28 @@
  * 분석 상태는 store 에 있어 이력 탭을 다녀와도 유지된다.
  */
 import { ref } from 'vue'
-import { FileAudio, Mic, RefreshCw, Upload } from 'lucide-vue-next'
+import { FileAudio, Mic, RefreshCw, Upload, Plus, FileText, ListTree } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Spinner } from '@/common/components/ui/spinner'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import PageTabs from '@/common/components/PageTabs.vue'
+import HowItWorks from '@/common/components/HowItWorks.vue'
 import { useVoiceStore } from '../stores/voice.store'
 import { voiceTabs } from '../routes'
 import VoiceResultPanel from '../components/VoiceResultPanel.vue'
 
 const store = useVoiceStore()
+
+/** 지원 오디오 형식 안내 칩 */
+const audioChips = ['MP3', 'WAV', 'M4A', 'WEBM', '최대 25MB']
+
+// 빈 화면 "이렇게 동작해요" 3단계 — 회의록 처리 흐름
+const voiceSteps = [
+    { icon: Upload, title: '업로드', desc: '회의 녹음 파일을 선택합니다.' },
+    { icon: FileText, title: 'AI 전사', desc: '음성을 텍스트로 정확히 받아씁니다.' },
+    { icon: ListTree, title: '3단 요약', desc: '요약·논의·결정으로 정리합니다.' },
+]
 
 const title = ref('')
 const selectedFile = ref<File | null>(null)
@@ -75,9 +86,18 @@ function formatSize(bytes: number): string {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <div class="mb-6 flex items-center gap-2">
-                <Mic class="size-6" />
-                <h1 class="text-2xl font-semibold">회의록 요약</h1>
+            <div class="mb-6 flex items-center gap-3">
+                <div
+                    class="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"
+                >
+                    <Mic class="size-5" />
+                </div>
+                <div>
+                    <h1 class="text-2xl leading-tight font-semibold">회의록 요약</h1>
+                    <p class="text-sm text-muted-foreground">
+                        녹음을 올리면 AI가 받아쓰고 핵심을 3단으로 정리합니다.
+                    </p>
+                </div>
             </div>
 
             <PageTabs :tabs="voiceTabs" />
@@ -92,8 +112,12 @@ function formatSize(bytes: number): string {
                 />
 
                 <div
-                    class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors"
-                    :class="dragOver ? 'border-primary bg-primary/5' : 'border-border'"
+                    class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-7 text-center transition-colors"
+                    :class="
+                        dragOver
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-muted-foreground/40'
+                    "
                     @dragover.prevent="dragOver = true"
                     @dragleave.prevent="dragOver = false"
                     @drop.prevent="onDrop"
@@ -108,18 +132,39 @@ function formatSize(bytes: number): string {
                         @change="onPick"
                     />
                     <template v-if="selectedFile">
-                        <FileAudio class="mb-2 size-8 text-primary" />
-                        <p class="font-medium">{{ selectedFile.name }}</p>
-                        <p class="text-sm text-muted-foreground">
+                        <div
+                            class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm"
+                        >
+                            <FileAudio class="size-6 text-primary" />
+                        </div>
+                        <p class="font-semibold">{{ selectedFile.name }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
                             {{ formatSize(selectedFile.size) }} · 클릭해서 다른 파일 선택
                         </p>
                     </template>
                     <template v-else>
-                        <Upload class="mb-2 size-8 text-muted-foreground" />
-                        <p class="font-medium">오디오 파일을 여기로 끌어다 놓거나 클릭해서 선택</p>
-                        <p class="text-sm text-muted-foreground">
-                            mp3 · wav · m4a · webm (최대 25MB)
+                        <div
+                            class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm"
+                        >
+                            <Upload class="size-6 text-muted-foreground" />
+                        </div>
+                        <p class="font-semibold">오디오 파일을 올려주세요</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            여기로 끌어다 놓거나 버튼으로 선택하세요
                         </p>
+                        <Button class="mt-4" @click.stop="fileInput?.click()">
+                            <Plus class="mr-1.5 size-4" />
+                            파일 선택
+                        </Button>
+                        <div class="mt-3.5 flex flex-wrap justify-center gap-1.5">
+                            <span
+                                v-for="chip in audioChips"
+                                :key="chip"
+                                class="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                            >
+                                {{ chip }}
+                            </span>
+                        </div>
                     </template>
                 </div>
 
@@ -141,6 +186,9 @@ function formatSize(bytes: number): string {
                     오디오 길이에 따라 수십 초 걸릴 수 있습니다.
                 </p>
             </div>
+
+            <!-- 빈 화면(결과 전) 동작 안내 -->
+            <HowItWorks v-if="!store.result" :steps="voiceSteps" class="mt-6" />
 
             <VoiceResultPanel v-if="store.result" :record="store.result" class="mt-6" />
         </div>

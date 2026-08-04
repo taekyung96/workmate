@@ -4,9 +4,13 @@
  * 실제 형식·크기 검증은 상위(useReceiptAnalyze.selectFile)에서 하고, 여기선 File만 올려보낸다.
  */
 import { ref } from 'vue'
-import { ImageUp } from 'lucide-vue-next'
+import { ImageUp, Plus } from 'lucide-vue-next'
+import { Button } from '@/common/components/ui/button'
 
 const emit = defineEmits<{ select: [file: File] }>()
+
+/** 지원 형식 안내 칩 */
+const formatChips = ['JPG', 'PNG', 'WEBP', '최대 10MB']
 
 const inputEl = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
@@ -31,11 +35,11 @@ function onDrop(event: DragEvent): void {
 
 <template>
     <div
-        class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-16 text-center transition-colors"
+        class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors"
         :class="
             dragging
                 ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-muted-foreground/40'
+                : 'border-border hover:border-muted-foreground/40'
         "
         role="button"
         tabindex="0"
@@ -45,10 +49,23 @@ function onDrop(event: DragEvent): void {
         @dragleave.prevent="dragging = false"
         @drop.prevent="onDrop"
     >
-        <ImageUp class="size-10 text-muted-foreground" />
-        <div class="text-sm">
-            <p class="font-medium">영수증 이미지를 끌어다 놓거나 클릭해서 선택하세요</p>
-            <p class="mt-1 text-muted-foreground">jpg / png / webp, 10MB 이하</p>
+        <div class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm">
+            <ImageUp class="size-6 text-muted-foreground" />
+        </div>
+        <p class="font-semibold">영수증 이미지를 올려주세요</p>
+        <p class="mt-1 text-sm text-muted-foreground">여기로 끌어다 놓거나 버튼으로 선택하세요</p>
+        <Button class="mt-4" @click.stop="openPicker">
+            <Plus class="mr-1.5 size-4" />
+            파일 선택
+        </Button>
+        <div class="mt-3.5 flex flex-wrap justify-center gap-1.5">
+            <span
+                v-for="chip in formatChips"
+                :key="chip"
+                class="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+            >
+                {{ chip }}
+            </span>
         </div>
         <input
             ref="inputEl"
