@@ -44,40 +44,36 @@ public class ReceiptController {
 
     /**
      * 영수증 최종 저장 요청 중계.
+     * (사용자 식별은 RestClient 인터셉터가 세션 LoginUser에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자 (인증 연동 전 기본값 1)
      * @param requestBody 저장 요청 JSON 원문
      * @return WAS 저장 응답 JSON
      */
     @PostMapping
-    public ResponseEntity<String> save(
-            @RequestParam(value = "userSeq", defaultValue = "1") Long userSeq,
-            @RequestBody String requestBody) {
-        return jsonPassthrough(receiptService.save(userSeq, requestBody));
+    public ResponseEntity<String> save(@RequestBody String requestBody) {
+        return jsonPassthrough(receiptService.save(requestBody));
     }
 
     /**
      * 영수증 등록 이력 조회 요청 중계.
+     * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자
      * @return WAS 이력 응답 JSON
      */
     @GetMapping
-    public ResponseEntity<String> getHistory(
-            @RequestParam(value = "userSeq", defaultValue = "1") Long userSeq) {
-        return jsonPassthrough(receiptService.getHistory(userSeq));
+    public ResponseEntity<String> getHistory() {
+        return jsonPassthrough(receiptService.getHistory());
     }
 
     /**
      * 영수증 이력 CSV 다운로드 요청 중계.
+     * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자
      * @return CSV 파일 응답
      */
     @GetMapping("/csv")
-    public ResponseEntity<byte[]> downloadCsv(
-            @RequestParam(value = "userSeq", defaultValue = "1") Long userSeq) {
-        return receiptService.downloadCsv(userSeq);
+    public ResponseEntity<byte[]> downloadCsv() {
+        return receiptService.downloadCsv();
     }
 
     /** WAS 응답의 상태코드·본문을 유지하며 JSON 컨텐츠 타입으로 화면에 전달한다. */

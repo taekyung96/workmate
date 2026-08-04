@@ -56,11 +56,10 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     @Override
-    public ResponseEntity<String> save(Long userSeq, String requestBody) {
-        log.info("영수증 저장 프록시 요청. UserSeq: {}", userSeq);
+    public ResponseEntity<String> save(String requestBody) {
+        log.info("영수증 저장 프록시 요청");
         return wasRestClient.post()
-                .uri(uriBuilder -> uriBuilder.path("/api/v1/receipts")
-                        .queryParam("userSeq", userSeq).build())
+                .uri("/api/v1/receipts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
@@ -68,19 +67,17 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     @Override
-    public ResponseEntity<String> getHistory(Long userSeq) {
+    public ResponseEntity<String> getHistory() {
         return wasRestClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/api/v1/receipts")
-                        .queryParam("userSeq", userSeq).build())
+                .uri("/api/v1/receipts")
                 .retrieve()
                 .toEntity(String.class);
     }
 
     @Override
-    public ResponseEntity<byte[]> downloadCsv(Long userSeq) {
+    public ResponseEntity<byte[]> downloadCsv() {
         ResponseEntity<byte[]> wasResponse = wasRestClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/api/v1/receipts/csv")
-                        .queryParam("userSeq", userSeq).build())
+                .uri("/api/v1/receipts/csv")
                 .retrieve()
                 .toEntity(byte[].class);
 

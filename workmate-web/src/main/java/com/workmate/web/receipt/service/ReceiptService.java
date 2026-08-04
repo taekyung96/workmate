@@ -21,26 +21,26 @@ public interface ReceiptService {
 
     /**
      * 영수증 최종 저장 요청을 WAS 로 중계한다.
+     * (사용자 식별은 RestClient 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자
      * @param requestBody 저장 요청 JSON 원문
      * @return WAS 저장 응답 (ApiResponse JSON 원문)
      */
-    ResponseEntity<String> save(Long userSeq, String requestBody);
+    ResponseEntity<String> save(String requestBody);
 
     /**
      * 영수증 등록 이력 조회 요청을 WAS 로 중계한다.
+     * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자
      * @return WAS 이력 응답 (ApiResponse JSON 원문)
      */
-    ResponseEntity<String> getHistory(Long userSeq);
+    ResponseEntity<String> getHistory();
 
     /**
      * 영수증 이력 CSV 다운로드 요청을 WAS 로 중계한다.
+     * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
-     * @param userSeq 사용자 식별자
      * @return CSV 파일 바이트 응답 (Content-Disposition 헤더 포함)
      */
-    ResponseEntity<byte[]> downloadCsv(Long userSeq);
+    ResponseEntity<byte[]> downloadCsv();
 }
