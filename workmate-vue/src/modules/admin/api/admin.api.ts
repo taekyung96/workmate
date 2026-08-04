@@ -16,7 +16,7 @@ import type {
  */
 export const adminApi = {
     /** 사용자 목록·검색 (M1) — 페이징, 이메일·전화는 마스킹된 값 */
-    async users(keyword: string, page: number, size = 20): Promise<UserPage> {
+    async users(keyword: string, page: number, size = 10): Promise<UserPage> {
         const { data } = await client.get<ApiResponse<UserPage>>('/v1/admin/users', {
             params: { keyword: keyword || undefined, page, size },
         })
@@ -24,7 +24,7 @@ export const adminApi = {
     },
 
     /** 감사 로그 목록 (M4) — 최신순 페이징, 행위자·대상 이름 포함 */
-    async auditLogs(page: number, size = 20): Promise<AuditLogPage> {
+    async auditLogs(page: number, size = 10): Promise<AuditLogPage> {
         const { data } = await client.get<ApiResponse<AuditLogPage>>('/v1/admin/audit-logs', {
             params: { page, size },
         })

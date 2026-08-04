@@ -14,17 +14,11 @@ export function useGuideList() {
     const loading = ref(false)
     const error = ref('')
 
-    // 한 페이지에 요청할(=서버에서 가져올) 문서 개수. 이 값 하나가 서버 요청 size와 로딩 스켈레톤 개수를 함께 결정한다.
-    const pageSize = 9
-
-    // 페이지 이동 시 호출될 로더 — 지정 페이지를 조회해 목록을 채우고 페이지 메타를 반환한다
+    // 페이지 이동 시 호출될 로더 — 지정 페이지·크기를 조회해 목록을 채우고 페이지 메타를 반환한다.
+    // 페이지 크기(기본 10)는 공통 usePagination 이 소유하고 size 로 넘겨준다.
     const { page, totalPages, totalElements, loadPage, goToPage, reset } = usePagination(
-        async (target) => {
-            const result = await guideApi.list({
-                keyword: keyword.value,
-                page: target,
-                size: pageSize,
-            })
+        async (target, size) => {
+            const result = await guideApi.list({ keyword: keyword.value, page: target, size })
             guides.value = result.content
             return result
         },
