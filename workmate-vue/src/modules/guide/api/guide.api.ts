@@ -22,7 +22,8 @@ export const guideApi = {
                 // 빈 검색어는 아예 보내지 않아 서버가 전체 조회로 처리하게 한다
                 keyword: params?.keyword?.trim() || undefined,
                 page: params?.page ?? 0,
-                size: params?.size ?? 6,
+                // size 미지정 시 서버 기본값 사용. 목록 화면은 useGuideList가 pageSize를 명시해 넘긴다.
+                size: params?.size,
             },
         })
         return data.result

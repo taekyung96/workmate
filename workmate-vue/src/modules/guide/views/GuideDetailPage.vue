@@ -9,7 +9,7 @@ import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { extractErrorMessage } from '@/common/utils/error'
 import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
-import { Skeleton } from '@/common/components/ui/skeleton'
+import { Spinner } from '@/common/components/ui/spinner'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -66,9 +66,8 @@ async function onDelete(): Promise<void> {
                 ← 목록으로
             </button>
 
-            <div v-if="loading" class="space-y-3">
-                <Skeleton class="h-8 w-1/2" />
-                <Skeleton class="h-40 w-full" />
+            <div v-if="loading" class="flex justify-center py-16">
+                <Spinner class="size-6" />
             </div>
 
             <p v-else-if="error" class="text-destructive">{{ error }}</p>

@@ -9,7 +9,7 @@ import { Search } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Badge } from '@/common/components/ui/badge'
-import { Skeleton } from '@/common/components/ui/skeleton'
+import { Spinner } from '@/common/components/ui/spinner'
 import {
     Card,
     CardContent,
@@ -64,9 +64,9 @@ function openDetail(guideSeq: number): void {
                 <Input v-model="keyword" placeholder="제목·본문 검색" class="pl-9" />
             </div>
 
-            <!-- 로딩: 카드 스켈레톤 -->
-            <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Skeleton v-for="n in 6" :key="n" class="h-36 w-full" />
+            <!-- 로딩: 중앙 스피너 (관리자·영수증·회의록 등 다른 목록 화면과 통일) -->
+            <div v-if="loading" class="flex justify-center py-16">
+                <Spinner class="size-6" />
             </div>
 
             <p v-else-if="error" class="text-destructive">{{ error }}</p>
