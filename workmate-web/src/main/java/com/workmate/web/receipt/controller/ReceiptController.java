@@ -55,14 +55,18 @@ public class ReceiptController {
     }
 
     /**
-     * 영수증 등록 이력 조회 요청 중계.
+     * 영수증 등록 이력 조회 요청 중계. page·size 가 오면 그대로 전달(페이징), 없으면 전체 조회.
      * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
+     * @param page 0-based 페이지 (선택)
+     * @param size 페이지 크기 (선택)
      * @return WAS 이력 응답 JSON
      */
     @GetMapping
-    public ResponseEntity<String> getHistory() {
-        return jsonPassthrough(receiptService.getHistory());
+    public ResponseEntity<String> getHistory(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        return jsonPassthrough(receiptService.getHistory(page, size));
     }
 
     /**

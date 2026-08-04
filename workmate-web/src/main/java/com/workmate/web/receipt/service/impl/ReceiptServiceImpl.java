@@ -67,9 +67,19 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     @Override
-    public ResponseEntity<String> getHistory() {
+    public ResponseEntity<String> getHistory(Integer page, Integer size) {
         return wasRestClient.get()
-                .uri("/api/v1/receipts")
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/api/v1/receipts");
+                    // page·size 는 있을 때만 붙인다 — 없으면 WAS 가 전체 조회한다
+                    if (page != null) {
+                        uriBuilder.queryParam("page", page);
+                    }
+                    if (size != null) {
+                        uriBuilder.queryParam("size", size);
+                    }
+                    return uriBuilder.build();
+                })
                 .retrieve()
                 .toEntity(String.class);
     }

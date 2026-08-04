@@ -4,6 +4,7 @@ import com.workmate.was.global.response.ApiResponse;
 import com.workmate.was.receipt.service.ReceiptService;
 import com.workmate.was.receipt.vo.Receipt;
 import com.workmate.was.receipt.vo.ReceiptAnalysisResponseVo;
+import com.workmate.was.receipt.vo.ReceiptPageVo;
 import com.workmate.was.receipt.vo.ReceiptSaveRequestVo;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * 영수증 처리 관련 REST API 컨트롤러.
@@ -66,16 +66,20 @@ public class ReceiptApiController {
 
     /**
      * 특정 사용자의 영수증 등록 목록을 최신순으로 조회한다.
+     * page·size 가 오면 그 값으로 페이징하고, 없으면 전체를 한 페이지로 반환한다.
      *
      * @param userSeq 사용자 식별자
-     * @return 영수증 이력 리스트 공통 응답
+     * @param page    0-based 페이지 (선택)
+     * @param size    페이지 크기 (선택)
+     * @return 영수증 이력 페이지 공통 응답
      */
     @GetMapping
-    public ApiResponse<List<Receipt>> getReceiptHistory(
-            @RequestHeader("X-User-Seq") Long userSeq) {
-        log.info("영수증 이력 조회 API 호출. UserSeq: {}", userSeq);
-        List<Receipt> history = receiptService.getReceiptHistory(userSeq);
-        return ApiResponse.success(history);
+    public ApiResponse<ReceiptPageVo> getReceiptHistory(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        log.info("영수증 이력 조회 API 호출. UserSeq: {}, page: {}, size: {}", userSeq, page, size);
+        return ApiResponse.success(receiptService.getReceiptHistoryPage(userSeq, page, size));
     }
 
     /**

@@ -29,12 +29,14 @@ public interface ReceiptService {
     ResponseEntity<String> save(String requestBody);
 
     /**
-     * 영수증 등록 이력 조회 요청을 WAS 로 중계한다.
+     * 영수증 등록 이력 조회 요청을 WAS 로 중계한다. page·size 가 있으면 함께 전달(페이징).
      * (사용자 식별은 인터셉터가 세션에서 X-User-Seq 헤더로 주입한다)
      *
+     * @param page 0-based 페이지 (선택, null 이면 미전달)
+     * @param size 페이지 크기 (선택, null 이면 미전달)
      * @return WAS 이력 응답 (ApiResponse JSON 원문)
      */
-    ResponseEntity<String> getHistory();
+    ResponseEntity<String> getHistory(Integer page, Integer size);
 
     /**
      * 영수증 이력 CSV 다운로드 요청을 WAS 로 중계한다.

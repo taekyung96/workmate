@@ -1,6 +1,6 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { Receipt, ReceiptAnalysis, ReceiptSaveRequest } from '../types'
+import type { Receipt, ReceiptAnalysis, ReceiptPage, ReceiptSaveRequest } from '../types'
 
 /**
  * 영수증 API (WEB의 /api/v1/receipts/* 프록시 호출 → WAS).
@@ -27,9 +27,14 @@ export const receiptApi = {
         return data.result
     },
 
-    /** 내 영수증 이력 (최신순) */
-    async history(): Promise<Receipt[]> {
-        const { data } = await client.get<ApiResponse<Receipt[]>>('/v1/receipts')
+    /**
+     * 내 영수증 이력 (최신순, 페이징). page·size 를 넘기면 해당 페이지만,
+     * 생략하면 서버가 전체를 한 페이지로 반환한다.
+     */
+    async history(page?: number, size?: number): Promise<ReceiptPage> {
+        const { data } = await client.get<ApiResponse<ReceiptPage>>('/v1/receipts', {
+            params: { page, size },
+        })
         return data.result
     },
 

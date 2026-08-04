@@ -6,6 +6,7 @@ import com.workmate.was.receipt.dao.ReceiptRepository;
 import com.workmate.was.receipt.service.ReceiptService;
 import com.workmate.was.receipt.vo.Receipt;
 import com.workmate.was.receipt.vo.ReceiptAnalysisResponseVo;
+import com.workmate.was.receipt.vo.ReceiptPageVo;
 import com.workmate.was.receipt.vo.ReceiptSaveRequestVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,6 +14,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -128,6 +134,26 @@ public class ReceiptServiceImpl implements ReceiptService {
     @Transactional(readOnly = true)
     public List<Receipt> getReceiptHistory(Long userSeq) {
         return receiptRepository.findByUserSeqOrderByCreatedAtDesc(userSeq);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReceiptPageVo getReceiptHistoryPage(Long userSeq, Integer page, Integer size) {
+        Page<Receipt> result;
+        if (page != null && size != null) {
+            // 페이징 파라미터가 오면 그 값으로 페이징 조회 (최신 등록순)
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+            result = receiptRepository.findByUserSeq(userSeq, pageable);
+        } else {
+            // page·size 가 없으면 전체를 한 페이지로 담아 반환 (totalPages=1)
+            result = new PageImpl<>(receiptRepository.findByUserSeqOrderByCreatedAtDesc(userSeq));
+        }
+        return ReceiptPageVo.builder()
+                .content(result.getContent())
+                .page(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
     }
 
     @Override

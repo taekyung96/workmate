@@ -50,3 +50,12 @@ export interface Receipt {
     rawJson: string | null
     createdAt: string
 }
+
+/** 영수증 이력 페이지 응답 (WAS ReceiptPageVo 대응) */
+export interface ReceiptPage {
+    content: Receipt[]
+    /** 0-based 현재 페이지 */
+    page: number
+    totalPages: number
+    totalElements: number
+}
