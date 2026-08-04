@@ -46,13 +46,17 @@ public class VoiceController {
     }
 
     /**
-     * 내 회의록 이력 조회 중계.
+     * 내 회의록 이력 조회 중계. page·size 가 오면 그대로 전달(페이징), 없으면 전체 조회.
      *
+     * @param page 0-based 페이지 (선택)
+     * @param size 페이지 크기 (선택)
      * @return WAS 목록 응답 JSON
      */
     @GetMapping
-    public ResponseEntity<String> history() {
-        return jsonPassthrough(voiceService.history());
+    public ResponseEntity<String> history(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        return jsonPassthrough(voiceService.history(page, size));
     }
 
     /**

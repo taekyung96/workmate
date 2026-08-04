@@ -7,10 +7,16 @@ import com.workmate.was.voice.service.VoiceTranscriber;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
 import com.workmate.was.voice.vo.VoiceAudioVo;
 import com.workmate.was.voice.vo.VoiceRecord;
+import com.workmate.was.voice.vo.VoiceRecordPageVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -94,6 +100,27 @@ public class VoiceServiceImpl implements VoiceService {
         return voiceRecordRepository.findByUserSeqOrderByCreatedAtDesc(userSeq).stream()
                 .map(VoiceRecordSummaryVo::new)
                 .toList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public VoiceRecordPageVo getHistoryPage(Long userSeq, Integer page, Integer size) {
+        Page<VoiceRecord> result;
+        if (page != null && size != null) {
+            // 페이징 파라미터가 오면 그 값으로 페이징 조회 (최신 등록순)
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+            result = voiceRecordRepository.findByUserSeq(userSeq, pageable);
+        } else {
+            // page·size 가 없으면 전체를 한 페이지로 담아 반환 (totalPages=1)
+            result = new PageImpl<>(voiceRecordRepository.findByUserSeqOrderByCreatedAtDesc(userSeq));
+        }
+        return VoiceRecordPageVo.builder()
+                .content(result.getContent().stream().map(VoiceRecordSummaryVo::new).toList())
+                .page(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
     }
 
     /** {@inheritDoc} */

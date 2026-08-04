@@ -1,6 +1,6 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { VoiceAnalysisResult, VoiceRecordSummary } from '../types'
+import type { VoiceAnalysisResult, VoiceRecordPage } from '../types'
 
 /**
  * 음성 회의록 API (WEB의 /api/v1/voice/* 프록시 호출 → WAS).
@@ -20,9 +20,14 @@ export const voiceApi = {
         return data.result
     },
 
-    /** 내 회의록 이력 (최신순) */
-    async history(): Promise<VoiceRecordSummary[]> {
-        const { data } = await client.get<ApiResponse<VoiceRecordSummary[]>>('/v1/voice')
+    /**
+     * 내 회의록 이력 (최신순, 페이징). page·size 를 넘기면 해당 페이지만,
+     * 생략하면 서버가 전체를 한 페이지로 반환한다.
+     */
+    async history(page?: number, size?: number): Promise<VoiceRecordPage> {
+        const { data } = await client.get<ApiResponse<VoiceRecordPage>>('/v1/voice', {
+            params: { page, size },
+        })
         return data.result
     },
 

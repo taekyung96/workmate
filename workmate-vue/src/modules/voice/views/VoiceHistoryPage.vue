@@ -25,7 +25,8 @@ import { useVoiceHistory } from '../composables/useVoiceHistory'
 import { voiceTabs } from '../routes'
 
 const router = useRouter()
-const { records, loading, error, load, remove } = useVoiceHistory()
+const { records, page, totalPages, totalElements, loading, error, load, goToPage, remove } =
+    useVoiceHistory()
 
 const deleteOpen = ref(false)
 const deleteTarget = ref<number | null>(null)
@@ -78,7 +79,7 @@ function formatSize(bytes: number | null): string {
             <PageTabs :tabs="voiceTabs" />
 
             <p class="mb-3 text-sm text-muted-foreground">
-                총 <span class="font-medium text-foreground">{{ records.length }}</span
+                총 <span class="font-medium text-foreground">{{ totalElements }}</span
                 >건
             </p>
 
@@ -91,7 +92,7 @@ function formatSize(bytes: number | null): string {
             </div>
 
             <p
-                v-else-if="records.length === 0"
+                v-else-if="totalElements === 0"
                 class="py-16 text-center text-sm text-muted-foreground"
             >
                 아직 분석한 회의록이 없습니다.
@@ -135,6 +136,30 @@ function formatSize(bytes: number | null): string {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 페이징 -->
+            <div
+                v-if="!loading && totalElements > 0"
+                class="mt-4 flex items-center justify-end gap-3 text-sm text-muted-foreground"
+            >
+                <Button
+                    size="sm"
+                    variant="outline"
+                    :disabled="page <= 0"
+                    @click="goToPage(page - 1)"
+                >
+                    이전
+                </Button>
+                <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    :disabled="page >= totalPages - 1"
+                    @click="goToPage(page + 1)"
+                >
+                    다음
+                </Button>
             </div>
 
             <AlertDialog v-model:open="deleteOpen">

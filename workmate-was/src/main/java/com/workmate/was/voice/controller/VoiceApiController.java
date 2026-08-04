@@ -4,7 +4,7 @@ import com.workmate.was.global.response.ApiResponse;
 import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
 import com.workmate.was.voice.vo.VoiceAudioVo;
-import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
+import com.workmate.was.voice.vo.VoiceRecordPageVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -56,15 +56,20 @@ public class VoiceApiController {
 
     /**
      * 내 회의록 이력을 최신순으로 조회한다.
+     * page·size 가 오면 그 값으로 페이징하고, 없으면 전체를 한 페이지로 반환한다.
      *
      * @param userSeq 인증 세션에서 WEB 인터셉터가 주입한 사용자 식별자
-     * @return 목록 요약 (전사문·요약 본문 제외)
+     * @param page    0-based 페이지 (선택)
+     * @param size    페이지 크기 (선택)
+     * @return 목록 요약 페이지 (전사문·요약 본문 제외)
      */
     @GetMapping
-    public ApiResponse<List<VoiceRecordSummaryVo>> history(
-            @RequestHeader("X-User-Seq") Long userSeq) {
-        log.info("회의록 이력 조회 API 호출 - userSeq: {}", userSeq);
-        return ApiResponse.success(voiceService.getHistory(userSeq));
+    public ApiResponse<VoiceRecordPageVo> history(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        log.info("회의록 이력 조회 API 호출 - userSeq: {}, page: {}, size: {}", userSeq, page, size);
+        return ApiResponse.success(voiceService.getHistoryPage(userSeq, page, size));
     }
 
     /**

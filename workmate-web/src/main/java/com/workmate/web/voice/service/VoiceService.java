@@ -14,8 +14,8 @@ public interface VoiceService {
 
     ResponseEntity<String> analyze(MultipartFile file, String title) throws IOException;
 
-    /** 내 회의록 이력 조회 중계 */
-    ResponseEntity<String> history();
+    /** 내 회의록 이력 조회 중계 — page·size 가 있으면 함께 전달(페이징), 없으면 전체 */
+    ResponseEntity<String> history(Integer page, Integer size);
 
     /** 회의록 상세 조회 중계 */
     ResponseEntity<String> getRecord(Long recordSeq);

@@ -24,3 +24,12 @@ export interface VoiceRecordSummary {
     hasAudio: boolean
     createdAt: string
 }
+
+/** 회의록 이력 페이지 응답 (WAS VoiceRecordPageVo와 대응) */
+export interface VoiceRecordPage {
+    content: VoiceRecordSummary[]
+    /** 0-based 현재 페이지 */
+    page: number
+    totalPages: number
+    totalElements: number
+}

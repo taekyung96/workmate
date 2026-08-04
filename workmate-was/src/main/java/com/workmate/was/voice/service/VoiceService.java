@@ -2,6 +2,7 @@ package com.workmate.was.voice.service;
 
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
 import com.workmate.was.voice.vo.VoiceAudioVo;
+import com.workmate.was.voice.vo.VoiceRecordPageVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +31,16 @@ public interface VoiceService {
      * @return 목록 요약 VO (전사문·요약 본문 제외)
      */
     List<VoiceRecordSummaryVo> getHistory(Long userSeq);
+
+    /**
+     * 회의록 이력 페이지 조회 — page·size 가 없으면(null) 전체를 한 페이지로 반환한다.
+     *
+     * @param userSeq 사용자 식별자
+     * @param page    0-based 페이지 (선택)
+     * @param size    페이지 크기 (선택)
+     * @return 목록 요약 + 페이징 메타
+     */
+    VoiceRecordPageVo getHistoryPage(Long userSeq, Integer page, Integer size);
 
     /**
      * 회의록 상세를 조회한다 (본인 소유만).
