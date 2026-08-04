@@ -14,6 +14,19 @@ export function formatDate(iso: string): string {
 }
 
 /**
+ * YYYYMMDD 형식의 8자리 숫자 날짜를 'YYYY.MM.DD' 로 표시한다(영수증 결제일 등).
+ * 완전한 8자리가 아니어도 자리수에 맞춰 부분 포맷하므로 입력 중 실시간 표시에도 쓸 수 있다.
+ * @param ymd YYYYMMDD 형식(숫자·구분자 혼용 가능)
+ * @returns 'YYYY.MM.DD' (숫자가 없으면 빈 문자열)
+ */
+export function formatYmd(ymd: string | null | undefined): string {
+    const d = (ymd ?? '').replace(/\D/g, '').slice(0, 8)
+    if (d.length <= 4) return d
+    if (d.length <= 6) return `${d.slice(0, 4)}.${d.slice(4)}`
+    return `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6)}`
+}
+
+/**
  * 사업자등록번호를 'XXX-XX-XXXXX'(3-2-5) 형식으로 표시한다.
  * 완전한 10자리가 아니어도 자리수에 맞춰 부분 포맷하므로 입력 중 실시간 표시에도 쓸 수 있다.
  * @param bizNo 숫자·하이픈이 섞인 사업자번호 문자열

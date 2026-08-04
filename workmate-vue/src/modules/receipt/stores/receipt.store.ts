@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { receiptApi } from '../api/receipt.api'
 import { extractErrorMessage } from '@/common/utils/error'
-import type { ReceiptAnalysis, ReceiptSaveRequest } from '../types'
+import type { ReceiptAnalysis, ReceiptOcrItem, ReceiptSaveRequest } from '../types'
 
 /** 업로드 허용 형식·크기 (설계 F3-01) */
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -77,6 +77,38 @@ export const useReceiptStore = defineStore('receipt', () => {
         }
     }
 
+    /**
+     * OCR 항목 하나의 값으로 폼 전체(카드사·금액·사업자번호·결제일)를 채운다.
+     * 사업자번호·결제일은 저장 규격(숫자만)에 맞춰 정규화한다(백엔드 정규화와 동일).
+     * @param item 반영할 OCR 검출 항목
+     */
+    function applyItem(item: ReceiptOcrItem): void {
+        form.cardName = item.cardName?.trim() ?? ''
+        form.payAmount = item.payAmount ?? 0
+        form.bizNo = (item.bizNo ?? '').replace(/\D/g, '').slice(0, 10)
+        form.payDate = (item.payDate ?? '').replace(/\D/g, '')
+    }
+
+    /**
+     * 카드사 드롭다운에서 카드를 고르면 호출 — 그 카드의 첫 OCR 항목 값으로 폼을 채운다.
+     * items 는 카드별로 금액 등이 다를 수 있어(한 영수증에 여러 결제 검출), 카드만 바뀌고
+     * 금액이 그대로 남지 않도록 함께 갱신한다.
+     * @param cardName 선택한 카드명
+     */
+    function selectCard(cardName: string): void {
+        const matched = analysis.value?.items.find((item) => item.cardName?.trim() === cardName)
+        if (matched) applyItem(matched)
+        else form.cardName = cardName
+    }
+
+    /**
+     * 결제 후보 카드를 클릭하면 호출 — 그 항목 값으로 폼을 채운다(드롭다운과 달리 항목을 정확히 지정).
+     * @param item 선택한 OCR 항목
+     */
+    function selectItem(item: ReceiptOcrItem): void {
+        applyItem(item)
+    }
+
     /** 확인·수정한 값을 최종 저장 */
     async function save(): Promise<boolean> {
         if (!analysis.value || !canSave.value) return false
@@ -136,6 +168,8 @@ export const useReceiptStore = defineStore('receipt', () => {
         canSave,
         selectFile,
         analyze,
+        selectCard,
+        selectItem,
         save,
         reset,
     }
