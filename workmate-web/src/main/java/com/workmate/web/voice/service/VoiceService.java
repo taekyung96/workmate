@@ -23,6 +23,9 @@ public interface VoiceService {
     /** 회의록 삭제 중계 */
     ResponseEntity<String> delete(Long recordSeq);
 
+    /** 회의록 제목 수정 중계 — 분석 후 결과 화면에서 확정한 제목을 WAS 로 전달한다 */
+    ResponseEntity<String> updateTitle(Long recordSeq, String title);
+
     /**
      * 회의록 오디오를 WAS 에서 받아 브라우저 응답으로 그대로 흘려보낸다.
      *

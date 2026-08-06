@@ -159,6 +159,20 @@ public class VoiceServiceImpl implements VoiceService {
         log.info("회의록 삭제 완료 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    @Transactional
+    public VoiceAnalysisResultVo updateTitle(Long userSeq, Long recordSeq, String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("회의 제목을 입력해주세요.");
+        }
+        VoiceRecord record = findOwnedRecord(userSeq, recordSeq);
+        // JPA 더티 체킹 — 조회된 엔티티의 제목만 바꾸면 트랜잭션 커밋 시 UPDATE 가 자동 반영된다
+        record.changeTitle(title.trim());
+        log.info("회의록 제목 수정 완료 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
+        return new VoiceAnalysisResultVo(record);
+    }
+
     /**
      * 본인 소유의 회의록을 찾는다. 없거나 타인 소유면 예외.
      * 상세·오디오·삭제가 공유하는 검증 지점이다.

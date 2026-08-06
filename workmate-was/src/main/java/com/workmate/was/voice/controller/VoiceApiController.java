@@ -5,6 +5,8 @@ import com.workmate.was.voice.service.VoiceService;
 import com.workmate.was.voice.vo.VoiceAnalysisResultVo;
 import com.workmate.was.voice.vo.VoiceAudioVo;
 import com.workmate.was.voice.vo.VoiceRecordPageVo;
+import com.workmate.was.voice.vo.VoiceTitleUpdateVo;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -132,5 +135,22 @@ public class VoiceApiController {
         log.info("회의록 삭제 API 호출 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
         voiceService.deleteRecord(userSeq, recordSeq);
         return ApiResponse.success();
+    }
+
+    /**
+     * 회의록 제목을 수정한다 (본인 소유만). 분석 후 결과 화면에서 제목을 확정할 때 호출한다.
+     *
+     * @param userSeq   인증 세션에서 WEB 인터셉터가 주입한 사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @param request   새 제목 요청 바디
+     * @return 제목이 반영된 회의록 상세
+     */
+    @PostMapping("/{recordSeq}/title")
+    public ApiResponse<VoiceAnalysisResultVo> updateTitle(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @PathVariable Long recordSeq,
+            @Valid @RequestBody VoiceTitleUpdateVo request) {
+        log.info("회의록 제목 수정 API 호출 - userSeq: {}, recordSeq: {}", userSeq, recordSeq);
+        return ApiResponse.success(voiceService.updateTitle(userSeq, recordSeq, request.getTitle()));
     }
 }

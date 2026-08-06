@@ -67,4 +67,14 @@ public class VoiceRecord {
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /**
+     * 회의 제목을 변경한다. 본인 소유 검증·공백 검증은 서비스 계층에서 끝낸 뒤 호출한다.
+     * (엔티티는 불변을 기본으로 하되, 제목만 사후 수정 가능하도록 도메인 메서드로 노출한다.)
+     *
+     * @param title 새 회의 제목 (공백 아님)
+     */
+    public void changeTitle(String title) {
+        this.title = title;
+    }
 }

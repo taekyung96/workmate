@@ -67,4 +67,14 @@ public interface VoiceService {
      * @param recordSeq 회의록 식별자
      */
     void deleteRecord(Long userSeq, Long recordSeq);
+
+    /**
+     * 회의록 제목을 수정한다 (본인 소유만). 분석 후 결과 화면에서 제목을 확정할 때 쓴다.
+     *
+     * @param userSeq   사용자 식별자
+     * @param recordSeq 회의록 식별자
+     * @param title     새 회의 제목 (공백 불가)
+     * @return 제목이 반영된 회의록 상세
+     */
+    VoiceAnalysisResultVo updateTitle(Long userSeq, Long recordSeq, String title);
 }

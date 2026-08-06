@@ -159,8 +159,34 @@ public class ChatServiceImpl implements ChatService {
         return Flux.concat(metaEvent, sourceEvents, tokenEvents, doneEvent)
                 .onErrorResume(e -> {
                     log.error("채팅 스트리밍 실패 - userSeq: {}, roomSeq: {}", userSeq, prepared.roomSeq(), e);
+                    // Google 429(무료 할당량/요청限 초과)면 원인을 명확히 안내하고 status 를 실어 화면이 배너로 띄우게 한다.
+                    // 이 실패는 사용자 메시지 저장 이후(post-save)라 자동 재시도(retryable)는 주지 않는다(중복 저장 방지).
+                    if (isQuotaError(e)) {
+                        return Flux.just(sse("error", Map.of(
+                                "message", "AI 무료 사용량(할당량)을 초과했어요. 잠시 후 다시 시도해주세요.",
+                                "status", 429)));
+                    }
                     return Flux.just(sse("error", Map.of("message", "응답이 중단되었습니다")));
                 });
+    }
+
+    /**
+     * AI 제공자(Google GenAI)의 할당량/요청限 초과(429, RESOURCE_EXHAUSTED) 오류인지
+     * 예외 원인 체인을 따라 판별한다. 라이브러리 예외 타입에 직접 의존하지 않도록 메시지로 검사한다.
+     *
+     * @param error 스트림에서 전파된 예외
+     * @return 429/할당량 초과로 판단되면 true
+     */
+    private boolean isQuotaError(Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            String msg = t.getMessage();
+            if (msg != null && (msg.contains("RESOURCE_EXHAUSTED")
+                    || msg.contains("exceeded your current quota")
+                    || msg.startsWith("429"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

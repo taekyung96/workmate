@@ -16,6 +16,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * 음성 회의록 WEB 프록시 구현체 (F8-1).
@@ -89,6 +90,18 @@ public class VoiceServiceImpl implements VoiceService {
         log.info("회의록 삭제 프록시 요청. recordSeq: {}", recordSeq);
         return wasRestClient.post()
                 .uri("/api/v1/voice/{recordSeq}/delete", recordSeq)
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    @Override
+    public ResponseEntity<String> updateTitle(Long recordSeq, String title) {
+        log.info("회의록 제목 수정 프록시 요청. recordSeq: {}", recordSeq);
+        // WAS 는 { "title": ... } JSON 바디를 기대한다. 값 검증(공백 불가)은 WAS 가 하고 그 응답을 그대로 중계한다.
+        return wasRestClient.post()
+                .uri("/api/v1/voice/{recordSeq}/title", recordSeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Collections.singletonMap("title", title))
                 .retrieve()
                 .toEntity(String.class);
     }
