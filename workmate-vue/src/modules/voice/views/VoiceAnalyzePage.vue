@@ -41,7 +41,7 @@ const localError = ref('')
 // 결과 화면에서 확정하는 회의 제목 — 분석이 끝나면 서버 기본 제목으로 채운다
 const titleInput = ref('')
 
-/** 최대 업로드 크기 (WAS max-file-size 와 맞춤) */
+/** 최대 업로드 크기 25MB — 오디오는 WEB 프록시를 거치므로 WEB·WAS 의 max-file-size 와 반드시 일치시킬 것 */
 const MAX_SIZE = 25 * 1024 * 1024
 
 /** 파일 선택/드롭 공통 검증 처리 */

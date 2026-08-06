@@ -6,7 +6,9 @@ spring:
         active: local # 기본은 로컬 개발, 배포 시 -Dspring.profiles.active 로 전환
     servlet:
         multipart:
-            max-file-size: 10MB # 영수증 이미지 프록시 업로드 허용 크기 (WAS 설정과 동일하게 유지)
-            max-request-size: 12MB
+            # 프록시 업로드 허용 크기 — 영수증 이미지(10MB)뿐 아니라 WEB 을 거치는 회의 오디오(F8-1, 25MB)도
+            # 수용해야 하므로 WAS(25MB/30MB) 와 동일하게 맞춘다. (낮으면 큰 오디오가 WAS 도달 전 WEB 에서 막힘)
+            max-file-size: 25MB
+            max-request-size: 30MB
     thymeleaf:
         cache: false # prod 프로파일에서 true 로 재정의

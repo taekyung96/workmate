@@ -6,7 +6,8 @@ import type { ReceiptAnalysis, ReceiptOcrItem, ReceiptSaveRequest } from '../typ
 
 /** 업로드 허용 형식·크기 (설계 F3-01) */
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_BYTES = 10 * 1024 * 1024 // 10MB
+// 10MB — WEB/WAS 의 spring.servlet.multipart.max-file-size 와 반드시 일치시킬 것(어긋나면 서버가 먼저 거절)
+const MAX_BYTES = 10 * 1024 * 1024
 
 /**
  * 영수증 분석 상태.
