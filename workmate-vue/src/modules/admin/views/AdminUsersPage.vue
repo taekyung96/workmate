@@ -26,6 +26,7 @@ import PageTabs from '@/common/components/PageTabs.vue'
 import PageHeader from '@/common/components/PageHeader.vue'
 import Pagination from '@/common/components/Pagination.vue'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
+import { useDebouncedWatch } from '@/common/composables/useDebouncedWatch'
 
 // 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
 const adminTabs = [
@@ -50,6 +51,10 @@ const {
     unlock,
     resetPassword,
 } = useAdminUsers()
+
+// 검색어 입력 자동조회(디바운스) — 가이드 목록과 동일하게 입력이 멈추면 재검색.
+// 폼 제출(Enter·검색 버튼)은 즉시 검색으로 그대로 유지된다.
+useDebouncedWatch(keyword, search)
 
 // 확인 모달 — 열림 상태(boolean)와 대상(target)을 분리한다.
 // 확정 버튼 클릭 시 다이얼로그가 닫히며 open이 false로 바뀌는데, 이때 target까지 비우면

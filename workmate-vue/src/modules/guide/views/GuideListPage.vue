@@ -3,7 +3,7 @@
  * 가이드 목록 화면 (/guide) — 본인+공개 문서를 카드 그리드로 표시.
  * 서버 페이징 + 키워드 검색(입력 디바운스). 각 카드는 제목·공개여부·수정일·본문 미리보기를 보여준다.
  */
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, BookText } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
@@ -20,6 +20,7 @@ import {
     CardTitle,
 } from '@/common/components/ui/card'
 import { formatDate } from '@/common/utils/format'
+import { useDebouncedWatch } from '@/common/composables/useDebouncedWatch'
 import { useGuideList } from '../composables/useGuideList'
 
 const router = useRouter()
@@ -38,12 +39,8 @@ const {
 
 onMounted(load)
 
-// 키워드 입력 디바운스 — 입력이 멈춘 뒤 300ms 후 첫 페이지부터 재검색(연타로 요청 폭주 방지)
-let searchTimer: ReturnType<typeof setTimeout> | undefined
-watch(keyword, () => {
-    clearTimeout(searchTimer)
-    searchTimer = setTimeout(() => search(), 300)
-})
+// 키워드 입력 디바운스 — 입력이 멈춘 뒤 첫 페이지부터 재검색(연타로 요청 폭주 방지)
+useDebouncedWatch(keyword, search)
 
 function openDetail(guideSeq: number): void {
     router.push({ name: 'guide-detail', params: { id: guideSeq } })
