@@ -4,13 +4,15 @@
  * 목록은 결제일·금액·사업자번호·검증상태를 보여준다.
  */
 import { onMounted } from 'vue'
-import { Download } from 'lucide-vue-next'
+import { Download, Receipt } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import PageTabs from '@/common/components/PageTabs.vue'
-import { formatBizNo } from '@/common/utils/format'
+import PageHeader from '@/common/components/PageHeader.vue'
+import Pagination from '@/common/components/Pagination.vue'
+import { formatBizNo, formatYmd, formatAmount } from '@/common/utils/format'
 import { useReceiptHistory } from '../composables/useReceiptHistory'
 import { receiptTabs } from '../routes'
 
@@ -18,23 +20,16 @@ const { receipts, page, totalPages, totalElements, loading, error, load, goToPag
     useReceiptHistory()
 
 onMounted(load)
-
-/** YYYYMMDD → YYYY.MM.DD */
-function formatDate(yyyymmdd: string): string {
-    if (!/^\d{8}$/.test(yyyymmdd)) return yyyymmdd
-    return `${yyyymmdd.slice(0, 4)}.${yyyymmdd.slice(4, 6)}.${yyyymmdd.slice(6, 8)}`
-}
-
-/** 금액 천단위 콤마 */
-function formatAmount(amount: number): string {
-    return amount.toLocaleString('ko-KR')
-}
 </script>
 
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-4xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">영수증</h1>
+            <PageHeader
+                :icon="Receipt"
+                title="영수증"
+                description="사진 한 장이면 금액·사업자번호·카드사를 AI가 읽어 정리합니다."
+            />
 
             <PageTabs :tabs="receiptTabs" />
 
@@ -55,9 +50,7 @@ function formatAmount(amount: number): string {
                     <AlertDescription>{{ error }}</AlertDescription>
                 </Alert>
 
-                <div v-if="loading" class="flex justify-center py-16">
-                    <Spinner class="size-6" />
-                </div>
+                <LoadingArea v-if="loading" />
 
                 <p
                     v-else-if="totalElements === 0"
@@ -83,7 +76,7 @@ function formatAmount(amount: number): string {
                                 :key="r.receiptSeq"
                                 class="border-b last:border-0 hover:bg-accent/40"
                             >
-                                <td class="px-4 py-2.5">{{ formatDate(r.payDate) }}</td>
+                                <td class="px-4 py-2.5">{{ formatYmd(r.payDate) }}</td>
                                 <td class="px-4 py-2.5 text-right tabular-nums">
                                     {{ formatAmount(r.payAmount) }}원
                                 </td>
@@ -106,25 +99,7 @@ function formatAmount(amount: number): string {
                     class="flex items-center justify-between text-sm text-muted-foreground"
                 >
                     <span>총 {{ totalElements }}건</span>
-                    <div class="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page <= 0"
-                            @click="goToPage(page - 1)"
-                        >
-                            이전
-                        </Button>
-                        <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page >= totalPages - 1"
-                            @click="goToPage(page + 1)"
-                        >
-                            다음
-                        </Button>
-                    </div>
+                    <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
                 </div>
             </div>
         </div>

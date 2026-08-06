@@ -7,9 +7,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Mic } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
 import { extractErrorMessage } from '@/common/utils/error'
 import { voiceApi } from '../api/voice.api'
 import { voiceTabs } from '../routes'
@@ -41,10 +42,11 @@ onMounted(async () => {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <div class="mb-6 flex items-center gap-2">
-                <Mic class="size-6" />
-                <h1 class="text-2xl font-semibold">회의록 요약</h1>
-            </div>
+            <PageHeader
+                :icon="Mic"
+                title="회의록 요약"
+                description="녹음을 올리면 AI가 받아쓰고 핵심을 3단으로 정리합니다."
+            />
 
             <PageTabs :tabs="voiceTabs" />
 
@@ -57,9 +59,7 @@ onMounted(async () => {
                 <AlertDescription>{{ error }}</AlertDescription>
             </Alert>
 
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <template v-else-if="record">
                 <h2 class="mb-3 text-lg font-semibold">{{ record.title }}</h2>

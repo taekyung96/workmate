@@ -7,15 +7,32 @@ import type { VoiceAnalysisResult, VoiceRecordPage } from '../types'
  * 계층 규칙: HTTP 통신만 담당.
  */
 export const voiceApi = {
-    /** 오디오 업로드 → 전사(STT) + 구조화 요약 — F8-1 */
-    async analyze(file: File, title: string): Promise<VoiceAnalysisResult> {
+    /**
+     * 오디오 업로드 → 전사(STT) + 구조화 요약 — F8-1.
+     * 제목은 분석 후 결과 화면에서 별도로 저장하므로(updateTitle) 여기선 파일만 보낸다.
+     * 제목을 비워 보내면 WAS 가 "회의록 {날짜}" 기본 제목을 붙인다.
+     */
+    async analyze(file: File): Promise<VoiceAnalysisResult> {
         const form = new FormData()
         form.append('file', file)
-        if (title.trim()) form.append('title', title.trim())
         // 멀티파트는 axios가 Content-Type(boundary 포함)을 자동 설정한다
         const { data } = await client.post<ApiResponse<VoiceAnalysisResult>>(
             '/v1/voice/analyze',
             form,
+        )
+        return data.result
+    },
+
+    /**
+     * 회의록 제목 수정 — 분석 후 결과 화면에서 확정한 제목을 저장한다.
+     * @param recordSeq 회의록 식별자
+     * @param title     새 회의 제목
+     * @returns 제목이 반영된 회의록 상세
+     */
+    async updateTitle(recordSeq: number, title: string): Promise<VoiceAnalysisResult> {
+        const { data } = await client.post<ApiResponse<VoiceAnalysisResult>>(
+            `/v1/voice/${recordSeq}/title`,
+            { title },
         )
         return data.result
     },

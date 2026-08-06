@@ -39,7 +39,7 @@ function dispatchEvent(rawEvent: string, handlers: ChatStreamHandlers): void {
             handlers.onDone?.(data as { messageSeq: number; modelName: string })
             break
         case 'error':
-            handlers.onError?.(data as { message: string; status?: number })
+            handlers.onError?.(data as { message: string; status?: number; retryable?: boolean })
             break
     }
 }

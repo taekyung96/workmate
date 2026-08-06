@@ -6,8 +6,9 @@
  * 참고(모듈 경계): "최근 채팅"은 chat 데이터라 chat.store를 읽는다.
  * 채팅이 주인공인 제품의 쉘이라 상시 노출하는 의도된 결합이다(데이터 소유는 chat 모듈).
  */
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import {
     BookText,
     LogOut,
@@ -19,20 +20,11 @@ import {
     Trash2,
 } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/common/components/ui/alert-dialog'
+import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useChatStore } from '@/modules/chat/stores/chat.store'
+import type { ChatRoom } from '@/modules/chat/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,6 +53,30 @@ function newChat(): void {
 function openRoom(roomSeq: number): void {
     chat.selectRoom(roomSeq)
     if (route.name !== 'chat') router.push({ name: 'chat' })
+}
+
+// 삭제 확인창 — 열림 상태와 대상 방을 분리 보관(공용 ConfirmDialog 하나로 목록 전체를 제어)
+const deleteOpen = ref(false)
+const deleteTarget = ref<ChatRoom | null>(null)
+
+/** 특정 방의 삭제 확인창 열기 */
+function askDeleteRoom(room: ChatRoom): void {
+    deleteTarget.value = room
+    deleteOpen.value = true
+}
+
+/** 확인창에서 삭제 확정 — store 액션은 예외를 던질 수 있어 결과를 toast 로 알린다 */
+async function confirmDeleteRoom(): Promise<void> {
+    const target = deleteTarget.value
+    if (!target) return
+    try {
+        await chat.deleteRoom(target.roomSeq)
+        toast.success('채팅을 삭제했습니다.')
+    } catch {
+        toast.error('채팅 삭제에 실패했습니다.')
+    } finally {
+        deleteTarget.value = null
+    }
 }
 </script>
 
@@ -145,33 +161,24 @@ function openRoom(roomSeq: number): void {
                     >
                         {{ room.title }}
                     </button>
-                    <AlertDialog>
-                        <AlertDialogTrigger as-child>
-                            <button
-                                class="mr-1 hidden shrink-0 rounded p-1 text-muted-foreground hover:text-destructive group-hover:block"
-                                title="삭제"
-                            >
-                                <Trash2 class="size-3.5" />
-                            </button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>채팅을 삭제할까요?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    "{{ room.title }}" 대화가 삭제됩니다.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction @click="chat.deleteRoom(room.roomSeq)">
-                                    삭제
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <button
+                        class="mr-1 hidden shrink-0 rounded p-1 text-muted-foreground hover:text-destructive group-hover:block"
+                        title="삭제"
+                        @click="askDeleteRoom(room)"
+                    >
+                        <Trash2 class="size-3.5" />
+                    </button>
                 </li>
             </ul>
         </div>
+
+        <!-- 채팅 삭제 확인 (목록 공용 하나로 제어) -->
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="채팅을 삭제할까요?"
+            :description="`&quot;${deleteTarget?.title}&quot; 대화가 삭제됩니다.`"
+            @confirm="confirmDeleteRoom"
+        />
 
         <!-- 하단 사용자 -->
         <div class="flex items-center justify-between border-t p-3">

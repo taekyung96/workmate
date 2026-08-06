@@ -5,7 +5,10 @@
  */
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
+import { BookText } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
+import PageHeader from '@/common/components/PageHeader.vue'
 import { Input } from '@/common/components/ui/input'
 import { Label } from '@/common/components/ui/label'
 import MarkdownEditor from '@/common/components/form/MarkdownEditor.vue'
@@ -32,16 +35,18 @@ const canSubmit = computed(
 async function onSubmit(): Promise<void> {
     if (!canSubmit.value) return
     const saved = await submit(guideSeq.value)
-    if (saved) router.replace({ name: 'guide-detail', params: { id: saved.guideSeq } })
+    if (saved) {
+        // toast 는 전역 마운트라 라우팅 후 상세 화면에서도 그대로 뜬다
+        toast.success(isEdit.value ? '가이드를 수정했습니다.' : '가이드를 등록했습니다.')
+        router.replace({ name: 'guide-detail', params: { id: saved.guideSeq } })
+    }
 }
 </script>
 
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-3xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">
-                {{ isEdit ? '가이드 수정' : '새 가이드 문서' }}
-            </h1>
+            <PageHeader :icon="BookText" :title="isEdit ? '가이드 수정' : '새 가이드 문서'" />
 
             <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
                 <div class="flex flex-col gap-2">

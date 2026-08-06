@@ -41,6 +41,27 @@ export function formatBizNo(bizNo: string | null | undefined): string {
 }
 
 /**
+ * 바이트 크기를 사람이 읽기 좋은 'N KB' / 'N.N MB' 로 표시한다(첨부 파일 크기 등).
+ * @param bytes 파일 크기(바이트). null·undefined 면 빈 문자열
+ * @returns 1MB 미만은 정수 KB, 이상은 소수 1자리 MB
+ */
+export function formatFileSize(bytes: number | null | undefined): string {
+    if (bytes == null) return ''
+    return bytes < 1024 * 1024
+        ? `${(bytes / 1024).toFixed(0)} KB`
+        : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+/**
+ * 숫자 금액에 천단위 구분 콤마를 넣어 표시한다(원화 등).
+ * @param amount 금액 숫자
+ * @returns 'ko-KR' 로케일 콤마 문자열
+ */
+export function formatAmount(amount: number): string {
+    return amount.toLocaleString('ko-KR')
+}
+
+/**
  * ISO 날짜 문자열을 'YYYY.MM.DD HH:mm' 형식(날짜+시각)으로 표시한다.
  * 감사 로그처럼 발생 '시각'이 의미 있는 곳에서 사용한다.
  * @param iso 서버가 내려준 ISO 날짜 문자열

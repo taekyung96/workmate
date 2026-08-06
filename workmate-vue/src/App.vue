@@ -18,5 +18,5 @@ const layout = computed(() => (route.meta.layout === 'auth' ? AuthLayout : AppLa
         <RouterView />
     </component>
     <!-- 전역 토스트 알림 — 어느 화면에서든 toast()로 성공·실패 메시지를 띄운다 -->
-    <Toaster rich-colors position="top-center" />
+    <Toaster rich-colors position="top-right" />
 </template>

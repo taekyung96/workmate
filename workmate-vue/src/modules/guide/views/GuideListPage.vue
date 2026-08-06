@@ -5,11 +5,13 @@
  */
 import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search } from 'lucide-vue-next'
+import { Search, BookText } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
+import PageHeader from '@/common/components/PageHeader.vue'
+import Pagination from '@/common/components/Pagination.vue'
 import { Input } from '@/common/components/ui/input'
 import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import {
     Card,
     CardContent,
@@ -51,10 +53,15 @@ function openDetail(guideSeq: number): void {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <div class="mb-6 flex items-center justify-between gap-3">
-                <h1 class="text-2xl font-semibold">가이드 문서</h1>
-                <Button @click="router.push({ name: 'guide-new' })">+ 새 문서</Button>
-            </div>
+            <PageHeader
+                :icon="BookText"
+                title="가이드 문서"
+                description="자주 쓰는 업무 지식을 문서로 모아 검색합니다."
+            >
+                <template #actions>
+                    <Button @click="router.push({ name: 'guide-new' })">+ 새 문서</Button>
+                </template>
+            </PageHeader>
 
             <!-- 검색 -->
             <div class="relative mb-5 max-w-sm">
@@ -65,9 +72,7 @@ function openDetail(guideSeq: number): void {
             </div>
 
             <!-- 로딩: 중앙 스피너 (관리자·영수증·회의록 등 다른 목록 화면과 통일) -->
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <p v-else-if="error" class="text-destructive">{{ error }}</p>
 
@@ -117,25 +122,7 @@ function openDetail(guideSeq: number): void {
                 <!-- 페이징 -->
                 <div class="mt-6 flex items-center justify-between text-sm text-muted-foreground">
                     <span>총 {{ totalElements }}건</span>
-                    <div class="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page <= 0"
-                            @click="changePage(page - 1)"
-                        >
-                            이전
-                        </Button>
-                        <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page >= totalPages - 1"
-                            @click="changePage(page + 1)"
-                        >
-                            다음
-                        </Button>
-                    </div>
+                    <Pagination :page="page" :total-pages="totalPages" @change="changePage" />
                 </div>
             </template>
         </div>

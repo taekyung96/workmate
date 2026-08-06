@@ -1,17 +1,24 @@
 <script setup lang="ts">
 /**
  * 회의록 [분석] 화면 (/voice, F8-1).
- * 오디오 업로드 → Gemini 전사(STT) + 3단 구조화 요약 → 결과 2분할 표시.
+ * 영수증과 동일한 점진적 흐름: 빈 드랍존 → 파일 선택 후 분석 → 결과(제목 확정 + 2분할).
+ * 오디오는 이미지 미리보기가 없으므로 파일 카드로 대체하고, 제목은 분석이 끝난 뒤 결과 화면에서 정한다.
  * 분석 상태는 store 에 있어 이력 탭을 다녀와도 유지된다.
  */
-import { ref } from 'vue'
-import { FileAudio, Mic, RefreshCw, Upload, Plus, FileText, ListTree } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import { FileAudio, Mic, RefreshCw, Upload, FileText, ListTree } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
+import { Label } from '@/common/components/ui/label'
 import { Spinner } from '@/common/components/ui/spinner'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
+import { Card } from '@/common/components/ui/card'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
 import HowItWorks from '@/common/components/HowItWorks.vue'
+import FileDropzone from '@/common/components/FileDropzone.vue'
+import { formatFileSize } from '@/common/utils/format'
 import { useVoiceStore } from '../stores/voice.store'
 import { voiceTabs } from '../routes'
 import VoiceResultPanel from '../components/VoiceResultPanel.vue'
@@ -28,11 +35,11 @@ const voiceSteps = [
     { icon: ListTree, title: '3단 요약', desc: '요약·논의·결정으로 정리합니다.' },
 ]
 
-const title = ref('')
 const selectedFile = ref<File | null>(null)
-const dragOver = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
 const localError = ref('')
+
+// 결과 화면에서 확정하는 회의 제목 — 분석이 끝나면 서버 기본 제목으로 채운다
+const titleInput = ref('')
 
 /** 최대 업로드 크기 (WAS max-file-size 와 맞춤) */
 const MAX_SIZE = 25 * 1024 * 1024
@@ -52,145 +59,141 @@ function acceptFile(file: File | undefined): void {
     selectedFile.value = file
 }
 
-function onDrop(e: DragEvent): void {
-    dragOver.value = false
-    acceptFile(e.dataTransfer?.files?.[0])
+/** 선택 취소 — 빈 드랍존으로 되돌린다 */
+function clearFile(): void {
+    selectedFile.value = null
+    localError.value = ''
 }
 
-function onPick(e: Event): void {
-    acceptFile((e.target as HTMLInputElement).files?.[0])
-}
-
-/** 분석 실행 */
+/** 분석 실행 (제목 없이 파일만 — 제목은 결과에서 저장) */
 async function onAnalyze(): Promise<void> {
     if (!selectedFile.value || store.loading) return
-    await store.analyze(selectedFile.value, title.value)
+    await store.analyze(selectedFile.value)
+}
+
+// 분석 결과가 새로 도착하면 제목 입력칸을 비운다.
+// (제목은 분석 후 사용자가 직접 입력하는 값이라, 서버 기본 제목 "회의록 {날짜}" 은 placeholder 로만 보여준다.)
+watch(
+    () => store.result,
+    (r) => {
+        if (r) titleInput.value = ''
+    },
+)
+
+/** 결과 화면에서 확정한 제목 저장 */
+async function onSaveTitle(): Promise<void> {
+    const ok = await store.saveTitle(titleInput.value)
+    if (ok) toast.success('제목을 저장했습니다.')
 }
 
 /** 새로 분석하기 — 입력·결과 초기화 */
 function onReset(): void {
     store.reset()
     selectedFile.value = null
-    title.value = ''
+    titleInput.value = ''
     localError.value = ''
-}
-
-/** 사람이 읽기 좋은 파일 크기 표기 */
-function formatSize(bytes: number): string {
-    return bytes < 1024 * 1024
-        ? `${(bytes / 1024).toFixed(0)} KB`
-        : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 </script>
 
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <div class="mb-6 flex items-center gap-3">
-                <div
-                    class="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"
-                >
-                    <Mic class="size-5" />
-                </div>
-                <div>
-                    <h1 class="text-2xl leading-tight font-semibold">회의록 요약</h1>
-                    <p class="text-sm text-muted-foreground">
-                        녹음을 올리면 AI가 받아쓰고 핵심을 3단으로 정리합니다.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                :icon="Mic"
+                title="회의록 요약"
+                description="녹음을 올리면 AI가 받아쓰고 핵심을 3단으로 정리합니다."
+            />
 
             <PageTabs :tabs="voiceTabs" />
 
-            <!-- 업로드 섹션 -->
-            <div class="rounded-lg border p-6">
-                <label class="mb-1.5 block text-sm font-medium">회의 제목 (선택)</label>
-                <Input
-                    v-model="title"
-                    placeholder="예: 2026-07-30 아키텍처 회의"
-                    class="mb-4 max-w-md"
-                />
-
-                <div
-                    class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-7 text-center transition-colors"
-                    :class="
-                        dragOver
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-muted-foreground/40'
-                    "
-                    @dragover.prevent="dragOver = true"
-                    @dragleave.prevent="dragOver = false"
-                    @drop.prevent="onDrop"
-                    @click="fileInput?.click()"
-                    role="button"
-                >
-                    <input
-                        ref="fileInput"
-                        type="file"
-                        accept="audio/*"
-                        class="hidden"
-                        @change="onPick"
-                    />
-                    <template v-if="selectedFile">
-                        <div
-                            class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm"
-                        >
-                            <FileAudio class="size-6 text-primary" />
-                        </div>
-                        <p class="font-semibold">{{ selectedFile.name }}</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{ formatSize(selectedFile.size) }} · 클릭해서 다른 파일 선택
-                        </p>
-                    </template>
-                    <template v-else>
-                        <div
-                            class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm"
-                        >
-                            <Upload class="size-6 text-muted-foreground" />
-                        </div>
-                        <p class="font-semibold">오디오 파일을 올려주세요</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            여기로 끌어다 놓거나 버튼으로 선택하세요
-                        </p>
-                        <Button class="mt-4" @click.stop="fileInput?.click()">
-                            <Plus class="mr-1.5 size-4" />
-                            파일 선택
-                        </Button>
-                        <div class="mt-3.5 flex flex-wrap justify-center gap-1.5">
-                            <span
-                                v-for="chip in audioChips"
-                                :key="chip"
-                                class="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-                            >
-                                {{ chip }}
-                            </span>
-                        </div>
-                    </template>
-                </div>
-
-                <Alert v-if="localError || store.error" variant="destructive" class="mt-4">
+            <div class="flex flex-col gap-4">
+                <Alert v-if="localError || store.error" variant="destructive">
                     <AlertDescription>{{ localError || store.error }}</AlertDescription>
                 </Alert>
 
-                <div class="mt-4 flex items-center gap-2">
-                    <Button :disabled="!selectedFile || store.loading" @click="onAnalyze">
-                        <Spinner v-if="store.loading" class="mr-2 size-4" />
-                        {{ store.loading ? 'AI가 분석 중…' : 'AI 회의록 요약하기' }}
-                    </Button>
-                    <Button v-if="store.result || selectedFile" variant="outline" @click="onReset">
-                        <RefreshCw class="mr-2 size-4" />
-                        새로 분석
-                    </Button>
+                <!-- 1) 업로드 전 (빈 화면) — 드랍존 + 동작 안내 -->
+                <div v-if="!selectedFile && !store.result" class="flex flex-col gap-5">
+                    <FileDropzone
+                        :icon="Upload"
+                        title="오디오 파일을 올려주세요"
+                        accept="audio/*"
+                        :chips="audioChips"
+                        @select="acceptFile"
+                    />
+                    <HowItWorks :steps="voiceSteps" />
                 </div>
-                <p v-if="store.loading" class="mt-2 text-xs text-muted-foreground">
-                    오디오 길이에 따라 수십 초 걸릴 수 있습니다.
-                </p>
+
+                <!-- 2) 파일 선택됨 · 분석 전 — 파일 카드 + 분석 버튼 -->
+                <div v-else-if="!store.result" class="flex flex-col gap-4">
+                    <div class="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5">
+                        <div
+                            class="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/10"
+                        >
+                            <FileAudio class="size-5 text-primary" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate font-medium">{{ selectedFile!.name }}</p>
+                            <p class="text-sm text-muted-foreground">
+                                {{ formatFileSize(selectedFile!.size) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <Button :disabled="store.loading" @click="onAnalyze">
+                            <Spinner v-if="store.loading" class="mr-2 size-4" />
+                            {{ store.loading ? 'AI가 분석 중…' : 'AI 회의록 요약하기' }}
+                        </Button>
+                        <Button variant="outline" :disabled="store.loading" @click="clearFile">
+                            다시 선택
+                        </Button>
+                    </div>
+
+                    <p class="text-sm text-muted-foreground">
+                        분석하면 결과가 이력에 자동 저장되며, 아래에서 회의 제목을 정할 수 있습니다.
+                    </p>
+                    <p v-if="store.loading" class="text-xs text-muted-foreground">
+                        오디오 길이에 따라 수십 초 걸릴 수 있습니다.
+                    </p>
+                </div>
+
+                <!-- 3) 분석 후 — 제목 확정 카드 + 결과 2분할 -->
+                <div v-else class="flex flex-col gap-4">
+                    <!-- 제목 확정 카드 — 영수증 확인 폼과 같은 결의 카드 -->
+                    <Card class="gap-0 overflow-hidden py-0">
+                        <div class="flex items-center justify-between gap-2 border-b px-5 py-4">
+                            <span class="text-sm font-semibold">회의록 정보</span>
+                            <Button variant="outline" size="sm" @click="onReset">
+                                <RefreshCw class="mr-1.5 size-4" />
+                                새로 분석
+                            </Button>
+                        </div>
+                        <div class="flex flex-col gap-1.5 p-5">
+                            <Label>회의 제목</Label>
+                            <div class="flex gap-2">
+                                <Input
+                                    v-model="titleInput"
+                                    maxlength="255"
+                                    :placeholder="
+                                        store.result?.title || '예: 2026-07-30 아키텍처 회의'
+                                    "
+                                    class="flex-1"
+                                    @keydown.enter="onSaveTitle"
+                                />
+                                <Button
+                                    :disabled="store.savingTitle || !titleInput.trim()"
+                                    @click="onSaveTitle"
+                                >
+                                    <Spinner v-if="store.savingTitle" class="mr-2 size-4" />
+                                    저장
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <VoiceResultPanel :record="store.result" />
+                </div>
             </div>
-
-            <!-- 빈 화면(결과 전) 동작 안내 -->
-            <HowItWorks v-if="!store.result" :steps="voiceSteps" class="mt-6" />
-
-            <VoiceResultPanel v-if="store.result" :record="store.result" class="mt-6" />
         </div>
     </div>
 </template>

@@ -1,4 +1,6 @@
 import './styles/index.css'
+// vue-sonner(Sonner) 기본 스타일 — 없으면 토스트가 스타일 없이 깨져서 뜨고 위치 지정도 안 먹는다
+import 'vue-sonner/style.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

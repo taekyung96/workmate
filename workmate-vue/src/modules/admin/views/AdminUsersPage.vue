@@ -5,22 +5,13 @@
  * 접근 제어는 라우트 가드(requiresAdmin) + WEB Security가 담당한다.
  */
 import { onMounted, ref } from 'vue'
-import { Check, Copy, Search } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+import { Check, Copy, Search, ShieldCheck } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/common/components/ui/alert-dialog'
 import {
     Dialog,
     DialogContent,
@@ -32,6 +23,9 @@ import {
 import { formatDate } from '@/common/utils/format'
 import { extractErrorMessage } from '@/common/utils/error'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
+import Pagination from '@/common/components/Pagination.vue'
+import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 
 // 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
 const adminTabs = [
@@ -91,8 +85,10 @@ async function confirmUnlock(): Promise<void> {
     actionError.value = null
     try {
         await unlock(target.userSeq)
+        toast.success('계정 잠금을 해제했습니다.')
     } catch (e) {
-        actionError.value = extractErrorMessage(e, '잠금 해제에 실패했습니다.')
+        // 확인창이 이미 닫혀 인라인 에러가 안 보이므로 toast 로 알린다
+        toast.error(extractErrorMessage(e, '잠금 해제에 실패했습니다.'))
     }
 }
 
@@ -103,10 +99,12 @@ async function confirmReset(): Promise<void> {
     if (!target) return
     actionError.value = null
     try {
+        // 성공 피드백은 임시 비밀번호 모달이 담당하므로 별도 성공 toast 는 두지 않는다
         tempPassword.value = await resetPassword(target.userSeq)
         tempCopied.value = false
     } catch (e) {
-        actionError.value = extractErrorMessage(e, '비밀번호 초기화에 실패했습니다.')
+        // 확인창이 이미 닫혀 인라인 에러가 안 보이므로 toast 로 알린다
+        toast.error(extractErrorMessage(e, '비밀번호 초기화에 실패했습니다.'))
     }
 }
 
@@ -116,8 +114,9 @@ async function copyTemp(): Promise<void> {
     try {
         await navigator.clipboard.writeText(tempPassword.value)
         tempCopied.value = true
+        toast.success('임시 비밀번호를 복사했습니다.')
     } catch {
-        // 복사 실패는 조용히 무시
+        toast.error('클립보드 복사에 실패했습니다.')
     }
 }
 
@@ -130,7 +129,11 @@ function roleLabel(role: string): string {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
+            <PageHeader
+                :icon="ShieldCheck"
+                title="관리자"
+                description="사용자·공통코드·감사 로그를 관리합니다."
+            />
 
             <PageTabs :tabs="adminTabs" />
 
@@ -147,9 +150,7 @@ function roleLabel(role: string): string {
                 <AlertDescription>{{ error || actionError }}</AlertDescription>
             </Alert>
 
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <p
                 v-else-if="users.length === 0"
@@ -210,61 +211,27 @@ function roleLabel(role: string): string {
                 <!-- 페이징 -->
                 <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                     <span>총 {{ totalElements }}명</span>
-                    <div class="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page <= 0"
-                            @click="goToPage(page - 1)"
-                        >
-                            이전
-                        </Button>
-                        <span>{{ page + 1 }} / {{ totalPages }}</span>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page >= totalPages - 1"
-                            @click="goToPage(page + 1)"
-                        >
-                            다음
-                        </Button>
-                    </div>
+                    <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
                 </div>
             </template>
 
             <!-- 잠금 해제 확인 -->
-            <AlertDialog v-model:open="unlockOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>계정 잠금을 해제할까요?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {{ unlockTarget?.userName }}님의 로그인 실패 횟수를 초기화하고 잠금을
-                            해제합니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmUnlock">잠금 해제</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                v-model:open="unlockOpen"
+                title="계정 잠금을 해제할까요?"
+                :description="`${unlockTarget?.userName}님의 로그인 실패 횟수를 초기화하고 잠금을 해제합니다.`"
+                confirm-text="잠금 해제"
+                @confirm="confirmUnlock"
+            />
 
             <!-- 비밀번호 초기화 확인 -->
-            <AlertDialog v-model:open="resetOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>비밀번호를 초기화할까요?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {{ resetTarget?.userName }}님의 비밀번호를 임시 비밀번호로 변경합니다.
-                            임시 비밀번호는 이 창을 닫으면 다시 볼 수 없습니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmReset">초기화</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                v-model:open="resetOpen"
+                title="비밀번호를 초기화할까요?"
+                :description="`${resetTarget?.userName}님의 비밀번호를 임시 비밀번호로 변경합니다. 임시 비밀번호는 이 창을 닫으면 다시 볼 수 없습니다.`"
+                confirm-text="초기화"
+                @confirm="confirmReset"
+            />
 
             <!-- 임시 비밀번호 1회 표시 -->
             <Dialog :open="tempPassword !== null" @update:open="(v) => !v && (tempPassword = null)">

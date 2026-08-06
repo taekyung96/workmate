@@ -5,7 +5,8 @@
  * 접근 제어는 라우트 가드(requiresAdmin) + WEB Security가 담당한다.
  */
 import { onMounted, reactive, ref } from 'vue'
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+import { Pencil, Plus, Trash2, ShieldCheck } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Badge } from '@/common/components/ui/badge'
@@ -20,18 +21,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/common/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/common/components/ui/alert-dialog'
 import { extractErrorMessage } from '@/common/utils/error'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
+import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 
 // 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
 const adminTabs = [
@@ -99,9 +93,11 @@ async function saveGroup(): Promise<void> {
             description: groupForm.description,
             useYn: groupForm.useYn,
         }
-        if (groupMode.value === 'create') await createGroup(body)
+        const creating = groupMode.value === 'create'
+        if (creating) await createGroup(body)
         else await updateGroup(groupForm.groupCode, body)
         groupOpen.value = false
+        toast.success(creating ? '그룹을 등록했습니다.' : '그룹을 수정했습니다.')
     } catch (e) {
         actionError.value = extractErrorMessage(e, '그룹 저장에 실패했습니다.')
     } finally {
@@ -145,9 +141,11 @@ async function saveCode(): Promise<void> {
             sortOrder: Number(codeForm.sortOrder),
             useYn: codeForm.useYn,
         }
-        if (codeMode.value === 'create') await createCode(body)
+        const creating = codeMode.value === 'create'
+        if (creating) await createCode(body)
         else await updateCode(codeForm.code, body)
         codeOpen.value = false
+        toast.success(creating ? '코드를 등록했습니다.' : '코드를 수정했습니다.')
     } catch (e) {
         actionError.value = extractErrorMessage(e, '코드 저장에 실패했습니다.')
     } finally {
@@ -173,8 +171,10 @@ async function confirmDeleteGroup(): Promise<void> {
     actionError.value = null
     try {
         await deleteGroup(target.groupCode)
+        toast.success('그룹을 삭제했습니다.')
     } catch (e) {
-        actionError.value = extractErrorMessage(e, '그룹 삭제에 실패했습니다.')
+        // 확인창이 이미 닫혀 인라인 에러가 안 보이므로 toast 로 알린다
+        toast.error(extractErrorMessage(e, '그룹 삭제에 실패했습니다.'))
     }
 }
 
@@ -190,8 +190,10 @@ async function confirmDeleteCode(): Promise<void> {
     actionError.value = null
     try {
         await deleteCode(target.code)
+        toast.success('코드를 삭제했습니다.')
     } catch (e) {
-        actionError.value = extractErrorMessage(e, '코드 삭제에 실패했습니다.')
+        // 확인창이 이미 닫혀 인라인 에러가 안 보이므로 toast 로 알린다
+        toast.error(extractErrorMessage(e, '코드 삭제에 실패했습니다.'))
     }
 }
 </script>
@@ -199,7 +201,11 @@ async function confirmDeleteCode(): Promise<void> {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
+            <PageHeader
+                :icon="ShieldCheck"
+                title="관리자"
+                description="사용자·공통코드·감사 로그를 관리합니다."
+            />
 
             <PageTabs :tabs="adminTabs" />
 
@@ -207,9 +213,7 @@ async function confirmDeleteCode(): Promise<void> {
                 <AlertDescription>{{ error || actionError }}</AlertDescription>
             </Alert>
 
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-[240px_1fr]">
                 <!-- 그룹 목록 -->
@@ -448,38 +452,20 @@ async function confirmDeleteCode(): Promise<void> {
             </Dialog>
 
             <!-- 그룹 삭제 확인 -->
-            <AlertDialog v-model:open="groupDeleteOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>그룹을 삭제할까요?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            "{{ groupDeleteTarget?.groupName }}" 그룹을 삭제합니다. 하위 코드가
-                            있으면 삭제되지 않습니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmDeleteGroup">삭제</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                v-model:open="groupDeleteOpen"
+                title="그룹을 삭제할까요?"
+                :description="`&quot;${groupDeleteTarget?.groupName}&quot; 그룹을 삭제합니다. 하위 코드가 있으면 삭제되지 않습니다.`"
+                @confirm="confirmDeleteGroup"
+            />
 
             <!-- 코드 삭제 확인 -->
-            <AlertDialog v-model:open="codeDeleteOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>코드를 삭제할까요?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            "{{ codeDeleteTarget?.codeName }}"({{ codeDeleteTarget?.code }}) 코드를
-                            삭제합니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmDeleteCode">삭제</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                v-model:open="codeDeleteOpen"
+                title="코드를 삭제할까요?"
+                :description="`&quot;${codeDeleteTarget?.codeName}&quot;(${codeDeleteTarget?.code}) 코드를 삭제합니다.`"
+                @confirm="confirmDeleteCode"
+            />
         </div>
     </div>
 </template>

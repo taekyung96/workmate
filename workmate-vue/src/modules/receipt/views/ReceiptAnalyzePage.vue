@@ -8,7 +8,15 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { CheckCircle2, RotateCcw, ClipboardCopy, Receipt, Upload, Sparkles } from 'lucide-vue-next'
+import {
+    CheckCircle2,
+    RotateCcw,
+    ClipboardCopy,
+    Receipt,
+    Upload,
+    Sparkles,
+    ImageUp,
+} from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Badge } from '@/common/components/ui/badge'
 import { Spinner } from '@/common/components/ui/spinner'
@@ -24,12 +32,13 @@ import {
     SelectValue,
 } from '@/common/components/ui/select'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
 import HowItWorks from '@/common/components/HowItWorks.vue'
+import FileDropzone from '@/common/components/FileDropzone.vue'
 import { formatBizNo, formatYmd } from '@/common/utils/format'
 import { useReceiptStore } from '../stores/receipt.store'
 import { receiptTabs } from '../routes'
 import type { ReceiptOcrItem } from '../types'
-import ReceiptUpload from '../components/ReceiptUpload.vue'
 
 const router = useRouter()
 
@@ -129,26 +138,22 @@ async function copyResultJson(): Promise<void> {
 
 async function onSave(): Promise<void> {
     const ok = await save()
-    if (ok) router.push({ name: 'receipt-history' })
+    if (ok) {
+        // toast 는 전역 마운트라 이력 화면으로 이동한 뒤에도 그대로 뜬다
+        toast.success('영수증을 저장했습니다.')
+        router.push({ name: 'receipt-history' })
+    }
 }
 </script>
 
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-4xl px-6 py-8">
-            <div class="mb-6 flex items-center gap-3">
-                <div
-                    class="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"
-                >
-                    <Receipt class="size-5" />
-                </div>
-                <div>
-                    <h1 class="text-2xl leading-tight font-semibold">영수증</h1>
-                    <p class="text-sm text-muted-foreground">
-                        사진 한 장이면 금액·사업자번호·카드사를 AI가 읽어 정리합니다.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                :icon="Receipt"
+                title="영수증"
+                description="사진 한 장이면 금액·사업자번호·카드사를 AI가 읽어 정리합니다."
+            />
 
             <PageTabs :tabs="receiptTabs" />
 
@@ -159,7 +164,13 @@ async function onSave(): Promise<void> {
 
                 <!-- 1) 업로드 전 (빈 화면) — 업로드 존 + 동작 안내 -->
                 <div v-if="!previewUrl" class="flex flex-col gap-5">
-                    <ReceiptUpload @select="selectFile" />
+                    <FileDropzone
+                        :icon="ImageUp"
+                        title="영수증 이미지를 올려주세요"
+                        accept="image/jpeg,image/png,image/webp"
+                        :chips="['JPG', 'PNG', 'WEBP', '최대 10MB']"
+                        @select="selectFile"
+                    />
                     <HowItWorks :steps="howSteps" />
                 </div>
 

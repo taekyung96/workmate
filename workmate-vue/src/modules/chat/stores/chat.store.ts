@@ -118,12 +118,12 @@ export const useChatStore = defineStore('chat', () => {
                     onError: (d) => {
                         ai.streaming = false
                         ai.error = true
-                        // status가 있으면 스트림 시작 전 요청 거절 → 저장된 게 없어 재시도 안전
-                        const preSave = d.status !== undefined
-                        ai.canRetry = preSave
+                        // 서버가 재시도 안전(retryable=스트림 시작 전 거절, 저장된 게 없음)이라 알린 경우에만
+                        // 재시도를 허용한다. Google 429처럼 저장 이후(post-save) 실패는 재전송 시 중복되므로 제외.
+                        ai.canRetry = d.retryable === true
                         if (!ai.content) ai.content = d.message
-                        if (preSave) retryText.value = trimmed
-                        // 429(요청제한)는 상단 배너로도 안내
+                        if (d.retryable) retryText.value = trimmed
+                        // 429(요청제한/할당량)는 상단 배너로도 안내
                         if (d.status === 429) rateLimited.value = d.message
                     },
                 },

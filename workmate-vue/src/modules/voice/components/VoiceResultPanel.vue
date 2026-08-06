@@ -5,7 +5,7 @@
  * TXT 다운로드가 과거 회의록에서도 그대로 동작한다.
  */
 import { computed } from 'vue'
-import { Download } from 'lucide-vue-next'
+import { Download, FileText, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { renderMarkdown } from '@/common/utils/markdown'
 import { useMarkdownCopy } from '@/common/composables/useMarkdownCopy'
@@ -38,7 +38,10 @@ function downloadTxt(): void {
         <!-- 좌: STT 원문 -->
         <div class="rounded-lg border">
             <div class="flex items-center justify-between border-b px-4 py-2.5">
-                <span class="text-sm font-semibold">STT 전사 원문</span>
+                <span class="flex items-center gap-1.5 text-sm font-semibold">
+                    <FileText class="size-4 text-muted-foreground" />
+                    STT 전사 원문
+                </span>
                 <Button size="sm" variant="outline" @click="downloadTxt">
                     <Download class="mr-1.5 size-4" />
                     TXT 다운로드
@@ -54,7 +57,10 @@ function downloadTxt(): void {
         <!-- 우: AI 구조화 요약 -->
         <div class="rounded-lg border">
             <div class="flex items-center justify-between border-b px-4 py-2.5">
-                <span class="text-sm font-semibold">AI 요약 리포트</span>
+                <span class="flex items-center gap-1.5 text-sm font-semibold">
+                    <Sparkles class="size-4 text-primary" />
+                    AI 요약 리포트
+                </span>
             </div>
             <div
                 class="markdown-body markdown-doc slim-scroll max-h-[60vh] overflow-y-auto px-4 py-3"

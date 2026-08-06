@@ -41,6 +41,9 @@ export interface ChatStreamHandlers {
     onToken?: (data: { delta: string }) => void
     onSource?: (data: ChatSource) => void
     onDone?: (data: { messageSeq: number; modelName: string }) => void
-    /** status 가 있으면 스트림 시작 전 요청 거절(재시도 안전), 429 면 요청제한 */
-    onError?: (data: { message: string; status?: number }) => void
+    /**
+     * status 가 있으면 HTTP/제공자 오류 코드(429 면 요청제한/할당량 → 상단 배너),
+     * retryable=true 면 스트림 시작 전 거절(저장된 게 없어 재시도 안전).
+     */
+    onError?: (data: { message: string; status?: number; retryable?: boolean }) => void
 }

@@ -1,16 +1,26 @@
 <script setup lang="ts">
 /**
- * 영수증 이미지 업로드 영역 — 드래그앤드롭 + 클릭 선택.
- * 실제 형식·크기 검증은 상위(useReceiptAnalyze.selectFile)에서 하고, 여기선 File만 올려보낸다.
+ * 파일 업로드 드롭존 — 드래그앤드롭 + 클릭 선택. 영수증(이미지)·회의록(오디오) 등이 공유하는 공통 부품.
+ * 실제 형식·크기 검증은 상위(@select 핸들러)에서 하고, 여기선 고른 File 만 올려보낸다.
+ *
+ * Props
+ *   - icon:   안내 아이콘 컴포넌트 (lucide)
+ *   - title:  안내 제목 (예: '영수증 이미지를 올려주세요')
+ *   - accept: file input 의 accept 속성 (예: 'audio/*')
+ *   - chips:  형식·크기 안내 칩 목록 (예: ['JPG', 'PNG', '최대 10MB'])
+ * Emits
+ *   - select: 사용자가 고른 File
  */
-import { ref } from 'vue'
-import { ImageUp, Plus } from 'lucide-vue-next'
-import { Button } from '@/common/components/ui/button'
+import { ref, type Component } from 'vue'
+
+defineProps<{
+    icon: Component
+    title: string
+    accept: string
+    chips: string[]
+}>()
 
 const emit = defineEmits<{ select: [file: File] }>()
-
-/** 지원 형식 안내 칩 */
-const formatChips = ['JPG', 'PNG', 'WEBP', '최대 10MB']
 
 const inputEl = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
@@ -50,29 +60,19 @@ function onDrop(event: DragEvent): void {
         @drop.prevent="onDrop"
     >
         <div class="mb-3 grid size-14 place-items-center rounded-full border bg-card shadow-sm">
-            <ImageUp class="size-6 text-muted-foreground" />
+            <component :is="icon" class="size-6 text-muted-foreground" />
         </div>
-        <p class="font-semibold">영수증 이미지를 올려주세요</p>
-        <p class="mt-1 text-sm text-muted-foreground">여기로 끌어다 놓거나 버튼으로 선택하세요</p>
-        <Button class="mt-4" @click.stop="openPicker">
-            <Plus class="mr-1.5 size-4" />
-            파일 선택
-        </Button>
-        <div class="mt-3.5 flex flex-wrap justify-center gap-1.5">
+        <p class="font-semibold">{{ title }}</p>
+        <p class="mt-1 text-sm text-muted-foreground">클릭하거나 여기로 끌어다 놓으세요</p>
+        <div class="mt-4 flex flex-wrap justify-center gap-1.5">
             <span
-                v-for="chip in formatChips"
+                v-for="chip in chips"
                 :key="chip"
                 class="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
             >
                 {{ chip }}
             </span>
         </div>
-        <input
-            ref="inputEl"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            class="hidden"
-            @change="onPicked"
-        />
+        <input ref="inputEl" type="file" :accept="accept" class="hidden" @change="onPicked" />
     </div>
 </template>

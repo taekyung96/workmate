@@ -6,21 +6,16 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import { Mic, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/common/components/ui/alert-dialog'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
+import Pagination from '@/common/components/Pagination.vue'
+import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
+import { formatDate, formatFileSize } from '@/common/utils/format'
 import { useVoiceHistory } from '../composables/useVoiceHistory'
 import { voiceTabs } from '../routes'
 
@@ -49,32 +44,20 @@ async function confirmDelete(): Promise<void> {
     if (deleteTarget.value === null) return
     await remove(deleteTarget.value)
     deleteTarget.value = null
-}
-
-/** YYYY.MM.DD 표기 */
-function formatDate(iso: string): string {
-    const d = new Date(iso)
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${d.getFullYear()}.${mm}.${dd}`
-}
-
-/** 사람이 읽기 좋은 파일 크기 표기 */
-function formatSize(bytes: number | null): string {
-    if (bytes === null) return ''
-    return bytes < 1024 * 1024
-        ? `${(bytes / 1024).toFixed(0)} KB`
-        : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    // remove 는 실패 시 error 에 사유를 담고 던지지 않으므로, 그 값으로 성공/실패를 가른다
+    if (error.value) toast.error(error.value)
+    else toast.success('회의록을 삭제했습니다.')
 }
 </script>
 
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <div class="mb-6 flex items-center gap-2">
-                <Mic class="size-6" />
-                <h1 class="text-2xl font-semibold">회의록 요약</h1>
-            </div>
+            <PageHeader
+                :icon="Mic"
+                title="회의록 요약"
+                description="녹음을 올리면 AI가 받아쓰고 핵심을 3단으로 정리합니다."
+            />
 
             <PageTabs :tabs="voiceTabs" />
 
@@ -82,9 +65,7 @@ function formatSize(bytes: number | null): string {
                 <AlertDescription>{{ error }}</AlertDescription>
             </Alert>
 
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <p
                 v-else-if="totalElements === 0"
@@ -113,7 +94,7 @@ function formatSize(bytes: number | null): string {
                             <td class="px-4 py-2.5 font-medium">{{ r.title }}</td>
                             <td class="px-4 py-2.5 text-muted-foreground">
                                 <template v-if="r.hasAudio">
-                                    {{ r.originFileName }} · {{ formatSize(r.fileSize) }}
+                                    {{ r.originFileName }} · {{ formatFileSize(r.fileSize) }}
                                 </template>
                                 <span v-else>오디오 없음</span>
                             </td>
@@ -139,41 +120,15 @@ function formatSize(bytes: number | null): string {
                 class="mt-4 flex items-center justify-between text-sm text-muted-foreground"
             >
                 <span>총 {{ totalElements }}건</span>
-                <div class="flex items-center gap-3">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page <= 0"
-                        @click="goToPage(page - 1)"
-                    >
-                        이전
-                    </Button>
-                    <span>{{ page + 1 }} / {{ Math.max(totalPages, 1) }}</span>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        :disabled="page >= totalPages - 1"
-                        @click="goToPage(page + 1)"
-                    >
-                        다음
-                    </Button>
-                </div>
+                <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
             </div>
 
-            <AlertDialog v-model:open="deleteOpen">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>이 회의록을 삭제할까요?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            전사문·요약과 저장된 오디오 파일이 함께 삭제되며 되돌릴 수 없습니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction @click="confirmDelete">삭제</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                v-model:open="deleteOpen"
+                title="이 회의록을 삭제할까요?"
+                description="전사문·요약과 저장된 오디오 파일이 함께 삭제되며 되돌릴 수 없습니다."
+                @confirm="confirmDelete"
+            />
         </div>
     </div>
 </template>

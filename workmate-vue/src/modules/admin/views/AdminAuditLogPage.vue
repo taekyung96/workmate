@@ -5,12 +5,14 @@
  * append-only 기록이라 조회만 가능하며, 접근 제어는 라우트 가드(requiresAdmin) + WEB Security가 담당한다.
  */
 import { onMounted } from 'vue'
-import { Button } from '@/common/components/ui/button'
+import Pagination from '@/common/components/Pagination.vue'
 import { Badge } from '@/common/components/ui/badge'
-import { Spinner } from '@/common/components/ui/spinner'
+import LoadingArea from '@/common/components/LoadingArea.vue'
 import { Alert, AlertDescription } from '@/common/components/ui/alert'
 import { formatDateTime } from '@/common/utils/format'
+import { ShieldCheck } from 'lucide-vue-next'
 import PageTabs from '@/common/components/PageTabs.vue'
+import PageHeader from '@/common/components/PageHeader.vue'
 
 // 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
 const adminTabs = [
@@ -36,7 +38,11 @@ function actionLabel(action: string): string {
 <template>
     <div class="slim-scroll h-full overflow-y-auto">
         <div class="mx-auto max-w-5xl px-6 py-8">
-            <h1 class="mb-6 text-2xl font-semibold">관리자</h1>
+            <PageHeader
+                :icon="ShieldCheck"
+                title="관리자"
+                description="사용자·공통코드·감사 로그를 관리합니다."
+            />
 
             <PageTabs :tabs="adminTabs" />
 
@@ -44,9 +50,7 @@ function actionLabel(action: string): string {
                 <AlertDescription>{{ error }}</AlertDescription>
             </Alert>
 
-            <div v-if="loading" class="flex justify-center py-16">
-                <Spinner class="size-6" />
-            </div>
+            <LoadingArea v-if="loading" />
 
             <p
                 v-else-if="logs.length === 0"
@@ -96,25 +100,7 @@ function actionLabel(action: string): string {
                 <!-- 페이징 -->
                 <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                     <span>총 {{ totalElements }}건</span>
-                    <div class="flex items-center gap-3">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page <= 0"
-                            @click="goToPage(page - 1)"
-                        >
-                            이전
-                        </Button>
-                        <span>{{ page + 1 }} / {{ totalPages }}</span>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            :disabled="page >= totalPages - 1"
-                            @click="goToPage(page + 1)"
-                        >
-                            다음
-                        </Button>
-                    </div>
+                    <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
                 </div>
             </template>
         </div>
