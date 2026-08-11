@@ -7,7 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [vue(), vueDevTools(), tailwindcss()],
+    // VITE_NO_DEVTOOLS=1 이면 Vue DevTools 플로팅 패널을 끈다(README 스크린샷 등 깔끔한 캡처용).
+    plugins: [vue(), ...(process.env.VITE_NO_DEVTOOLS ? [] : [vueDevTools()]), tailwindcss()],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),

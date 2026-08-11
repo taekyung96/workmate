@@ -6,11 +6,17 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 
 개발 기간: 2026.07 ~ (1인 개발)
 
-|  스트리밍 채팅 (RAG 출처 인용)   |              영수증 인식 이력              |
-| :------------------------------: | :----------------------------------------: |
-|  ![채팅](docs/images/chat.png)   | ![영수증](docs/images/receipt-history.png) |
-|         사내 가이드 RAG          |              회의록 요약 이력              |
-| ![가이드](docs/images/guide.png) |  ![회의록](docs/images/voice-history.png)  |
+**스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
+
+![스트리밍 채팅](docs/images/chat.png)
+
+|                 로그인                  |                 사내 가이드 RAG                 |
+| :-------------------------------------: | :---------------------------------------------: |
+|    ![로그인](docs/images/login.png)     |        ![가이드](docs/images/guide.png)         |
+|               영수증 분석               |                영수증 인식 이력                 |
+| ![영수증 분석](docs/images/receipt.png) | ![영수증 이력](docs/images/receipt-history.png) |
+|               회의록 요약               |                회의록 요약 이력                 |
+|  ![회의록 요약](docs/images/voice.png)  |  ![회의록 이력](docs/images/voice-history.png)  |
 
 ## 주요 기능
 
