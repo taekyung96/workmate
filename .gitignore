@@ -55,5 +55,6 @@ uploads/
 # 로컬 전용 스크립트 (DB 자격증명 하드코딩 등) — 스크린샷 캡처 스크립트와 그 의존성 정의만 추적
 scripts/*
 !scripts/capture-all-perfect.js
+!scripts/seed-demo-accounts.js
 !scripts/package.json
 !scripts/package-lock.json
