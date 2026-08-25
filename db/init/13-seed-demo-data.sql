@@ -104,15 +104,18 @@ public GuideVo getGuide(Long guideSeq) {
     ) AS v(role, content, model_name, created_at);
 
 -- 영수증 인식 이력 — 실제 멀티모달 OCR 결과
+-- image_path 는 설정값(app.upload.receipt-dir) 기준 상대경로로 정규화한다.
+-- 업로드 원본 이미지는 저장소에 포함하지 않으므로(uploads/ 는 git 미추적) 파일 자체는 없지만,
+-- 이력 목록 화면은 이미지를 표시하지 않아 캡처 재현에는 문제가 없다.
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\6c8e6ab5-8043-4ba4-a518-ab5d2747f116.png$wm$, 48100, $wm$2208162517$wm$, $wm$20260715$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"2208162517","payDate":"20260715","cardName":"롯데법인카드","payAmount":48100}]$wm$::jsonb, TIMESTAMP '2026-07-22 09:05:27'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND image_path = $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\6c8e6ab5-8043-4ba4-a518-ab5d2747f116.png$wm$);
+SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/6c8e6ab5-8043-4ba4-a518-ab5d2747f116.png$wm$, 48100, $wm$2208162517$wm$, $wm$20260715$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"2208162517","payDate":"20260715","cardName":"롯데법인카드","payAmount":48100}]$wm$::jsonb, TIMESTAMP '2026-07-22 09:05:27'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$2208162517$wm$ AND pay_date = $wm$20260715$wm$ AND pay_amount = 48100);
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\71d06fd4-731f-41de-9143-a6686588c373.jpg$wm$, 22000, $wm$6727600528$wm$, $wm$20260713$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"6727600528","payDate":"20260713","cardName":"롯데법인카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-29 06:08:54'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND image_path = $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\71d06fd4-731f-41de-9143-a6686588c373.jpg$wm$);
+SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/71d06fd4-731f-41de-9143-a6686588c373.jpg$wm$, 22000, $wm$6727600528$wm$, $wm$20260713$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"6727600528","payDate":"20260713","cardName":"롯데법인카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-29 06:08:54'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6727600528$wm$ AND pay_date = $wm$20260713$wm$ AND pay_amount = 22000);
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\ebf1d7eb-8002-482a-a5c9-24ff4d35269d.png$wm$, 22000, $wm$6831602314$wm$, $wm$20260401$wm$, $wm$롯데 아멕스 블루 비즈니스 카드$wm$, true, $wm$MANUAL$wm$, $wm$[{"bizNo":"6831602314","payDate":"20260401","cardName":"롯데 아멕스 블루 비즈니스 카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-30 02:00:10'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND image_path = $wm$C:\ClaudeCode\workmate-v3-ws\workmate-v3\workmate-was\uploads\ebf1d7eb-8002-482a-a5c9-24ff4d35269d.png$wm$);
+SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/ebf1d7eb-8002-482a-a5c9-24ff4d35269d.png$wm$, 22000, $wm$6831602314$wm$, $wm$20260401$wm$, $wm$롯데 아멕스 블루 비즈니스 카드$wm$, true, $wm$MANUAL$wm$, $wm$[{"bizNo":"6831602314","payDate":"20260401","cardName":"롯데 아멕스 블루 비즈니스 카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-30 02:00:10'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6831602314$wm$ AND pay_date = $wm$20260401$wm$ AND pay_amount = 22000);
 
 -- 회의록 이력 — 실제 STT 전사문과 AI 3단 요약
 INSERT INTO voice_record (user_seq, title, stt_text, summary_md, audio_file_name, origin_file_name, file_size, content_type, created_at)
