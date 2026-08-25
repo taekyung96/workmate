@@ -1,7 +1,7 @@
 # 07. 프로젝트 지도 — "뭘 하려면 어디를 봐야 하나"
 
 - **목적**: 이 구조(Vue3 SPA + 얇은 WEB(BFF) + WAS 3-tier)를 처음 다룰 때, **어떤 작업을 하려면 어느 파일을 열어야 하는지** 빠르게 찾는 지도.
-- **함께 보기**: [01_ARCHITECTURE](01_ARCHITECTURE.md) · [02_FRONTEND_STRUCTURE_GUIDE](02_FRONTEND_STRUCTURE_GUIDE.md) · [06_BUILD_WIRING](06_BUILD_WIRING.md)
+- **함께 보기**: [01_ARCHITECTURE](01_ARCHITECTURE.md) · [02_FRONTEND_STRUCTURE_GUIDE](02_FRONTEND_STRUCTURE_GUIDE.md) · [07_BUILD_WIRING](07_BUILD_WIRING.md)
 
 ---
 

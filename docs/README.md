@@ -31,8 +31,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 
 | 문서                                                                                                  | 설명                                     |
 | :---------------------------------------------------------------------------------------------------- | :--------------------------------------- |
-| [RAG 임베딩 쿼터 & 로컬 임베딩 전환 가이드](architecture/06_RAG_VECTORSTORE_EMBEDDING_QUOTA_GUIDE.md) | VectorStore 임베딩 쿼터 이슈 분석과 대응 |
-| [Antigravity 시스템 환경설정 명세](architecture/ANTIGRAVITY_SYSTEM_CONFIG.md)                         | Antigravity AI Agent 환경설정·아키텍처   |
+| [RAG 임베딩 쿼터 & 로컬 임베딩 전환 가이드](architecture/RAG_VECTORSTORE_EMBEDDING_QUOTA_GUIDE.md) | VectorStore 임베딩 쿼터 이슈 분석과 대응 |
 
 ---
 
@@ -45,13 +44,11 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [03. API·DB 상세 설계서](development/03_API_DB_SPEC.md)                                     | 엔드포인트·테이블 스키마                      |
 | [04. 백엔드 개발 표준 가이드](development/04_BACKEND_GUIDE.md)                              | 백엔드 3-tier·네이밍·로깅·예외                |
 | [05. 공통 요구사항 명세](development/05_COMMON_REQUIREMENTS.md)                             | F8 로깅·F9 서버 측 입력 검증                  |
-| [WSL2 · Docker PostgreSQL(pgvector) 구축 가이드](development/05_DOCKER_WSL2_SETUP_GUIDE.md) | 로컬 DB 환경 구축                             |
-| [얇은 WEB(BFF) 재구성 방향](development/05_WEB_BFF_RECONSTRUCTION.md)                       | BFF 계층 설계                                 |
-| [빌드 연결 (Vue 산출물 → WEB)](development/06_BUILD_WIRING.md)                              | SPA 빌드 산출물을 WEB에 붙이는 방법           |
-| [버전 호환성 매트릭스](development/06_COMPATIBILITY_MATRIX.md)                              | 스택 버전 호환 정보                           |
-| [프로젝트 지도](development/07_PROJECT_MAP.md)                                              | "뭘 하려면 어디를 봐야 하나" 탐색 지도        |
-
-> ⚠️ `development/` 폴더는 번호 접두어가 일부 중복(`05_`×3, `06_`×2)입니다. 순번 재정렬은 **2단계(선택)** 로 남겨둔 상태입니다.
+| [06. 얇은 WEB(BFF) 재구성 방향](development/06_WEB_BFF_RECONSTRUCTION.md)                   | BFF 계층 설계                                 |
+| [07. 빌드 연결 (Vue 산출물 → WEB)](development/07_BUILD_WIRING.md)                          | SPA 빌드 산출물을 WEB에 붙이는 방법           |
+| [08. WSL2 · Docker PostgreSQL(pgvector) 구축](development/08_DOCKER_WSL2_SETUP_GUIDE.md)    | 로컬 DB 환경 구축                             |
+| [09. 버전 호환성 매트릭스](development/09_COMPATIBILITY_MATRIX.md)                          | 스택 버전 호환 정보                           |
+| [10. 프로젝트 지도](development/10_PROJECT_MAP.md)                                          | "뭘 하려면 어디를 봐야 하나" 탐색 지도        |
 
 ---
 
@@ -98,4 +95,3 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | :--------------------------- | :----------------------------------------------------------- |
 | [../README.md](../README.md) | 프로젝트 소개 · 빠른 시작                                    |
 | [../CLAUDE.md](../CLAUDE.md) | **공통 규칙 단일 기준(SSOT)** — 코딩·네이밍·DB·Git 커밋 규칙 |
-| [../AGY.md](../AGY.md)       | Antigravity 전용 진입 문서 (공통 규칙은 CLAUDE.md 참조)      |

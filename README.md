@@ -8,15 +8,15 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 
 **스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
 
-![스트리밍 채팅](docs/images/chat.png)
+![스트리밍 채팅](docs/images/03_chat.png)
 
-|                 로그인                  |                 사내 가이드 RAG                 |
-| :-------------------------------------: | :---------------------------------------------: |
-|    ![로그인](docs/images/login.png)     |        ![가이드](docs/images/guide.png)         |
-|               영수증 분석               |                영수증 인식 이력                 |
-| ![영수증 분석](docs/images/receipt.png) | ![영수증 이력](docs/images/receipt-history.png) |
-|               회의록 요약               |                회의록 요약 이력                 |
-|  ![회의록 요약](docs/images/voice.png)  |  ![회의록 이력](docs/images/voice-history.png)  |
+|                       로그인                        |                  사내 가이드 RAG                   |
+| :---------------------------------------------------: | :--------------------------------------------------: |
+|         ![로그인](docs/images/01_login.png)         |        ![가이드](docs/images/06_guide.png)         |
+|                     영수증 분석                     |                  영수증 인식 이력                  |
+| ![영수증 분석](docs/images/04_receipt_analysis.png) | ![영수증 이력](docs/images/05_receipt_history.png) |
+|                     회의록 요약                     |                  회의록 요약 이력                  |
+|  ![회의록 요약](docs/images/08_voice_analysis.png)  |  ![회의록 이력](docs/images/09_voice_history.png)  |
 
 ## 주요 기능
 
@@ -43,8 +43,9 @@ PostgreSQL 17 + pgvector
 ```
 
 - **workmate-vue** — Vue 3.5 · Vite 8 · TypeScript · Vue Router 5 · Pinia 3 · Tailwind v4 + shadcn-vue(Reka UI)
-- **workmate-web** — Spring Boot · Spring Security(세션) · SPA 서빙 + 프록시
-- **workmate-was** — Spring Boot · Spring AI · JPA/MyBatis · PostgreSQL(pgvector)
+- **workmate-web** — Java 17 · Spring Boot 3.5 · Spring Security(세션) · SPA 서빙 + 프록시
+- **workmate-was** — Java 17 · Spring Boot 3.5 · Spring AI 1.1(Google GenAI) · JPA + MyBatis · PostgreSQL 17 + pgvector
+- **빌드** — Gradle 8.13 멀티 프로젝트 (WEB 빌드 시 Vue 산출물 자동 포함)
 
 ## 실행
 
@@ -56,10 +57,15 @@ docker compose up -d db                 # pgvector PostgreSQL 17
 ./gradlew :workmate-web:bootRun         # 8080, Vue 빌드까지 자동
 ```
 
-프론트만 따로 핫리로드로 개발할 때는 `cd workmate-vue && npm run dev` (5173, `/api`는 8080으로 프록시). DB 환경 구축은 [WSL2·Docker 셋업 가이드](docs/development/05_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
+프론트만 따로 핫리로드로 개발할 때는 `cd workmate-vue && npm run dev` (5173, `/api`는 8080으로 프록시). DB 환경 구축은 [WSL2·Docker 셋업 가이드](docs/development/08_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
 
 ## 문서
 
 - [docs/README.md](docs/README.md) — 전체 문서 색인 (여기서 시작)
 - [프로젝트 종합 개요](docs/project/PROJECT_OVERVIEW.md) · [개발 진입점(HANDOVER)](docs/project/HANDOVER.md)
 - [아키텍처](docs/development/01_ARCHITECTURE.md) · [프론트 구조](docs/development/02_FRONTEND_STRUCTURE_GUIDE.md) · [ADR](docs/project/adr/) · [로드맵](docs/project/ROADMAP.md)
+
+## 라이선스
+
+[MIT](LICENSE)
+

@@ -52,7 +52,7 @@ PostgreSQL 17 + pgvector
 | **운영** | `vite build` 산출물을 WEB이 서빙(`static/`). **SPA fallback**: `/api`·정적자원 외 모든 경로 → `index.html` (Vue Router가 처리) |
 
 - Tailwind v4는 `@tailwindcss/vite` 플러그인으로 Vite에 통합.
-- Gradle 빌드에 `npm run build` 연동하거나 산출물 커밋 (v2 관례 계승 — [06_COMPATIBILITY_MATRIX](06_COMPATIBILITY_MATRIX.md) 참조).
+- Gradle 빌드에 `npm run build` 연동하거나 산출물 커밋 (v2 관례 계승 — [09_COMPATIBILITY_MATRIX](09_COMPATIBILITY_MATRIX.md) 참조).
 
 ---
 

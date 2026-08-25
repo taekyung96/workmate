@@ -31,9 +31,10 @@ workmate-web/src/main/resources/static/
 *.local.yml
 application-local.yml
 
-# Claude Code 개인 설정
+# AI 코딩 도구 개인 설정 (프로젝트 규칙 SSOT 는 CLAUDE.md 하나로 유지)
 .claude/
 .playwright-mcp/
+AGY.md
 
 # 로컬 산출물
 docs/**/*.html
@@ -52,6 +53,8 @@ uploads/
 # 로컬 테스트용 오디오 (음성 회의록 F8-1 테스트)
 *.wav
 
-# 로컬 전용 스크립트 (DB 자격증명 하드코딩 등) — 스크린샷 캡처 스크립트만 추적
+# 로컬 전용 스크립트 (DB 자격증명 하드코딩 등) — 스크린샷 캡처 스크립트와 그 의존성 정의만 추적
 scripts/*
 !scripts/capture-all-perfect.js
+!scripts/package.json
+!scripts/package-lock.json

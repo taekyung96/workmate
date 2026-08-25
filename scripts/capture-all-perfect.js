@@ -8,18 +8,21 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-async function saveImage(page, baseName, altName) {
+/**
+ * 현재 페이지를 캡처해 docs/images 아래에 PNG 한 장으로 저장한다.
+ * @param {import('playwright').Page} page - 캡처 대상 페이지
+ * @param {string} fileName - 저장할 파일명 (예: '01_login.png')
+ * @returns {Promise<void>}
+ */
+async function saveImage(page, fileName) {
   const buf = await page.screenshot();
   const opt = await sharp(buf)
     .resize({ width: 1280, fit: 'inside' })
     .png({ compressionLevel: 9, palette: true, quality: 85 })
     .toBuffer();
-  
-  fs.writeFileSync(path.join(OUTPUT_DIR, baseName), opt);
-  if (altName) {
-    fs.writeFileSync(path.join(OUTPUT_DIR, altName), opt);
-  }
-  console.log(`[SAVED SUCCESS] ${baseName} ${altName ? 'and ' + altName : ''}`);
+
+  fs.writeFileSync(path.join(OUTPUT_DIR, fileName), opt);
+  console.log(`[SAVED SUCCESS] ${fileName}`);
 }
 
 async function run() {
@@ -222,13 +225,13 @@ async function run() {
     await page.goto('http://localhost:5173/login');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
-    await saveImage(page, '01_login.png', 'login.png');
+    await saveImage(page, '01_login.png');
 
     console.log('2. Capturing 02_signup.png...');
     await page.goto('http://localhost:5173/signup');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
-    await saveImage(page, '02_signup.png', 'signup.png');
+    await saveImage(page, '02_signup.png');
 
     await context.close();
   }
@@ -261,70 +264,70 @@ async function run() {
     const roomBtn = await page.$('ul li button');
     if (roomBtn) await roomBtn.click();
     await page.waitForTimeout(1500);
-    await saveImage(page, '03_chat.png', 'chat.png');
+    await saveImage(page, '03_chat.png');
 
     // 4. Receipt Form
     console.log('4. Capturing 04_receipt_analysis.png...');
     await page.goto('http://localhost:5173/receipt');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
-    await saveImage(page, '04_receipt_analysis.png', 'receipt.png');
+    await saveImage(page, '04_receipt_analysis.png');
 
     // 5. Receipt History
     console.log('5. Capturing 05_receipt_history.png...');
     await page.goto('http://localhost:5173/receipt/history');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '05_receipt_history.png', 'receipt-history.png');
+    await saveImage(page, '05_receipt_history.png');
 
     // 6. Guide List
     console.log('6. Capturing 06_guide.png...');
     await page.goto('http://localhost:5173/guide');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
-    await saveImage(page, '06_guide.png', 'guide.png');
+    await saveImage(page, '06_guide.png');
 
     // 7. Guide Detail
     console.log('7. Capturing 07_guide_detail.png...');
     await page.goto('http://localhost:5173/guide/28');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '07_guide_detail.png', 'guide-detail.png');
+    await saveImage(page, '07_guide_detail.png');
 
     // 8. Voice Form
     console.log('8. Capturing 08_voice_analysis.png...');
     await page.goto('http://localhost:5173/voice');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
-    await saveImage(page, '08_voice_analysis.png', 'voice.png');
+    await saveImage(page, '08_voice_analysis.png');
 
     // 9. Voice History
     console.log('9. Capturing 09_voice_history.png...');
     await page.goto('http://localhost:5173/voice/history');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '09_voice_history.png', 'voice-history.png');
+    await saveImage(page, '09_voice_history.png');
 
     // 10. Admin Users
     console.log('10. Capturing 10_admin_users.png...');
     await page.goto('http://localhost:5173/admin/users');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '10_admin_users.png', 'admin-users.png');
+    await saveImage(page, '10_admin_users.png');
 
     // 11. Admin Audit Logs
     console.log('11. Capturing 11_admin_audit.png...');
     await page.goto('http://localhost:5173/admin/audit-logs');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '11_admin_audit.png', 'admin-audit.png');
+    await saveImage(page, '11_admin_audit.png');
 
     // 12. Admin Common Codes
     console.log('12. Capturing 12_admin_codes.png...');
     await page.goto('http://localhost:5173/admin/common-codes');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '12_admin_codes.png', 'admin-codes.png');
+    await saveImage(page, '12_admin_codes.png');
 
     await context.close();
   }
