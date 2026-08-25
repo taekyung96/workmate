@@ -10,7 +10,7 @@ Spring AI 기반 "업무 비서" 웹앱의 **v3 (Vue3 단독 SPA)**. v2의 Thyme
 ## 필독 문서
 
 - `docs/README.md` — **전체 문서 색인** (범주별 목차·한 줄 설명, 문서 탐색은 여기서 시작)
-- `docs/project/HANDOVER.md` — 콜드스타트 진입점 (결정·근거·셋업 체크리스트)
+- `docs/project/HANDOVER.md` — 콜드스타트 진입점 (결정·근거·초기 셋업 기록)
 - `docs/project/adr/*` — 아키텍처 결정 기록 (왜 SPA·왜 세션·왜 기능별 모듈·왜 shadcn-vue)
 - `docs/development/01_ARCHITECTURE.md` — 아키텍처 상세 spec (모듈 구조·빌드·에러·테스트)
 - `docs/development/02_FRONTEND_STRUCTURE_GUIDE.md` — Vue3 SPA 디렉토리·계층·모듈 규칙 (백엔드 계층 매핑 포함)

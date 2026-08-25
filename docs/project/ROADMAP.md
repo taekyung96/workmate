@@ -7,7 +7,7 @@
 
 ## 0단계 — 셋업 (개발 시작)
 
-[HANDOVER §4 체크리스트](HANDOVER.md) 참조. WAS/db/gradle 복사 → 얇은 WEB 재구성 → Vue3 SPA 스캐폴딩 → 빌드 연결.
+[HANDOVER §4 초기 셋업 기록](HANDOVER.md) 참조. WAS/db/gradle 복사 → 얇은 WEB 재구성 → Vue3 SPA 스캐폴딩 → 빌드 연결.
 
 ## 1단계 — 골격 + 로그인/회원가입
 

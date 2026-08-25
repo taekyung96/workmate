@@ -4,7 +4,7 @@
 > 가장 먼저 읽는 문서다. 설계 단계(별도 세션)에서 내린 **모든 결정과 그 근거**,
 > 현재 상태, 다음 할 일을 담는다.
 
-- **현재 단계**: 설계 완료 → **개발 시작 직전** (코드는 아직 없음, 문서만 존재)
+- **현재 상태**: v2 이관과 SPA 전환 완료. [로드맵](ROADMAP.md) 5단계까지 구현됐고, 이후 회의록 요약(F8-1) 등이 추가됐다.
 - **관련 문서**: [ADR](adr/) · [아키텍처](../development/01_ARCHITECTURE.md) · [프론트 구조 가이드](../development/02_FRONTEND_STRUCTURE_GUIDE.md) · [로드맵](ROADMAP.md)
 
 ---
@@ -54,29 +54,34 @@ PostgreSQL 17 + pgvector
 
 ---
 
-## 4. 개발 단계 셋업 체크리스트 (이 순서로 시작)
+## 4. 초기 셋업 기록 (v2 → v3 이관)
 
-현재 이 폴더엔 **문서만** 있다. 코드는 아래 순서로 세팅한다:
+v3는 빈 저장소에서 시작해, v2에서 쓸 만한 것만 골라 옮겨온 뒤 프론트를 새로 만들었다.
+아래는 그때 무엇을 왜 가져왔는지 남겨두는 기록이다. 전부 끝난 단계다.
 
-- [ ] **1. WAS 복사** — **원본 위치: `C:\ClaudeCode\workmate-ws\workmate`** (v2 저장소). 여기서 아래를 이 저장소(`workmate-v3`)로 복사
-    - `workmate-was/` (AI 로직 대체로 유지, 필요 시 수정)
-    - `db/init/*.sql` (스키마 — `ddl-auto: validate`)
-    - `docker-compose.yml`, gradle 루트(`settings.gradle`·`build.gradle`·`gradlew*`·`gradle/`), `gradle.properties`
-    - `.env.example` (실제 `.env`는 새로 작성, git 미추적)
-    - > ⚠️ **`.git` 딸려오지 않게 주의**: v2의 `.git`은 저장소 **루트**(`workmate/.git`)에 있다. **하위 폴더(`workmate-was/` 등)만 골라 복사**하면 `.git`은 안 따라온다. 루트 전체를 통째로 복사하지 말 것.
-    - > 복사 후 이 저장소에서 **새로 `git init`** 하여 독립된 이력으로 시작한다 (v2 이력과 분리). 혹시 실수로 `.git`이 딸려왔으면 그 `.git` 폴더를 지우고 새로 init.
-- [ ] **2. 얇은 WEB 재구성** — v2 `workmate-web`에서 Thymeleaf 페이지 로직 제거, SPA 정적서빙 + `/api` 프록시 + SSE 중계 + Spring Security 세션만 남김
-- [ ] **3. Vue3 SPA 스캐폴딩** — `workmate-vue`를 SPA로 승격 (아래 명령)
-- [ ] **4. 빌드 연결** — Vite dev proxy(5173→8080) / 운영 빌드 산출물 → WEB 서빙 ([아키텍처 §빌드](../development/01_ARCHITECTURE.md))
-- [ ] **5. 구현** — [ROADMAP.md](ROADMAP.md) 순서대로
+1. **WAS 이관** — v2 저장소에서 `workmate-was/`(AI 로직), `db/init/*.sql`(스키마, `ddl-auto: validate`),
+   `docker-compose.yml`, Gradle 루트 파일(`settings.gradle`·`build.gradle`·`gradlew*`·`gradle/`·`gradle.properties`),
+   `.env.example`을 복사했다. 실제 `.env`는 비밀값이라 새로 작성했고 git에 올리지 않는다.
 
-```bash
-# Vue3 SPA + shadcn-vue 초기 세팅 (workmate-vue 안에서)
-npm create vue@latest .            # Router·Pinia·TS 선택
-npm install
-npx shadcn-vue@latest init         # components.json 생성 (경로를 common/ 모듈로 설정)
-npx shadcn-vue@latest add button dialog ...   # 필요한 컴포넌트만
-```
+   v2의 `.git`은 저장소 루트에 있어서, 하위 폴더만 골라 복사하면 이력이 딸려오지 않는다.
+   v3는 `git init`으로 이력을 새로 시작해 v2와 완전히 분리했다.
+
+2. **얇은 WEB 재구성** — v2 `workmate-web`에서 Thymeleaf 페이지 로직을 걷어내고,
+   SPA 정적 서빙 + `/api` 프록시 + SSE 중계 + Spring Security 세션만 남겼다.
+
+3. **Vue3 SPA 스캐폴딩** — `workmate-vue`를 단독 SPA로 세웠다. 당시 쓴 명령은 아래와 같다.
+
+   ```bash
+   npm create vue@latest .                       # Router·Pinia·TS 선택
+   npm install
+   npx shadcn-vue@latest init                    # components.json 생성 (경로를 common/ 모듈로 설정)
+   npx shadcn-vue@latest add button dialog ...   # 필요한 컴포넌트만
+   ```
+
+4. **빌드 연결** — 개발은 Vite dev proxy(5173→8080)로, 운영은 Vue 빌드 산출물을 WEB이 서빙하도록 붙였다.
+   ([아키텍처 §빌드](../development/01_ARCHITECTURE.md))
+
+5. **기능 구현** — [ROADMAP.md](ROADMAP.md) 순서대로 진행했다.
 
 ---
 

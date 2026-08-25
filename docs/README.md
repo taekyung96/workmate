@@ -12,7 +12,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | 문서                                                     | 설명                                               |
 | :------------------------------------------------------- | :------------------------------------------------- |
 | [프로젝트 종합 개요](project/PROJECT_OVERVIEW.md)        | v3 전체 개요와 4대 핵심 기능                       |
-| [개발 진입점 · 인수인계 (HANDOVER)](project/HANDOVER.md) | 콜드스타트 진입점 — 설계 결정·근거·셋업 체크리스트 |
+| [개발 진입점 · 인수인계 (HANDOVER)](project/HANDOVER.md) | 콜드스타트 진입점 — 설계 결정·근거·초기 셋업 기록 |
 | [기능 명세서](project/FEATURE_SPEC.md)                   | F1~F7 기능별 요구사항·예외·완료 조건               |
 | [v2 진화 배경](project/PROJECT_BACKGROUND_V2.md)         | 왜 v2에서 v3로 재설계했는가                        |
 | [로드맵](project/ROADMAP.md)                             | 구현 순서                                          |

@@ -63,7 +63,7 @@ docker version
 
 ### 2.1 환경변수 파일 (`.env`) 작성
 
-프로젝트 루트(`C:\ClaudeCode\workmate-v3-ws\workmate-v3\.env`) 경로에 실제 환경변수를 작성합니다.
+저장소 루트에 `.env` 파일을 만들고 실제 값을 채웁니다. `.env.example`을 복사해 쓰면 됩니다.
 
 ```env
 POSTGRES_DB=workmate_db
@@ -141,4 +141,4 @@ SELECT * FROM pg_extension WHERE extname = 'vector';
 ## 🔗 관련 문서
 
 - 🏗️ [01_ARCHITECTURE.md](01_ARCHITECTURE.md) — 전체 시스템 모듈 구조
-- 📌 [HANDOVER.md](../project/HANDOVER.md) — 개발 단계 셋업 체크리스트
+- 📌 [HANDOVER.md](../project/HANDOVER.md) — 콜드스타트 진입점 (설계 결정과 초기 셋업 기록)

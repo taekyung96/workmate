@@ -1,7 +1,7 @@
 -- =============================================================
 -- 마일스톤 1 테이블: 인증(admin_user)·채팅(chat_room/chat_message)·감사(admin_audit_log)
 -- 이미 볼륨이 있는 기존 환경에 수동 적용:
---   wsl -e sh -c "cd /mnt/c/ClaudeCode/workmate-ws/workmate && docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/03-schema.sql"
+--   docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/03-schema.sql
 -- 규칙: 소문자 snake_case, 단수형, 제약 테이블명_컬럼명_제약 (04 문서 §4)
 -- =============================================================
 
