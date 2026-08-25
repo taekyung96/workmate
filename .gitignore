@@ -34,7 +34,6 @@ application-local.yml
 # AI 코딩 도구 개인 설정 (프로젝트 규칙 SSOT 는 CLAUDE.md 하나로 유지)
 .claude/
 .playwright-mcp/
-AGY.md
 
 # 로컬 산출물
 docs/**/*.html
