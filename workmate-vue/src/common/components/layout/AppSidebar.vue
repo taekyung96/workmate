@@ -21,6 +21,7 @@ import {
 } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
+import BrandMark from '@/common/components/BrandMark.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useChatStore } from '@/modules/chat/stores/chat.store'
@@ -84,7 +85,11 @@ async function confirmDeleteRoom(): Promise<void> {
     <aside class="flex h-screen w-64 shrink-0 flex-col border-r bg-muted/30">
         <!-- 로고 + 새 채팅 -->
         <div class="p-3">
-            <div class="mb-3 px-2 text-lg font-semibold">Workmate</div>
+            <div class="mb-3 flex items-center gap-2 px-2">
+                <!-- 작게 들어가므로 반짝임은 빼고 W 만 남긴다 -->
+                <BrandMark :sparkle="false" class="size-6 shrink-0" />
+                <span class="text-lg font-semibold">Workmate</span>
+            </div>
             <Button variant="outline" class="w-full justify-start gap-2" @click="newChat">
                 <SquarePen class="size-4" />
                 새 채팅

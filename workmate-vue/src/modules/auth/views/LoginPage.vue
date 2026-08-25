@@ -20,6 +20,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/common/components/ui/card'
+import BrandMark from '@/common/components/BrandMark.vue'
 import { useAuth } from '../composables/useAuth'
 
 const route = useRoute()
@@ -72,6 +73,7 @@ function startSocialLogin(provider: string): void {
 <template>
     <Card class="w-full max-w-sm">
         <CardHeader>
+            <BrandMark class="mb-2 size-12" />
             <CardTitle class="text-2xl">로그인</CardTitle>
             <CardDescription>Workmate 업무 비서에 로그인하세요.</CardDescription>
         </CardHeader>
