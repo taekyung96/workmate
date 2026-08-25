@@ -21,6 +21,7 @@ import {
     CardTitle,
 } from '@/common/components/ui/card'
 import BrandMark from '@/common/components/BrandMark.vue'
+import SocialProviderIcon from '../components/SocialProviderIcon.vue'
 import { useAuth } from '../composables/useAuth'
 
 const route = useRoute()
@@ -41,6 +42,11 @@ const socialProviders = [
         id: 'kakao',
         label: '카카오 로그인',
         buttonClass: 'bg-[#FEE500] text-black hover:bg-[#f2d900]',
+    },
+    {
+        id: 'google',
+        label: 'Google 로그인',
+        buttonClass: 'border bg-white text-foreground hover:bg-accent',
     },
 ]
 
@@ -81,7 +87,7 @@ function onSubmit(): void {
  * OAuth 는 XHR 이 아니라 제공자로의 전체 페이지 이동이라 axios 가 아닌 location 이동을 쓴다.
  * 개발 중에는 5173 에서 시작하더라도 콜백은 세션을 쥔 8080(BFF)으로 돌아온다.
  *
- * @param provider 제공자 registrationId ('naver' · 'kakao')
+ * @param provider 제공자 registrationId ('naver' · 'kakao' · 'google')
  */
 function startSocialLogin(provider: string): void {
     window.location.href = `/oauth2/authorization/${provider}`
@@ -110,20 +116,7 @@ function startSocialLogin(provider: string): void {
                     :class="provider.buttonClass"
                     @click="startSocialLogin(provider.id)"
                 >
-                    <span v-if="provider.id === 'naver'" class="text-base font-bold leading-none">
-                        N
-                    </span>
-                    <!-- 카카오는 말풍선 마크가 상징이라 글자 대신 도형으로 둔다 -->
-                    <svg
-                        v-else-if="provider.id === 'kakao'"
-                        viewBox="0 0 24 24"
-                        class="size-4 fill-current"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M12 3C6.99 3 3 6.2 3 10.14c0 2.5 1.65 4.7 4.14 5.96l-.9 3.3c-.09.32.27.57.55.39l3.94-2.6c.42.05.84.08 1.27.08 5.01 0 9-3.2 9-7.13S17.01 3 12 3z"
-                        />
-                    </svg>
+                    <SocialProviderIcon :provider="provider.id" class="size-4" />
                     {{ provider.label }}
                 </Button>
             </div>

@@ -37,12 +37,13 @@ spring:
                         client-authentication-method: client_secret_post
                         redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
                         scope: profile_nickname, account_email
-                    # 구글을 붙일 때는 아래 3줄만 추가하면 된다 (Spring 내장 제공자라 provider 블록 불필요).
-                    # 빈 client-id 로 등록하면 기동 시점에 예외가 나므로, 키를 발급받은 뒤에 넣는다.
-                    #   google:
-                    #     client-id: ${GOOGLE_CLIENT_ID}
-                    #     client-secret: ${GOOGLE_CLIENT_SECRET}
-                    #     scope: profile, email   # openid 를 넣으면 OIDC 흐름으로 갈라져 UserService 가 달라진다
+                    # 구글 (F1-1) — Spring 내장 제공자라 provider 블록이 필요 없다.
+                    # openid 를 스코프에 넣으면 OIDC 흐름으로 갈라져 OidcUserService 를 타므로 넣지 않는다.
+                    # profile·email 만으로 sub·email·name 을 모두 받는다
+                    google:
+                        client-id: ${GOOGLE_CLIENT_ID:not-configured}
+                        client-secret: ${GOOGLE_CLIENT_SECRET:not-configured}
+                        scope: profile, email
                 provider:
                     naver:
                         authorization-uri: https://nid.naver.com/oauth2.0/authorize

@@ -38,6 +38,11 @@ application-local.yml
 # 로컬 산출물
 docs/**/*.html
 
+# 작업 중 저장한 화면 캡처 (저장소 루트) — 문서용 이미지는 docs/images 에 둔다
+/*.png
+/*.jpg
+/*.jpeg
+
 # OS
 Thumbs.db
 .DS_Store
