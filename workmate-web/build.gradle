@@ -25,6 +25,9 @@ dependencies {
     // WebClient(리액티브) — 채팅 SSE 스트리밍의 무버퍼 relay 전용 (F2-06). 블로킹 프록시는 RestClient 유지
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    // 소셜 로그인 (F1-1) — 인가 코드 교환·state 검증·프로필 조회를 Spring 이 처리한다.
+    // 세션을 쥐는 WEB 에만 둔다 (WAS 는 stateless 유지)
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     // was.* 커스텀 프로퍼티(@ConfigurationProperties) IDE 자동완성 지원

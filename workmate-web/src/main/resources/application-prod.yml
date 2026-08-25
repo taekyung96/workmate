@@ -8,3 +8,9 @@ spring:
 
 was:
     base-url: ${WAS_BASE_URL}
+
+app:
+    oauth2:
+        # WEB 이 SPA 를 직접 서빙하므로 같은 오리진의 상대경로로 돌려보낸다
+        success-redirect-uri: /chat
+        failure-redirect-uri: /login

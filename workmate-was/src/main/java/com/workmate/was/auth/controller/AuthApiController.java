@@ -3,6 +3,7 @@ package com.workmate.was.auth.controller;
 import com.workmate.was.auth.vo.LoginRequestVo;
 import com.workmate.was.auth.vo.LoginResponseVo;
 import com.workmate.was.auth.vo.SignupRequestVo;
+import com.workmate.was.auth.vo.SocialLoginRequestVo;
 import com.workmate.was.auth.service.AuthService;
 import com.workmate.was.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -45,5 +46,17 @@ public class AuthApiController {
     @PostMapping("/login")
     public ApiResponse<LoginResponseVo> login(@RequestBody LoginRequestVo request) {
         return ApiResponse.success(authService.login(request));
+    }
+
+    /**
+     * A3 소셜 로그인 (F1-1) — 토큰 교환·프로필 조회는 WEB 이 끝낸 뒤 호출한다.
+     * 계정이 없으면 만들고, 이메일이 같은 계정이 있으면 그 계정에 연결한다.
+     *
+     * @param request 제공자 프로필 VO (provider·providerUserId·email·name)
+     * @return 로그인 성공 응답 VO
+     */
+    @PostMapping("/social-login")
+    public ApiResponse<LoginResponseVo> socialLogin(@RequestBody SocialLoginRequestVo request) {
+        return ApiResponse.success(authService.socialLogin(request));
     }
 }

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/modules/auth/stores/auth.store'
  * - 최초 진입 시 /me로 세션을 복원(1회)
  * - 보호 화면인데 미인증 → /login(원래 목적지 기억)
  * - 관리자 전용(meta.requiresAdmin)인데 관리자 아님 → /chat
- * - 이미 로그인 상태로 /login·/signup 접근 → /chat
+ * - 이미 로그인 상태로 /login 접근 → /chat
  *
  * @param router 가드를 부착할 라우터 인스턴스
  */
@@ -30,8 +30,8 @@ export function registerGuards(router: Router): void {
             return { name: 'chat' }
         }
 
-        // 이미 로그인했는데 로그인/가입 화면 접근 → 홈으로
-        if (isPublic && auth.isAuthenticated && (to.name === 'login' || to.name === 'signup')) {
+        // 이미 로그인했는데 로그인 화면 접근 → 홈으로
+        if (isPublic && auth.isAuthenticated && to.name === 'login') {
             return { name: 'chat' }
         }
 

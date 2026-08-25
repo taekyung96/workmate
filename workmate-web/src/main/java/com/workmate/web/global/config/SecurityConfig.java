@@ -6,6 +6,9 @@ import com.workmate.web.global.security.CsrfCookieFilter;
 import com.workmate.web.global.security.LoginFailureHandler;
 import com.workmate.web.global.security.LoginSuccessHandler;
 import com.workmate.web.global.security.WasAuthenticationProvider;
+import com.workmate.web.global.security.oauth.SocialLoginFailureHandler;
+import com.workmate.web.global.security.oauth.SocialLoginSuccessHandler;
+import com.workmate.web.global.security.oauth.WasOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -40,6 +43,9 @@ public class SecurityConfig {
     private final WasAuthenticationProvider wasAuthenticationProvider;
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
+    private final WasOAuth2UserService wasOAuth2UserService;
+    private final SocialLoginSuccessHandler socialLoginSuccessHandler;
+    private final SocialLoginFailureHandler socialLoginFailureHandler;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -47,8 +53,12 @@ public class SecurityConfig {
         http
             .authenticationProvider(wasAuthenticationProvider)
             .authorizeHttpRequests(auth -> auth
-                // 인증 없이 허용: 로그인·회원가입 API
-                .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
+                // 인증 없이 허용: 로그인 API
+                .requestMatchers("/api/auth/login").permitAll()
+                // 소셜 로그인 시작·콜백 경로 (F1-1) — 로그인 전이므로 열어둬야 한다
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                // 회원가입은 관리자 전용으로 전환 (F1-1) — 일반 사용자는 소셜로만 가입한다
+                .requestMatchers("/api/auth/signup").hasRole("ADMIN")
                 // 관리자 API는 ROLE_ADMIN 만 (F6-04 — URL 직접 접근도 서버 차단)
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // 그 외 모든 API는 세션 인증 필요 (/api/auth/me 포함 → 미로그인 시 401)
@@ -67,6 +77,11 @@ public class SecurityConfig {
                 .usernameParameter("email")
                 .successHandler(loginSuccessHandler)      // 성공 → 200 JSON + 사용자 정보
                 .failureHandler(loginFailureHandler))     // 실패 → 401 JSON + 사유
+            // 소셜 로그인 (F1-1) — 토큰 교환은 Spring 이, 계정 조회·생성은 WasOAuth2UserService 가 WAS 에 위임
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo.userService(wasOAuth2UserService))
+                .successHandler(socialLoginSuccessHandler)   // 전체 페이지 이동이라 JSON 대신 리다이렉트
+                .failureHandler(socialLoginFailureHandler))
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .logoutSuccessHandler((request, response, authentication) ->

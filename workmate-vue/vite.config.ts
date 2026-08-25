@@ -22,6 +22,16 @@ export default defineConfig({
                 target: 'http://localhost:8080',
                 changeOrigin: true,
             },
+            // 소셜 로그인(F1-1)도 8080 으로 넘긴다. 전체 페이지 이동이라 XHR 은 아니지만,
+            // 이 경로를 프록시해야 화면 코드가 '/oauth2/...' 상대경로 하나로 dev·운영을 모두 커버한다.
+            '/oauth2': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
+            '/login/oauth2': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
         },
     },
 })

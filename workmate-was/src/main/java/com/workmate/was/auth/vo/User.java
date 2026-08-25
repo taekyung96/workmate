@@ -29,8 +29,11 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 512)
     private String email;
 
-    /** BCrypt 해시 (F1-02) */
-    @Column(name = "password", nullable = false, length = 60)
+    /**
+     * BCrypt 해시 (F1-02).
+     * 소셜로 가입한 사용자는 비밀번호가 없어 null 이다 (F1-1) — 이메일 로그인 경로에서만 값이 존재한다.
+     */
+    @Column(name = "password", length = 60)
     private String password;
 
     @Column(name = "user_name", nullable = false, length = 50)

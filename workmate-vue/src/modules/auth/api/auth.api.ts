@@ -1,6 +1,6 @@
 import client from '@/common/api/client'
 import type { ApiResponse } from '@/common/types/api'
-import type { LoginUser, SignupRequest } from '../types'
+import type { LoginUser } from '../types'
 
 /**
  * 상태변경 요청(로그인·회원가입) 전에 XSRF-TOKEN 쿠키가 있는지 보장한다.
@@ -38,16 +38,6 @@ export const authApi = {
             skipAuthRedirect: true,
         })
         return data.result
-    },
-
-    /**
-     * 회원가입 (JSON). 검증은 WAS가 담당하고 실패 사유는 응답 message로 온다.
-     * @returns 공통 응답 (success=false면 message에 사유)
-     */
-    async signup(payload: SignupRequest): Promise<ApiResponse<void>> {
-        await ensureCsrfToken() // 쿠키가 삭제된 상태(로그아웃 후 등)에서 가입 첫 시도 403 방지
-        const { data } = await client.post<ApiResponse<void>>('/auth/signup', payload)
-        return data
     },
 
     /**

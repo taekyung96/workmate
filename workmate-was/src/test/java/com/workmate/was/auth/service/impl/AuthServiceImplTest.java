@@ -26,6 +26,9 @@ class AuthServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private com.workmate.was.auth.dao.UserSocialAccountRepository userSocialAccountRepository;
+
     // 실제 BCrypt 로 해시가 만들어지는지 검증하기 위해 Spy 실객체 사용
     @Spy
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -140,6 +143,100 @@ class AuthServiceImplTest {
 
         com.workmate.was.auth.vo.LoginRequestVo request = new com.workmate.was.auth.vo.LoginRequestVo();
         request.setEmail("ghost@example.com");
+        request.setPassword("abcd123!");
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(com.workmate.was.global.exception.AuthenticationFailedException.class)
+                .hasMessageContaining("이메일 또는 비밀번호");
+    }
+
+    // ── 소셜 로그인 (F1-1) ───────────────────────────────────────────────
+
+    private com.workmate.was.auth.vo.SocialLoginRequestVo socialRequest(String email) {
+        com.workmate.was.auth.vo.SocialLoginRequestVo request = new com.workmate.was.auth.vo.SocialLoginRequestVo();
+        request.setProvider("naver");
+        request.setProviderUserId("naver-1234");
+        request.setEmail(email);
+        request.setName("홍길동");
+        return request;
+    }
+
+    /** userSeq 는 JPA 가 채우는 값이라 테스트에서는 직접 심는다 */
+    private User userWithSeq(String email, long userSeq) {
+        User user = User.builder().email(email).password(null).userName("홍길동").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "userSeq", userSeq);
+        return user;
+    }
+
+    @Test
+    void 이미_연결된_소셜_계정이면_기존_계정으로_로그인한다() {
+        User existing = userWithSeq("user@example.com", 7L);
+        when(userSocialAccountRepository.findByProviderAndProviderUserId("naver", "naver-1234"))
+                .thenReturn(java.util.Optional.of(
+                        com.workmate.was.auth.vo.UserSocialAccount.builder()
+                                .userSeq(7L).provider("naver").providerUserId("naver-1234").build()));
+        when(userRepository.findById(7L)).thenReturn(java.util.Optional.of(existing));
+
+        com.workmate.was.auth.vo.LoginResponseVo response = authService.socialLogin(socialRequest("user@example.com"));
+
+        assertThat(response.getUserSeq()).isEqualTo(7L);
+        // 이미 연결돼 있으므로 계정도 연결도 새로 만들지 않는다
+        verify(userRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+        verify(userSocialAccountRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void 이메일이_같은_계정이_있으면_새_계정을_만들지_않고_연결만_추가한다() {
+        when(userSocialAccountRepository.findByProviderAndProviderUserId("naver", "naver-1234"))
+                .thenReturn(java.util.Optional.empty());
+        when(userRepository.findByEmail("user@example.com"))
+                .thenReturn(java.util.Optional.of(userWithSeq("user@example.com", 7L)));
+
+        // 제공자가 대문자·공백 섞인 이메일을 줘도 이메일 로그인과 같은 정규형으로 대조돼야 연동된다 (F1-01a)
+        authService.socialLogin(socialRequest("  User@Example.COM "));
+
+        verify(userRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+        ArgumentCaptor<com.workmate.was.auth.vo.UserSocialAccount> captor =
+                ArgumentCaptor.forClass(com.workmate.was.auth.vo.UserSocialAccount.class);
+        verify(userSocialAccountRepository).save(captor.capture());
+        assertThat(captor.getValue().getUserSeq()).isEqualTo(7L);
+        assertThat(captor.getValue().getProvider()).isEqualTo("naver");
+    }
+
+    @Test
+    void 계정이_없으면_비밀번호_없이_새로_만든다() {
+        when(userSocialAccountRepository.findByProviderAndProviderUserId("naver", "naver-1234"))
+                .thenReturn(java.util.Optional.empty());
+        when(userRepository.findByEmail("new@example.com")).thenReturn(java.util.Optional.empty());
+        when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        authService.socialLogin(socialRequest("new@example.com"));
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        User created = captor.getValue();
+        assertThat(created.getPassword()).isNull();     // 소셜 가입자는 비밀번호가 없다
+        assertThat(created.getPhone()).isNull();        // 전화번호도 받지 않는다
+        assertThat(created.getEmail()).isEqualTo("new@example.com");
+        assertThat(created.getRole()).isEqualTo("ROLE_USER");
+        verify(userSocialAccountRepository).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void 제공자가_이메일을_주지_않으면_로그인을_거부한다() {
+        assertThatThrownBy(() -> authService.socialLogin(socialRequest(null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("이메일 제공에 동의");
+    }
+
+    @Test
+    void 비밀번호가_없는_계정은_이메일_로그인을_할_수_없다() {
+        when(userRepository.findByEmail("social@example.com"))
+                .thenReturn(java.util.Optional.of(userWithSeq("social@example.com", 8L)));
+
+        com.workmate.was.auth.vo.LoginRequestVo request = new com.workmate.was.auth.vo.LoginRequestVo();
+        request.setEmail("social@example.com");
         request.setPassword("abcd123!");
 
         assertThatThrownBy(() -> authService.login(request))

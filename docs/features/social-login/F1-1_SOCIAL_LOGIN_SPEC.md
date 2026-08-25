@@ -184,7 +184,13 @@ spring:
 
 `user-name-attribute: response`가 네이버 특유의 부분이다. 구글은 프로필 JSON을 평평하게 주는데 네이버는 `{"response": {"id": ..., "email": ...}}` 로 한 겹 감싸서 준다. 제공자별 응답 차이는 `OAuth2UserInfo` 인터페이스와 제공자별 구현으로 흡수한다.
 
-구글은 Spring Security에 내장된 제공자라 `provider` 블록이 필요 없다. `registration.google` 아래에 `client-id`·`client-secret`·`scope`(`openid, email, profile`)만 넣으면 나머지는 기본값이 채워진다. 카카오도 나중에 검수를 통과하면 네이버와 같은 형태로 `registration`·`provider` 블록만 추가하면 된다.
+구글은 Spring Security에 내장된 제공자라 `provider` 블록이 필요 없다. `registration.google` 아래에 `client-id`·`client-secret`·`scope`만 넣으면 나머지는 기본값이 채워진다.
+
+이때 **스코프에 `openid`를 넣지 않는다.** `openid`가 있으면 Spring이 OIDC 흐름으로 갈라져 `OidcUserService`를 타는데, 우리는 네이버와 같은 `DefaultOAuth2UserService` 경로로 통일하는 게 코드가 단순하다. `profile, email`만으로도 `sub`·`email`·`name`을 다 받는다.
+
+카카오도 나중에 검수를 통과하면 네이버와 같은 형태로 `registration`·`provider` 블록만 추가하면 된다.
+
+제공자 키가 없는 환경에서도 앱은 떠야 한다. `client-id`를 빈 문자열로 두면 Spring이 `Client id must not be empty`로 기동을 막으므로, 기본값을 더미 문자열로 두고 그 상태에서는 소셜 버튼만 실패하게 한다. 저장소를 받아 바로 실행해보는 사람이 데모 계정으로는 들어갈 수 있어야 하기 때문이다.
 
 비밀값은 `.env`에 둔다. `redirect-uri`는 비밀값이 아니고 Spring이 템플릿으로 만들어주므로 `.env`에 넣지 않는다.
 

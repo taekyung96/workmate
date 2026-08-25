@@ -11,10 +11,6 @@ export const authRoutes: RouteRecordRaw[] = [
         component: () => import('./views/LoginPage.vue'),
         meta: { public: true, layout: 'auth' },
     },
-    {
-        path: '/signup',
-        name: 'signup',
-        component: () => import('./views/SignupPage.vue'),
-        meta: { public: true, layout: 'auth' },
-    },
+    // 회원가입 화면은 없앴다 (F1-1) — 일반 사용자는 소셜 로그인으로 가입하고,
+    // 이메일 계정은 관리자만 만들 수 있다 (POST /api/auth/signup, ROLE_ADMIN 전용)
 ]
