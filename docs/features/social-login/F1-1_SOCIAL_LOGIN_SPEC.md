@@ -1,0 +1,255 @@
+# [F1-1] 소셜 로그인 설계서
+
+> **선행 문서**: [FEATURE_SPEC F1. 회원/인증](../../project/FEATURE_SPEC.md) · [ADR-0001 (세션 인증 채택)](../../project/adr/0001-hybrid-ssr-to-vue3-spa.md)
+> **성격**: 기존 이메일/비밀번호 인증 위에 소셜 로그인을 얹고, 회원가입 경로를 소셜로 옮기는 설계
+
+---
+
+## 0. 배경
+
+지금 인증은 이메일과 비밀번호뿐이다. 회원가입에서 이메일·비밀번호·이름·전화번호를 받고, BCrypt로 해싱해 저장한다.
+
+기능상 부족한 건 없지만 두 가지가 걸린다. 하나는 비밀번호를 직접 보관한다는 점이다. BCrypt 해시라도 유출되면 오프라인 공격 대상이 되고, 사용자가 다른 서비스와 같은 비밀번호를 쓰는 건 우리가 통제할 수 없다. 다른 하나는 가입 마찰이다. 업무 비서를 써보려는 사람에게 전화번호까지 입력시킬 이유가 약하다.
+
+소셜 로그인을 붙이면 비밀번호를 아예 안 갖게 된다. 다만 위험이 사라지는 게 아니라 구글·네이버로 옮겨가는 것이다. 사용자의 구글 계정이 뚫리면 우리 서비스도 같이 뚫리고, 이메일을 받아 저장하는 이상 개인정보 취급 책임은 그대로 남는다. "우리가 잘 못 지키는 걸 더 잘 지키는 쪽에 맡긴다"가 정확한 표현이다.
+
+`PROJECT_BACKGROUND_V2.md` 11절에서 소셜 로그인은 범위 제외(YAGNI)로 적어뒀던 항목이다. 이 문서로 그 결정을 뒤집는다.
+
+---
+
+## 1. 제공자 조사 결과
+
+붙이기 전에 각 플랫폼이 개인 개발자의 로컬 프로젝트에서 실제로 쓸 수 있는지부터 확인했다.
+
+| 제공자 | 비용     | 로컬에서                                    | 검수                                                                                    |
+| :----- | :------- | :------------------------------------------ | :-------------------------------------------------------------------------------------- |
+| 구글   | 무료     | 그대로 동작                                 | `email`·`profile`·`openid`는 민감 스코프가 아니라 심사 불필요. 테스트 모드로 최대 100명 |
+| 네이버 | 무료     | 동작하되 등록한 테스터 아이디만 로그인 가능 | 일반 공개하려면 검수 필요                                                               |
+| 카카오 | 무료     | 로그인은 되지만 **이메일을 못 받음**        | 이메일 동의항목은 비즈 앱 전환 + 검수. 심사가 접속 가능한 서비스 URL을 요구             |
+| 애플   | **유료** | —                                           | Apple Developer Program 연 $99                                                          |
+
+**카카오를 이번 범위에서 뺀 이유가 여기 있다.** 로그인 자체는 무료지만 이메일 동의항목 검수는 "운영 중인 서비스와 앱이 일치하는지"를 보기 때문에, 배포되지 않은 로컬 프로젝트로는 통과를 기대하기 어렵다. 이메일이 계정 식별자인 우리 구조에서 이메일을 못 받으면 로그인이 성립하지 않는다.
+
+네이버는 개발 상태에서도 테스터로 등록한 아이디는 정상 로그인된다. 포트폴리오 용도로는 이 정도면 충분하다.
+
+### CI(연계정보)를 쓰지 않는 이유
+
+같은 사람인지 판별하는 데 CI를 쓰는 방식이 국내에서 흔하지만, 우리는 못 쓴다. CI는 주민등록번호를 암호화한 값이라 본인확인기관 승인 체계 안에서만 유통된다. 네이버는 승인받은 이용기관만 수집할 수 있고, 카카오는 카카오싱크 신청과 별도 심사를 거쳐야 한다. 구글은 CI라는 개념 자체가 없다. 한국 본인확인 제도이기 때문이다.
+
+CI 통합은 본인확인이 필요한 상용 서비스가 쓰는 방식이고, 이 프로젝트의 선택지가 아니다.
+
+---
+
+## 2. 결정 사항
+
+| #   | 결정                                                           | 근거                                           |
+| :-- | :------------------------------------------------------------- | :--------------------------------------------- |
+| 1   | 소셜을 주 경로로 두되 이메일 로그인은 남긴다                   | 아래 별도 설명                                 |
+| 2   | 구글 + 네이버. 카카오는 설정만 추가하면 붙도록 구조만 열어둔다 | 1절                                            |
+| 3   | 이메일이 같으면 같은 계정으로 자동 연동한다                    | 구글·네이버 모두 제공자가 검증한 이메일을 준다 |
+| 4   | 소셜 최초 로그인은 추가 입력 없이 바로 가입 완료               | 가입 마찰을 줄이는 게 도입 목적 중 하나        |
+| 5   | `POST /api/auth/signup`은 ROLE_ADMIN 전용으로 전환             | 아래 별도 설명                                 |
+
+### 결정 1을 이렇게 정한 이유
+
+소셜로 완전히 갈아치우는 안도 검토했지만 잃는 게 더 컸다.
+
+README에 데모 계정(`demo.admin@example.com`)이 박혀 있고, 이 저장소를 받아본 사람은 그 계정으로 들어가 스크린샷과 같은 화면을 본다. 소셜만 남기면 각자의 구글 계정으로 로그인하게 되고, 그러면 채팅·영수증·회의록이 하나도 없는 빈 화면을 보게 된다. `db/init/13-seed-demo-data.sql`로 맞춰둔 재현성이 통째로 깨진다.
+
+관리자 부트스트랩 문제도 있다. `provider_user_id`는 실제로 로그인해봐야 나오는 값이라 시드에 미리 넣을 수 없다. 소셜만 쓰면 최초 관리자를 만들 방법이 "일단 로그인시킨 뒤 DB에서 role을 수동으로 올린다"밖에 없다.
+
+기존 F1 구현물을 버리는 것도 손해다. BCrypt, AES 투명 암호화, 5회 실패 잠금, 중복 로그인 차단이 직접 구현되어 있는데, 이걸 지우면 남는 건 `oauth2Login()` 설정 몇 줄이다.
+
+그래서 **일반 사용자는 소셜로만 들어오고, 이메일 로그인은 관리자·데모 경로로 유지한다.** 회원가입 화면은 없앤다.
+
+### 결정 5를 이렇게 정한 이유
+
+회원가입 화면을 없애도 `POST /api/auth/signup`은 남겨야 한다. `scripts/seed-demo-accounts.js`가 이 API로 데모 계정을 만들기 때문이다. 이메일 AES 암호화와 BCrypt 해싱을 앱이 직접 하게 하려고 DB 직접 INSERT 대신 이 경로를 쓴다.
+
+다만 화면만 지우고 API를 공개로 두면 화면에 없을 뿐 누구나 POST 한 번으로 계정을 만들 수 있다. ROLE_ADMIN 전용으로 막고, 시드 스크립트는 관리자로 로그인한 뒤 호출하도록 바꾼다.
+
+---
+
+## 3. 인증 흐름
+
+브라우저는 여전히 8080만 바라본다. WEB이 세션을 쥐고 WAS는 stateless인 구조가 그대로 유지된다.
+
+```
+[네이버로 로그인] 클릭
+   │
+   ├─ GET /oauth2/authorization/naver          Spring Security 가 네이버로 리다이렉트
+   │
+   ├─ 네이버 동의 화면                            사용자가 이름·이메일 제공에 동의
+   │
+   ├─ GET /login/oauth2/code/naver             WEB(8080) 이 인가 코드 수신
+   │                                            토큰 교환·프로필 조회는 Spring 이 처리
+   │
+   ├─ POST {WAS}/api/v1/auth/social-login      WEB → WAS (내부망)
+   │      { provider, providerUserId, email, name }
+   │   ← LoginUser                              없으면 생성, 있으면 연동
+   │
+   └─ 세션 생성 → SPA 로 리다이렉트
+```
+
+지금 `WasAuthenticationProvider`가 하는 일과 대칭이다. 자격 검증만 WAS에 위임하고 세션은 WEB이 쥔다. **WEB은 이 흐름에서도 DB를 직접 보지 않는다.**
+
+토큰 교환, `state` 검증, 프로필 조회는 Spring Security의 `oauth2Login()`에 맡긴다. 직접 구현하는 방안도 검토했으나, 보안 결함이 들어가기 쉬운 부분을 굳이 손으로 짤 이유가 없다고 판단했다.
+
+---
+
+## 4. 스키마 변경
+
+`db/init/14-social-login.sql` 을 새로 만든다.
+
+```sql
+-- 소셜 가입자는 비밀번호가 없다
+ALTER TABLE admin_user ALTER COLUMN password DROP NOT NULL;
+
+-- 계정 하나에 제공자 여러 개를 매단다 (구글로 가입 → 나중에 네이버 연동)
+CREATE TABLE IF NOT EXISTS user_social_account (
+    social_seq        bigint GENERATED BY DEFAULT AS IDENTITY,
+    user_seq          bigint       NOT NULL,
+    provider          varchar(20)  NOT NULL,   -- 'naver' | 'google'
+    provider_user_id  varchar(255) NOT NULL,   -- 제공자가 주는 고유 식별자
+    created_at        timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT user_social_account_social_seq_pk PRIMARY KEY (social_seq),
+    CONSTRAINT user_social_account_user_seq_fk FOREIGN KEY (user_seq) REFERENCES admin_user(user_seq),
+    CONSTRAINT user_social_account_provider_uk UNIQUE (provider, provider_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_social_account_user ON user_social_account (user_seq);
+```
+
+`provider`와 `provider_user_id`를 별도 테이블로 뺀 이유는 한 계정에 제공자가 여러 개 붙을 수 있어야 하기 때문이다. `admin_user`에 컬럼 두 개로 넣으면 구글로 가입한 사람이 네이버를 추가로 연결할 수 없다.
+
+나중에 카카오가 붙어도 행 하나 추가로 끝나고, CI를 받을 수 있는 상황이 오면 연동 기준만 교체하면 된다.
+
+---
+
+## 5. WAS 변경
+
+`POST /api/v1/auth/social-login` 을 추가한다. 요청은 `{ provider, providerUserId, email, name }`, 응답은 기존 로그인과 같은 `LoginResponseVo`.
+
+로직은 세 갈래다.
+
+| 상황                                        | 처리                                               |
+| :------------------------------------------ | :------------------------------------------------- |
+| `(provider, provider_user_id)` 가 이미 있다 | 그 계정으로 로그인                                 |
+| 없는데 이메일이 같은 계정이 있다            | 그 계정에 소셜 계정을 연결한 뒤 로그인 (자동 연동) |
+| 둘 다 없다                                  | `admin_user` 생성 후 소셜 계정 연결                |
+
+신규 생성 시 값은 이렇게 채운다.
+
+- `email` — 제공자가 준 값을 기존 `EmailNormalizer`로 정규화(trim + 소문자)한 뒤 AES 암호화. 이메일 로그인과 같은 규칙을 타야 UK가 제대로 동작한다
+- `user_name` — 제공자가 준 이름
+- `password` — `NULL`
+- `phone` — `NULL`
+- `role` — `ROLE_USER`
+
+`use_yn = false`인 계정으로 소셜 로그인이 들어오면 거부한다. 탈퇴·정지된 계정이 소셜 경로로 되살아나면 안 된다.
+
+---
+
+## 6. WEB 변경
+
+`SecurityConfig`에 `oauth2Login()`을 추가한다. 기존 `formLogin`은 그대로 둔다.
+
+- 성공 핸들러에서 WAS 응답을 기존 `LoginUser` principal로 만들어 세션에 넣는다. 이렇게 하면 세션에 들어간 뒤로는 로그인 방식과 무관하게 모든 코드가 동일하게 동작한다
+- 실패 시 SPA 로그인 화면으로 사유와 함께 리다이렉트한다. OAuth는 XHR이 아니라 전체 페이지 이동이라 401 JSON을 돌려줄 수 없다
+- 세션 동시성 1개(F1-08)는 세션 레벨 설정이라 소셜 로그인에도 그대로 적용된다
+- `/oauth2/**`, `/login/oauth2/**` 는 `permitAll`
+
+`application.yml`의 제공자 설정은 아래와 같다. 네이버는 Spring 내장 제공자가 아니라 `provider` 블록을 직접 써야 한다.
+
+```yaml
+spring:
+    security:
+        oauth2:
+            client:
+                registration:
+                    naver:
+                        client-id: ${NAVER_CLIENT_ID}
+                        client-secret: ${NAVER_CLIENT_SECRET}
+                        client-name: Naver
+                        authorization-grant-type: authorization_code
+                        redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+                        scope: name, email
+                provider:
+                    naver:
+                        authorization-uri: https://nid.naver.com/oauth2.0/authorize
+                        token-uri: https://nid.naver.com/oauth2.0/token
+                        user-info-uri: https://openapi.naver.com/v1/nid/me
+                        user-name-attribute: response
+```
+
+`user-name-attribute: response`가 네이버 특유의 부분이다. 구글은 프로필 JSON을 평평하게 주는데 네이버는 `{"response": {"id": ..., "email": ...}}` 로 한 겹 감싸서 준다. 제공자별 응답 차이는 `OAuth2UserInfo` 인터페이스와 제공자별 구현으로 흡수한다.
+
+구글은 Spring Security에 내장된 제공자라 `provider` 블록이 필요 없다. `registration.google` 아래에 `client-id`·`client-secret`·`scope`(`openid, email, profile`)만 넣으면 나머지는 기본값이 채워진다. 카카오도 나중에 검수를 통과하면 네이버와 같은 형태로 `registration`·`provider` 블록만 추가하면 된다.
+
+비밀값은 `.env`에 둔다. `redirect-uri`는 비밀값이 아니고 Spring이 템플릿으로 만들어주므로 `.env`에 넣지 않는다.
+
+```bash
+NAVER_CLIENT_ID=
+NAVER_CLIENT_SECRET=
+```
+
+---
+
+## 7. 프론트 변경
+
+- 로그인 화면에 소셜 버튼을 추가한다. OAuth는 전체 페이지 이동이라 axios가 아니라 `window.location.href = '/oauth2/authorization/naver'` 로 보낸다
+- 회원가입 화면(`SignupPage.vue`)과 `/signup` 라우트를 제거한다. `docs/images/02_signup.png` 도 캡처 목록에서 뺀다
+- 로그인 실패로 돌아왔을 때 쿼리 파라미터의 사유를 읽어 안내한다
+
+---
+
+## 8. 개발 환경 주의사항
+
+브라우저는 `localhost`와 `127.0.0.1`을 **다른 호스트로 취급한다.** 세션 쿠키는 호스트 단위라 두 주소를 섞어 쓰면 로그인이 유지되지 않는다.
+
+각 콘솔에 등록한 주소와 브라우저에 입력하는 주소를 하나로 통일해야 한다.
+
+| 항목                     | 값                                                |
+| :----------------------- | :------------------------------------------------ |
+| 네이버 서비스 URL        | `http://localhost:8080`                           |
+| 네이버 Callback URL      | `http://localhost:8080/login/oauth2/code/naver`   |
+| 구글 승인된 리디렉션 URI | `http://localhost:8080/login/oauth2/code/google`  |
+| 개발 중 접속 주소        | `http://localhost:5173` · `http://localhost:8080` |
+
+네이버 개발자센터의 제공 정보 선택에서는 **회원이름과 연락처 이메일 주소만 필수로 체크한다.** 검수 기준상 체크한 항목은 실제로 쓰고 있어야 하고, 안 쓰는 항목을 체크하면 "불필요한 개인정보 요구"로 거절된다. 별명·프로필 사진·생일 등은 저장할 곳도 표시할 곳도 없다.
+
+서비스 환경은 PC 웹 하나만 등록한다. 하나의 Client ID가 모든 환경에 적용되고, 우리는 반응형 SPA라 URL이 하나뿐이다.
+
+---
+
+## 9. 예외 처리
+
+| 상황                           | 처리                                                          |
+| :----------------------------- | :------------------------------------------------------------ |
+| 사용자가 동의 화면에서 취소    | 로그인 화면으로 복귀, 오류 표시 없음                          |
+| 제공자가 이메일을 주지 않음    | 로그인 거부 + "이메일 제공에 동의해야 로그인할 수 있습니다"   |
+| `use_yn = false` 계정          | 로그인 거부 + 기존 비활성 계정 안내와 동일한 문구             |
+| WAS 통신 실패                  | 로그인 화면으로 복귀 + 일시적 오류 안내. 세션은 만들지 않는다 |
+| 제공자 응답 형식이 예상과 다름 | 로그인 거부 + `log.error` 로 원본 응답 기록                   |
+
+---
+
+## 10. 완료 조건
+
+- [ ] 네이버로 처음 로그인하면 계정이 생성되고 바로 채팅 화면에 진입한다
+- [ ] 같은 네이버 계정으로 다시 로그인하면 새 계정이 생기지 않고 기존 계정으로 들어간다
+- [ ] 구글로 가입한 뒤 같은 이메일의 네이버로 로그인하면 기존 계정에 연결된다 (`user_social_account` 2행, `admin_user` 1행)
+- [ ] 데모 계정 `demo.admin@example.com` 이메일 로그인이 그대로 동작한다
+- [ ] 소셜 로그인 후에도 중복 로그인 차단(F1-08)이 동작한다
+- [ ] 비로그인 상태에서 `POST /api/auth/signup` 호출 시 403
+- [ ] `/signup` 접근 시 404 또는 로그인 화면으로 이동
+
+---
+
+## 11. 범위 밖
+
+- 카카오 로그인 — 1절의 이메일 검수 문제. 구조는 열어두고 검수 통과 후 설정만 추가한다
+- CI 기반 동일인 판별 — 1절
+- 계정 연결 해제 화면 — 연결만 있고 해제는 없다. 필요해지면 별도로 다룬다
+- 소셜 계정의 관리자 승격 화면 — 관리자는 시드로 만든 이메일 계정을 쓴다
+- 애플 로그인 — 유료
