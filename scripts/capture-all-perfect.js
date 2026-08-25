@@ -28,8 +28,11 @@ const MAX_CAPTURE_HEIGHT = 3600;
 
 /** 관리자 사용자 목록에서 데모 계정만 남기는 검색어 (실제 사용자 이메일·전화번호 노출 방지) */
 const DEMO_KEYWORD = '데모';
-/** 채팅 캡처에 사용할 대화방 제목 */
-const CHAT_ROOM_TITLE = 'RAG에 대해서 설명해줘';
+/**
+ * 채팅 캡처 때 실제로 던지는 질문.
+ * 사내 가이드에 근거 문서가 있는 주제여야 답변에 출처가 붙는다.
+ */
+const RAG_QUESTION = 'pgvector에서 HNSW 인덱스는 어떤 기준으로 잡아야 해?';
 /** 가이드 상세 캡처 대상을 좁히기 위한 목록 검색어 */
 const GUIDE_SEARCH_KEYWORD = 'RAG';
 
@@ -126,6 +129,47 @@ async function login(page) {
     console.log(`  [로그인] ${EMAIL}`);
 }
 
+/**
+ * 새 대화에서 실제로 RAG 질문을 던지고, 답변에 출처가 붙은 상태를 캡처한다.
+ *
+ * 출처(sources)는 chat_message 에 저장되지 않아 이력을 다시 열면 사라진다.
+ * 그래서 저장된 대화를 여는 대신, 캡처하는 순간에 한 번 실제로 물어본다.
+ * @param {import('playwright').Page} page
+ */
+async function captureChatWithSources(page) {
+    const input = page.getByPlaceholder('메시지를 입력하세요…');
+    await input.fill(RAG_QUESTION);
+    await input.press('Enter');
+
+    try {
+        // 출처 칩(가이드 링크)이 붙으면 RAG 응답이 끝난 것으로 본다
+        await page.locator('a[href^="/guide/"]').first().waitFor({ timeout: 120000 });
+        await page.waitForTimeout(1500);
+    } catch {
+        console.warn('  [경고] 출처가 표시되지 않았다 (쿼터 초과이거나 검색 결과 없음) — 그대로 캡처한다');
+    }
+    await saveImage(page, '03_chat.png');
+    await deleteTempRoom(page);
+}
+
+/**
+ * 캡처하려고 만든 임시 대화방을 지운다.
+ * 이걸 안 하면 스크립트를 돌릴 때마다 데모 계정의 채팅 이력이 계속 불어난다.
+ * @param {import('playwright').Page} page
+ */
+async function deleteTempRoom(page) {
+    const row = page.locator('li.group').filter({ hasText: RAG_QUESTION.slice(0, 20) }).first();
+    if (!(await row.count())) {
+        console.warn('  [경고] 임시 대화방을 찾지 못해 삭제를 건너뛴다');
+        return;
+    }
+    await row.hover();
+    await row.locator('button[title="삭제"]').click();
+    await page.getByRole('button', { name: '삭제' }).click();
+    await page.waitForTimeout(1200);
+    console.log('  [정리] 캡처용 임시 대화방 삭제');
+}
+
 async function run() {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2 });
@@ -143,17 +187,9 @@ async function run() {
     // --- 2) 로그인 후 화면 ---
     await login(page);
 
-    console.log('3. 채팅 (실제 대화 이력)');
+    console.log('3. 채팅 (실제 RAG 질문 → 출처 표시)');
     await go(page, '/chat');
-    // 사이드바의 실제 대화방을 눌러 저장된 질문·AI 답변을 띄운다
-    const room = page.getByRole('button', { name: CHAT_ROOM_TITLE }).first();
-    if (await room.count()) {
-        await room.click();
-        await page.waitForTimeout(1500);
-    } else {
-        console.warn(`  [경고] 대화방 "${CHAT_ROOM_TITLE}" 을(를) 찾지 못했습니다`);
-    }
-    await saveImage(page, '03_chat.png');
+    await captureChatWithSources(page);
 
     console.log('4~5. 영수증 분석 · 이력');
     await go(page, '/receipt');
