@@ -1,11 +1,14 @@
 <script setup lang="ts">
 /**
  * 로그인 화면 (/login) — 단독 카드 레이아웃.
- * 일반 사용자는 소셜 로그인으로 들어오고, 이메일/비밀번호는 관리자·데모 계정용으로 남겨둔다 (F1-1).
+ *
+ * 일반 사용자는 소셜 로그인으로 들어온다 (F1-1). 이메일/비밀번호는 관리자·데모 계정 전용이라
+ * 기본 노출하지 않고 링크 뒤에 접어둔다.
  * 실패/잠금 사유는 서버 메시지를 그대로 표시한다(어느 쪽 오류인지 노출 안 함).
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { ChevronDown } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
 import { Input } from '@/common/components/ui/input'
 import { Label } from '@/common/components/ui/label'
@@ -24,6 +27,8 @@ const { loading, errorMessage, login } = useAuth()
 
 const email = ref('')
 const password = ref('')
+const showEmailForm = ref(false)
+const emailInput = ref<InstanceType<typeof Input> | null>(null)
 
 // 소셜 로그인 실패 시 WEB 이 ?error= 로 사유를 실어 되돌려보낸다 (F1-1)
 const socialError = computed(() => {
@@ -34,6 +39,18 @@ const socialError = computed(() => {
 const canSubmit = computed(
     () => email.value.trim() !== '' && password.value !== '' && !loading.value,
 )
+
+// 이메일 로그인이 실패하면 폼이 접혀 사유만 덩그러니 남는 상황을 막는다
+watch(errorMessage, (message) => {
+    if (message) showEmailForm.value = true
+})
+
+/** 이메일 폼을 펼치고 첫 입력칸으로 포커스를 옮긴다 */
+async function openEmailForm(): Promise<void> {
+    showEmailForm.value = true
+    await nextTick()
+    emailInput.value?.$el?.focus()
+}
 
 function onSubmit(): void {
     if (!canSubmit.value) return
@@ -58,7 +75,7 @@ function startSocialLogin(provider: string): void {
             <CardTitle class="text-2xl">로그인</CardTitle>
             <CardDescription>Workmate 업무 비서에 로그인하세요.</CardDescription>
         </CardHeader>
-        <CardContent class="flex flex-col gap-5">
+        <CardContent class="flex flex-col gap-4">
             <Alert v-if="socialError" variant="destructive">
                 <AlertDescription>{{ socialError }}</AlertDescription>
             </Alert>
@@ -73,18 +90,29 @@ function startSocialLogin(provider: string): void {
                 네이버로 계속하기
             </Button>
 
-            <div class="flex items-center gap-3">
-                <span class="h-px flex-1 bg-border" />
-                <span class="text-xs text-muted-foreground">또는</span>
-                <span class="h-px flex-1 bg-border" />
-            </div>
+            <!-- 이메일 로그인 — 관리자·데모 계정용이라 기본은 접어둔다 -->
+            <button
+                v-if="!showEmailForm"
+                type="button"
+                class="mx-auto flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                @click="openEmailForm"
+            >
+                이메일로 로그인
+                <ChevronDown class="size-4" />
+            </button>
 
-            <!-- 이메일 로그인 — 관리자·데모 계정용 -->
-            <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
+            <form v-else class="flex flex-col gap-4" @submit.prevent="onSubmit">
+                <div class="flex items-center gap-3">
+                    <span class="h-px flex-1 bg-border" />
+                    <span class="text-xs text-muted-foreground">이메일로 로그인</span>
+                    <span class="h-px flex-1 bg-border" />
+                </div>
+
                 <div class="flex flex-col gap-2">
                     <Label for="email">이메일</Label>
                     <Input
                         id="email"
+                        ref="emailInput"
                         v-model="email"
                         type="email"
                         autocomplete="email"
@@ -107,7 +135,7 @@ function startSocialLogin(provider: string): void {
                 </Alert>
 
                 <Button type="submit" variant="outline" :disabled="!canSubmit">
-                    {{ loading ? '로그인 중…' : '이메일로 로그인' }}
+                    {{ loading ? '로그인 중…' : '로그인' }}
                 </Button>
             </form>
         </CardContent>
