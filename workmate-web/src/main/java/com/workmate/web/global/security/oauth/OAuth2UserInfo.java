@@ -30,6 +30,7 @@ public interface OAuth2UserInfo {
     static OAuth2UserInfo of(String registrationId, Map<String, Object> attributes) {
         return switch (registrationId) {
             case "naver" -> new NaverOAuth2UserInfo(attributes);
+            case "kakao" -> new KakaoOAuth2UserInfo(attributes);
             case "google" -> new GoogleOAuth2UserInfo(attributes);
             default -> throw new IllegalArgumentException("지원하지 않는 소셜 제공자입니다: " + registrationId);
         };
