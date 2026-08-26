@@ -189,6 +189,13 @@ public class ChatServiceImpl implements ChatService {
                                 "message", "AI 무료 사용량(할당량)을 초과했어요. 잠시 후 다시 시도해주세요.",
                                 "status", 429)));
                     }
+                    // 제공자 쪽 일시적 장애 — 우리 사용량 문제가 아니라 다시 시도하면 되는 상황임을 알린다.
+                    // 429 와 같은 이유로 자동 재시도는 주지 않는다(사용자 메시지가 이미 저장된 뒤라 중복된다).
+                    if (isProviderUnavailableError(e)) {
+                        return Flux.just(sse("error", Map.of(
+                                "message", "AI 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.",
+                                "status", 503)));
+                    }
                     return Flux.just(sse("error", Map.of("message", "응답이 중단되었습니다")));
                 });
     }
@@ -206,6 +213,37 @@ public class ChatServiceImpl implements ChatService {
             if (msg != null && (msg.contains("RESOURCE_EXHAUSTED")
                     || msg.contains("exceeded your current quota")
                     || msg.startsWith("429"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 제공자(Google GenAI) 쪽 일시적 장애인지 판별한다.
+     *
+     * <p>두 가지를 함께 본다.
+     * <ul>
+     *   <li><b>503 과부하</b> — "This model is currently experiencing high demand"</li>
+     *   <li><b>스트림 절단</b> — 503 재시도가 반쪽짜리 응답을 받아 JSON 파싱이 깨지는 경우.
+     *       이때는 원인 체인에 503 이 남지 않고 파싱 예외만 올라오므로 따로 잡아야 한다.</li>
+     * </ul>
+     *
+     * @param error 스트림에서 전파된 예외
+     * @return 잠시 후 재시도하면 되는 일시적 장애면 true
+     */
+    private boolean isProviderUnavailableError(Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            String msg = t.getMessage();
+            if (msg == null) {
+                continue;
+            }
+            if (msg.startsWith("503") || msg.contains("UNAVAILABLE")
+                    || msg.contains("high demand") || msg.contains("overloaded")) {
+                return true;
+            }
+            if (msg.contains("Failed to parse the JSON string")
+                    || msg.contains("Unexpected end-of-input")) {
                 return true;
             }
         }

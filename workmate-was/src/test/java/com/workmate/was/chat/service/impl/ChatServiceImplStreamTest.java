@@ -117,6 +117,52 @@ class ChatServiceImplStreamTest {
     }
 
     @Test
+    @DisplayName("제공자 과부하(503): 다시 시도하면 된다고 안내한다")
+    void reports_provider_overload_as_temporary() {
+        when(persister.prepare(eq(1L), any())).thenReturn(
+                new PreparedChat(12L, "기존방", false, List.of()));
+        // 실제 로그에서 관측된 형태 — 래핑된 RuntimeException 아래 503 이 원인으로 달려 온다
+        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+                .thenReturn(Flux.error(new RuntimeException("Failed to generate content",
+                        new IllegalStateException("503 . This model is currently experiencing high demand."))));
+
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+
+        assertThat(events.get(0).event()).isEqualTo("error");
+        assertThat(events.get(0).data()).contains("일시적으로 혼잡").contains("503");
+        // 사용자 메시지는 이미 저장된 뒤라 자동 재시도를 주면 중복된다
+        assertThat(events.get(0).data()).doesNotContain("retryable");
+        verify(persister, never()).saveAssistant(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("스트림 절단(JSON 파싱 실패)도 일시적 장애로 안내한다")
+    void reports_truncated_stream_as_temporary() {
+        when(persister.prepare(eq(1L), any())).thenReturn(
+                new PreparedChat(12L, "기존방", false, List.of()));
+        // 503 재시도가 반쪽짜리 응답을 받으면 원인 체인에 503 이 남지 않고 파싱 예외만 올라온다
+        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+                .thenReturn(Flux.error(new IllegalStateException("Failed to parse the JSON string.")));
+
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+
+        assertThat(events.get(0).data()).contains("일시적으로 혼잡");
+    }
+
+    @Test
+    @DisplayName("할당량 초과(429)는 과부하와 구분해 안내한다")
+    void reports_quota_error_separately() {
+        when(persister.prepare(eq(1L), any())).thenReturn(
+                new PreparedChat(12L, "기존방", false, List.of()));
+        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+                .thenReturn(Flux.error(new RuntimeException("429 RESOURCE_EXHAUSTED")));
+
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+
+        assertThat(events.get(0).data()).contains("무료 사용량").contains("429");
+    }
+
+    @Test
     @DisplayName("빈 메시지: 스트림 진입 전 IllegalArgumentException, 방 준비도 안 함")
     void rejects_blank_message() {
         assertThatThrownBy(() -> service.streamChat(1L, request(null, "   ")))
