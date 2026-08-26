@@ -8,15 +8,22 @@
  * @prop provider - 제공자 registrationId ('naver' · 'kakao' · 'google')
  */
 defineProps<{ provider: string }>()
+
+// v-if/v-else-if 체인이라 루트가 fragment 로 잡혀 class 가 자동 상속되지 않는다.
+// 각 분기에 $attrs 를 직접 넘긴다 (안 그러면 부모가 준 size-4 가 먹지 않는다)
+defineOptions({ inheritAttrs: false })
 </script>
 
 <template>
     <!-- 네이버는 워드마크 N 자체가 상징이라 글자로 둔다 -->
-    <span v-if="provider === 'naver'" class="text-base font-bold leading-none">N</span>
+    <span v-if="provider === 'naver'" v-bind="$attrs" class="text-base font-bold leading-none"
+        >N</span
+    >
 
     <!-- 카카오는 말풍선 마크 — 버튼 글자색을 그대로 따라가게 fill-current 를 쓴다 -->
     <svg
         v-else-if="provider === 'kakao'"
+        v-bind="$attrs"
         viewBox="0 0 24 24"
         class="fill-current"
         aria-hidden="true"
@@ -27,7 +34,7 @@ defineProps<{ provider: string }>()
     </svg>
 
     <!-- 구글은 4색 G 마크가 규정이라 색을 각 path 에 직접 지정한다 (fill-current 를 쓰면 안 된다) -->
-    <svg v-else-if="provider === 'google'" viewBox="0 0 24 24" aria-hidden="true">
+    <svg v-else-if="provider === 'google'" v-bind="$attrs" viewBox="0 0 24 24" aria-hidden="true">
         <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

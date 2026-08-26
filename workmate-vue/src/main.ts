@@ -27,4 +27,7 @@ setUnauthorizedHandler(() => {
     }
 })
 
-app.mount('#app')
+// 라우터가 첫 경로를 해결한 뒤에 마운트한다.
+// 먼저 마운트하면 route.meta 가 아직 비어 있어 App.vue 의 레이아웃 선택이 기본값(AppLayout)으로 떨어지고,
+// 가드가 세션 확인(/me)을 기다리는 동안 로그인 화면 자리에 빈 사이드바가 잠깐 보인다.
+router.isReady().then(() => app.mount('#app'))
