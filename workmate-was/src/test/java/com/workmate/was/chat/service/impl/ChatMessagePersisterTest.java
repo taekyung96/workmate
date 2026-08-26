@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +38,10 @@ class ChatMessagePersisterTest {
 
     @Mock
     private ChatMessageRepository chatMessageRepository;
+
+    // 출처 직렬화는 실제 동작을 검증해야 하므로 목이 아닌 실객체를 주입한다
+    @Spy
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @InjectMocks
     private ChatMessagePersister persister;
@@ -96,12 +101,47 @@ class ChatMessagePersisterTest {
         ReflectionTestUtils.setField(saved, "messageSeq", 45L);
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(saved);
 
-        Long messageSeq = persister.saveAssistant(7L, "답변", "gemini-2.5-flash");
+        Long messageSeq = persister.saveAssistant(7L, "답변", "gemini-2.5-flash", java.util.List.of());
 
         assertThat(messageSeq).isEqualTo(45L);
         ArgumentCaptor<ChatMessage> captor = ArgumentCaptor.forClass(ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
         assertThat(captor.getValue().getRole()).isEqualTo("assistant");
         assertThat(captor.getValue().getModelName()).isEqualTo("gemini-2.5-flash");
+    }
+
+    @Test
+    @DisplayName("saveAssistant: RAG 출처를 JSON 으로 함께 저장한다 (F4-07)")
+    void saveAssistant_persists_sources() {
+        ChatMessage saved = ChatMessage.builder()
+                .roomSeq(7L).role(ChatMessage.ROLE_ASSISTANT).content("답변").build();
+        ReflectionTestUtils.setField(saved, "messageSeq", 50L);
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(saved);
+
+        persister.saveAssistant(7L, "답변", "gemini-flash-latest", java.util.List.of(
+                new com.workmate.was.chat.vo.ChatSourceVo(32L, "RAG 파이프라인 가이드"),
+                new com.workmate.was.chat.vo.ChatSourceVo(36L, "pgvector 가이드")));
+
+        ArgumentCaptor<ChatMessage> captor = ArgumentCaptor.forClass(ChatMessage.class);
+        verify(chatMessageRepository).save(captor.capture());
+        // 스트리밍이 끝난 뒤에도 화면이 출처를 복원할 수 있어야 한다
+        assertThat(captor.getValue().getSources())
+                .contains("\"guideSeq\":32")
+                .contains("RAG 파이프라인 가이드");
+    }
+
+    @Test
+    @DisplayName("saveAssistant: 출처가 없으면 sources 는 null 이다")
+    void saveAssistant_without_sources_stores_null() {
+        ChatMessage saved = ChatMessage.builder()
+                .roomSeq(7L).role(ChatMessage.ROLE_ASSISTANT).content("답변").build();
+        ReflectionTestUtils.setField(saved, "messageSeq", 51L);
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(saved);
+
+        persister.saveAssistant(7L, "답변", "gemini-flash-latest", java.util.List.of());
+
+        ArgumentCaptor<ChatMessage> captor = ArgumentCaptor.forClass(ChatMessage.class);
+        verify(chatMessageRepository).save(captor.capture());
+        assertThat(captor.getValue().getSources()).isNull();
     }
 }

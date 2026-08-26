@@ -37,6 +37,11 @@ class ChatServiceImplTest {
     @Mock
     private ChatMessageRepository chatMessageRepository;
 
+    // 출처 역직렬화는 실제 동작을 검증해야 하므로 목이 아닌 실객체를 주입한다
+    @org.mockito.Spy
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+
     @InjectMocks
     private ChatServiceImpl chatService;
 
@@ -114,5 +119,43 @@ class ChatServiceImplTest {
 
         assertThatThrownBy(() -> chatService.deleteRoom(99L, 10L))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("getMessages: 저장된 RAG 출처를 목록으로 복원한다 (F4-07)")
+    void getMessages_restores_sources() {
+        ChatMessage answer = ChatMessage.builder()
+                .roomSeq(10L).role(ChatMessage.ROLE_ASSISTANT).content("답변")
+                .sources("[{\"guideSeq\":32,\"title\":\"RAG 파이프라인 가이드\"}]")
+                .build();
+        ReflectionTestUtils.setField(answer, "messageSeq", 2L);
+        when(chatRoomRepository.findByRoomSeqAndUserSeqAndUseYnTrue(10L, 1L))
+                .thenReturn(Optional.of(room(10L, 1L, "방")));
+        when(chatMessageRepository.findByRoomSeqOrderByCreatedAtAsc(10L)).thenReturn(List.of(answer));
+
+        List<ChatMessageVo> result = chatService.getMessages(1L, 10L);
+
+        // 방을 나갔다 돌아와도 출처 뱃지가 그대로 보여야 한다
+        assertThat(result.get(0).getSources()).hasSize(1);
+        assertThat(result.get(0).getSources().get(0).guideSeq()).isEqualTo(32L);
+        assertThat(result.get(0).getSources().get(0).title()).isEqualTo("RAG 파이프라인 가이드");
+    }
+
+    @Test
+    @DisplayName("getMessages: 출처 JSON 이 깨져 있어도 이력 조회는 성공한다")
+    void getMessages_tolerates_broken_sources() {
+        ChatMessage answer = ChatMessage.builder()
+                .roomSeq(10L).role(ChatMessage.ROLE_ASSISTANT).content("답변")
+                .sources("{망가진 JSON")
+                .build();
+        ReflectionTestUtils.setField(answer, "messageSeq", 3L);
+        when(chatRoomRepository.findByRoomSeqAndUserSeqAndUseYnTrue(10L, 1L))
+                .thenReturn(Optional.of(room(10L, 1L, "방")));
+        when(chatMessageRepository.findByRoomSeqOrderByCreatedAtAsc(10L)).thenReturn(List.of(answer));
+
+        List<ChatMessageVo> result = chatService.getMessages(1L, 10L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getSources()).isEmpty();
     }
 }

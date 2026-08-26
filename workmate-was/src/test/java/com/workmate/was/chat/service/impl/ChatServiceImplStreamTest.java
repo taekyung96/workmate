@@ -70,7 +70,7 @@ class ChatServiceImplStreamTest {
                 new PreparedChat(12L, "지난달 영수증 총액?", true, List.of()));
         when(chatStreamClient.stream(any(), any(), anyString(), anyList(), eq("지난달 영수증 총액?"), any(), any()))
                 .thenReturn(Flux.just("6", "월"));
-        when(persister.saveAssistant(eq(12L), eq("6월"), eq("gemini-2.5-flash"))).thenReturn(45L);
+        when(persister.saveAssistant(eq(12L), eq("6월"), eq("gemini-2.5-flash"), anyList())).thenReturn(45L);
 
         List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(null, "지난달 영수증 총액?")));
 
@@ -91,7 +91,7 @@ class ChatServiceImplStreamTest {
                 new PreparedChat(12L, "기존방", false, List.of()));
         when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.just("안녕"));
-        when(persister.saveAssistant(eq(12L), eq("안녕"), anyString())).thenReturn(46L);
+        when(persister.saveAssistant(eq(12L), eq("안녕"), anyString(), anyList())).thenReturn(46L);
 
         List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
 
@@ -113,7 +113,7 @@ class ChatServiceImplStreamTest {
         assertThat(events).hasSize(1);
         assertThat(events.get(0).event()).isEqualTo("error");
         assertThat(events.get(0).data()).contains("응답이 중단되었습니다");
-        verify(persister, never()).saveAssistant(any(), any(), any());
+        verify(persister, never()).saveAssistant(any(), any(), any(), any());
     }
 
     @Test

@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -48,15 +50,25 @@ public class ChatMessage {
     @Column(name = "model_name", length = 50)
     private String modelName;
 
+    /**
+     * RAG 출처 목록의 JSON 문자열 — {@code [{"guideSeq":32,"title":"..."}]} (F4-07).
+     * 스트리밍 중에만 보이고 이력에서 사라지던 출처 뱃지를 되살리기 위해 함께 저장한다.
+     * RAG 를 쓰지 않은 답변과 사용자 메시지는 null 이다.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "sources", columnDefinition = "jsonb")
+    private String sources;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    public ChatMessage(Long roomSeq, String role, String content, String modelName) {
+    public ChatMessage(Long roomSeq, String role, String content, String modelName, String sources) {
         this.roomSeq = roomSeq;
         this.role = role;
         this.content = content;
         this.modelName = modelName;
+        this.sources = sources;
         this.createdAt = LocalDateTime.now();
     }
 }

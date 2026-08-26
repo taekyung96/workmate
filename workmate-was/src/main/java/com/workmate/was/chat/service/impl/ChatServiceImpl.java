@@ -1,6 +1,7 @@
 package com.workmate.was.chat.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workmate.was.chat.dao.ChatMessageRepository;
 import com.workmate.was.chat.dao.ChatRoomRepository;
@@ -9,6 +10,7 @@ import com.workmate.was.chat.service.ChatService;
 import com.workmate.was.chat.service.ChatStreamClient;
 import com.workmate.was.chat.vo.ChatImageVo;
 import com.workmate.was.chat.vo.ChatMessageVo;
+import com.workmate.was.chat.vo.ChatSourceVo;
 import com.workmate.was.chat.vo.ChatRoom;
 import com.workmate.was.chat.vo.ChatRoomVo;
 import com.workmate.was.chat.vo.ChatStreamRequestVo;
@@ -86,9 +88,26 @@ public class ChatServiceImpl implements ChatService {
                         .role(msg.getRole())
                         .content(msg.getContent())
                         .modelName(msg.getModelName())
+                        .sources(parseSources(msg.getSources()))
                         .createdAt(msg.getCreatedAt())
                         .build())
                 .toList();
+    }
+
+    /**
+     * 저장된 출처 JSON 을 화면이 쓰는 목록으로 되돌린다 (F4-07).
+     * 형식이 깨져 있어도 대화 이력 조회 자체는 성공해야 하므로 빈 목록으로 떨어뜨린다.
+     */
+    private List<ChatSourceVo> parseSources(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<ChatSourceVo>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("RAG 출처 역직렬화 실패 - json: {}", json, e);
+            return List.of();
+        }
     }
 
     /** {@inheritDoc} */
@@ -137,7 +156,11 @@ public class ChatServiceImpl implements ChatService {
         String effectiveSystemPrompt = ragChunks.isEmpty()
                 ? SYSTEM_PROMPT
                 : SYSTEM_PROMPT + buildRagBlock(ragChunks);
-        Flux<ServerSentEvent<String>> sourceEvents = Flux.fromIterable(distinctSources(ragChunks))
+        // 출처는 이벤트로 내려주는 동시에 저장도 해야 한다 — 한 번만 만들어 양쪽에서 쓴다 (F4-07)
+        List<ChatSourceVo> sources = distinctSources(ragChunks).stream()
+                .map(c -> new ChatSourceVo(c.guideSeq(), c.title()))
+                .toList();
+        Flux<ServerSentEvent<String>> sourceEvents = Flux.fromIterable(sources)
                 .map(s -> sse("source", Map.of("guideSeq", s.guideSeq(), "title", s.title())));
 
         // 토큰 스트림 — 응답 전문을 누적해 done 시점에 저장
@@ -151,7 +174,7 @@ public class ChatServiceImpl implements ChatService {
         // 스트림 완료 후 assistant 메시지 저장(블로킹 JPA → boundedElastic) + done 이벤트
         Mono<ServerSentEvent<String>> doneEvent = Mono.fromCallable(() -> {
             Long messageSeq = chatMessagePersister.saveAssistant(
-                    prepared.roomSeq(), accumulated.toString(), effectiveModel);
+                    prepared.roomSeq(), accumulated.toString(), effectiveModel, sources);
             return sse("done", Map.of("messageSeq", messageSeq, "modelName", effectiveModel));
         }).subscribeOn(Schedulers.boundedElastic());
 

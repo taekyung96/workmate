@@ -1,9 +1,12 @@
 package com.workmate.was.chat.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workmate.was.chat.dao.ChatMessageRepository;
 import com.workmate.was.chat.dao.ChatRoomRepository;
 import com.workmate.was.chat.vo.ChatMessage;
 import com.workmate.was.chat.vo.ChatRoom;
+import com.workmate.was.chat.vo.ChatSourceVo;
 import com.workmate.was.chat.vo.ChatStreamRequestVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +34,7 @@ class ChatMessagePersister {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final ObjectMapper objectMapper;
 
     /** 방 제목 최대 길이 — 첫 질문 앞 30자 (F2-02) */
     private static final int TITLE_MAX = 30;
@@ -79,17 +83,36 @@ class ChatMessagePersister {
      * AI 응답 완료 후 assistant 메시지를 저장한다 (F2-08·09).
      * 스트림 완료 콜백(별도 스레드)에서 호출되며, 리포지토리 자체 트랜잭션으로 커밋된다.
      *
+     * @param sources RAG 출처 목록 — 비어 있으면 null 로 저장한다 (F4-07)
      * @return 저장된 메시지 식별자
      */
     @Transactional
-    public Long saveAssistant(Long roomSeq, String content, String modelName) {
+    public Long saveAssistant(Long roomSeq, String content, String modelName, List<ChatSourceVo> sources) {
         ChatMessage saved = chatMessageRepository.save(ChatMessage.builder()
                 .roomSeq(roomSeq)
                 .role(ChatMessage.ROLE_ASSISTANT)
                 .content(content)
                 .modelName(modelName)
+                .sources(toJson(sources))
                 .build());
         return saved.getMessageSeq();
+    }
+
+    /**
+     * 출처 목록을 저장용 JSON 문자열로 바꾼다.
+     * 직렬화가 실패해도 답변 자체는 남아야 하므로 로그만 남기고 출처를 버린다 —
+     * 출처 때문에 응답 저장이 통째로 실패하는 게 더 나쁘다.
+     */
+    private String toJson(List<ChatSourceVo> sources) {
+        if (sources == null || sources.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(sources);
+        } catch (JsonProcessingException e) {
+            log.error("RAG 출처 직렬화 실패 — 출처 없이 저장한다", e);
+            return null;
+        }
     }
 
     /** 최근 contextSize 개 메시지를 시간순 Spring AI Message 로 변환 (F2-10) */
