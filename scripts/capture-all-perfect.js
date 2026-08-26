@@ -1,5 +1,5 @@
 /**
- * README 스크린샷 13종 캡처 스크립트.
+ * README 스크린샷 12종 캡처 스크립트.
  *
  * 예전에는 모든 API 응답을 목(mock)으로 가로채 가짜 데이터를 찍었으나,
  * 지금은 실제로 로그인해 실제 DB 데이터가 그려진 화면을 찍는다.
@@ -26,8 +26,6 @@ const VIEWPORT = { width: 1280, height: 800 };
 /** 세로로 늘릴 수 있는 한계 (너무 긴 문서까지 통짜로 찍으면 README 에서 읽기 어렵다) */
 const MAX_CAPTURE_HEIGHT = 3600;
 
-/** 관리자 사용자 목록에서 데모 계정만 남기는 검색어 (실제 사용자 이메일·전화번호 노출 방지) */
-const DEMO_KEYWORD = '데모';
 /**
  * 채팅 캡처 때 실제로 던지는 질문.
  * 사내 가이드에 근거 문서가 있는 주제여야 답변에 출처가 붙는다.
@@ -120,6 +118,9 @@ async function go(page, route, settle = 1200) {
  */
 async function login(page) {
     await go(page, '/login', 500);
+    // 이메일 폼은 '이메일로 로그인' 링크 뒤에 접혀 있다 (F1-1) — 펼쳐야 입력칸이 생긴다
+    await page.getByRole('button', { name: '이메일로 로그인' }).click();
+    await page.waitForSelector('#email');
     await page.fill('#email', EMAIL);
     await page.fill('#password', PASSWORD);
     await page.click('button[type="submit"]');
@@ -141,15 +142,29 @@ async function captureChatWithSources(page) {
     await input.fill(RAG_QUESTION);
     await input.press('Enter');
 
+    // 출처 이벤트는 토큰보다 먼저 오므로 출처 칩만 보고 완료로 판단하면 안 된다.
+    // 스트리밍 중에는 커서(▌)가 붙은 평문이 그려지고, 끝나야 마크다운으로 다시 그려진다.
+    // 두 번째 인자는 페이지 함수에 넘길 값이고 옵션은 세 번째다 — 자리를 바꾸면 타임아웃이 무시된다
+    await page.waitForFunction(
+        () => !document.body.innerText.includes('▌') && document.querySelector('.markdown-body') !== null,
+        null,
+        { timeout: 180000 },
+    );
+    await page.waitForTimeout(1000);
+
+    // 실패해도 임시 대화방은 반드시 지운다 — 안 그러면 재시도할 때마다 사이드바에 찌꺼기가 쌓인다
     try {
-        // 출처 칩(가이드 링크)이 붙으면 RAG 응답이 끝난 것으로 본다
-        await page.locator('a[href^="/guide/"]').first().waitFor({ timeout: 120000 });
-        await page.waitForTimeout(1500);
-    } catch {
-        console.warn('  [경고] 출처가 표시되지 않았다 (쿼터 초과이거나 검색 결과 없음) — 그대로 캡처한다');
+        // 실패로 끝난 응답(제공자 503·429 등)은 붉은 글씨로 그려진다 — 그대로 찍으면 잘린 답변이 박제된다
+        if (await page.locator('.text-destructive').count()) {
+            throw new Error('AI 응답이 실패로 끝났다 (제공자 오류 가능성) — 잠시 후 다시 실행할 것');
+        }
+        if (!(await page.locator('a[href^="/guide/"]').count())) {
+            console.warn('  [경고] 출처가 표시되지 않았다 — 검색 결과가 없었을 수 있다');
+        }
+        await saveImage(page, '02_chat.png');
+    } finally {
+        await deleteTempRoom(page).catch(() => console.warn('  [경고] 임시 대화방 정리 실패'));
     }
-    await saveImage(page, '03_chat.png');
-    await deleteTempRoom(page);
 }
 
 /**
@@ -178,28 +193,27 @@ async function run() {
     console.log(`대상: ${BASE}`);
 
     // --- 1) 비로그인 화면 ---
-    console.log('1~2. 로그인 · 회원가입');
+    // 회원가입 화면은 F1-1 에서 없앴다 — 일반 사용자는 소셜로만 가입한다
+    console.log('1. 로그인');
     await go(page, '/login');
     await saveImage(page, '01_login.png');
-    await go(page, '/signup');
-    await saveImage(page, '02_signup.png');
 
     // --- 2) 로그인 후 화면 ---
     await login(page);
 
-    console.log('3. 채팅 (실제 RAG 질문 → 출처 표시)');
+    console.log('2. 채팅 (실제 RAG 질문 → 출처 표시)');
     await go(page, '/chat');
     await captureChatWithSources(page);
 
-    console.log('4~5. 영수증 분석 · 이력');
+    console.log('3~4. 영수증 분석 · 이력');
     await go(page, '/receipt');
-    await saveImage(page, '04_receipt_analysis.png');
+    await saveImage(page, '03_receipt_analysis.png');
     await go(page, '/receipt/history', 1500);
-    await saveImage(page, '05_receipt_history.png');
+    await saveImage(page, '04_receipt_history.png');
 
-    console.log('6~7. 사내 가이드 목록 · 상세');
+    console.log('5~6. 사내 가이드 목록 · 상세');
     await go(page, '/guide', 1500);
-    await saveImage(page, '06_guide.png');
+    await saveImage(page, '05_guide.png');
     // 목록 검색으로 대상 문서를 좁힌 뒤 첫 카드를 눌러 상세로 진입한다 (문서 id 하드코딩 회피)
     await page.getByPlaceholder('제목·본문 검색').fill(GUIDE_SEARCH_KEYWORD);
     await page.waitForTimeout(1500);   // 검색 디바운스 + 재조회 대기
@@ -207,36 +221,35 @@ async function run() {
     await page.waitForURL(/\/guide\/\d+/, { timeout: 10000 });
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1200);
-    await saveImage(page, '07_guide_detail.png');
+    await saveImage(page, '06_guide_detail.png');
 
-    console.log('8~10. 회의록 분석 · 이력 · 상세');
+    console.log('7~9. 회의록 분석 · 이력 · 상세');
     await go(page, '/voice');
-    await saveImage(page, '08_voice_analysis.png');
+    await saveImage(page, '07_voice_analysis.png');
     await go(page, '/voice/history', 1500);
-    await saveImage(page, '09_voice_history.png');
+    await saveImage(page, '08_voice_history.png');
     // 이력 첫 행을 눌러 상세로 진입한다 — STT 전사문·AI 3단 요약·오디오 재생이 함께 보이는 화면
     await page.locator('tr.cursor-pointer').first().click();
     await page.waitForURL(/\/voice\/history\/\d+/, { timeout: 10000 });
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
-    await saveImage(page, '10_voice_detail.png');
+    await saveImage(page, '09_voice_detail.png');
 
-    console.log('11~13. 관리자 (사용자 · 감사 로그 · 공통코드)');
+    console.log('10~12. 관리자 (사용자 · 감사 로그 · 공통코드)');
+    // 검색 필터를 걸지 않고 전체를 찍는다.
+    // 앱이 이미 이메일·전화번호를 마스킹해 내려주고, 감사 로그 화면에는 필터가 없어
+    // 한쪽만 걸러내면 "사용자 목록에 없는 사람이 감사 로그에 등장하는" 앞뒤 안 맞는 화면이 된다.
     await go(page, '/admin/users', 1500);
-    // 실제 사용자의 이메일·전화번호가 캡처에 남지 않도록 데모 계정만 검색해 남긴다
-    const search = page.getByPlaceholder('이메일 또는 이름 검색');
-    await search.fill(DEMO_KEYWORD);
-    await page.waitForTimeout(1500);   // 검색 디바운스 + 재조회 대기
-    await saveImage(page, '11_admin_users.png');
+    await saveImage(page, '10_admin_users.png');
 
     await go(page, '/admin/audit-logs', 1500);
-    await saveImage(page, '12_admin_audit.png');
+    await saveImage(page, '11_admin_audit.png');
     await go(page, '/admin/common-codes', 1500);
-    await saveImage(page, '13_admin_codes.png');
+    await saveImage(page, '12_admin_codes.png');
 
     await context.close();
     await browser.close();
-    console.log('=== 13종 캡처 완료 ===');
+    console.log('=== 12종 캡처 완료 ===');
 }
 
 run().catch(err => {
