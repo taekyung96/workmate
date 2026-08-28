@@ -1,0 +1,101 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    frontend:
+        name: Vue SPA (type-check · test · build)
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: workmate-vue
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: workmate-vue/package-lock.json
+
+            - run: npm ci
+            - run: npm run type-check
+            - run: npx vitest run
+            - run: npm run build-only
+
+    backend:
+        name: Spring (WAS · WEB)
+        runs-on: ubuntu-latest
+
+        # WAS 통합 테스트는 실제 PostgreSQL(pgvector) 에 붙는다. 스키마는 db/init/*.sql 로만 관리하므로
+        # 서비스 컨테이너를 띄운 뒤 아래 단계에서 스크립트를 순서대로 적용한다.
+        services:
+            postgres:
+                image: pgvector/pgvector:pg17
+                env:
+                    POSTGRES_DB: workmate_db
+                    POSTGRES_USER: workmate
+                    POSTGRES_PASSWORD: ci-password
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U workmate -d workmate_db"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 10
+
+        env:
+            # application-local.yml 은 git 미추적이라 CI 에는 없다 → 환경변수로 주입한다
+            SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/workmate_db
+            SPRING_DATASOURCE_USERNAME: workmate
+            SPRING_DATASOURCE_PASSWORD: ci-password
+            # 테스트는 FakeEmbeddingModel 을 쓰므로 실제 호출이 없다. 자동설정의 플레이스홀더 해석용 더미.
+            GEMINI_API_KEY: dummy-key-for-ci
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 17
+
+            - uses: gradle/actions/setup-gradle@v4
+
+            # :workmate-web:processResources 가 SPA(npm run build)를 먼저 빌드한다
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: workmate-vue/package-lock.json
+
+            - name: SPA 의존성 설치
+              run: npm ci
+              working-directory: workmate-vue
+
+            - name: 스키마 적용 (db/init/*.sql)
+              run: |
+                  for f in $(ls db/init/*.sql | sort); do
+                      echo "apply $f"
+                      PGPASSWORD=ci-password psql -v ON_ERROR_STOP=1 -q \
+                          -h localhost -U workmate -d workmate_db -f "$f"
+                  done
+
+            - name: 테스트
+              run: |
+                  chmod +x gradlew
+                  ./gradlew :workmate-was:test :workmate-web:test --no-daemon
+
+            - name: 테스트 리포트 업로드
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-reports
+                  path: |
+                      workmate-was/build/reports/tests/test
+                      workmate-web/build/reports/tests/test
+                  retention-days: 7
