@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 가이드 문서 처리 및 벡터 스토어 RAG 적재 서비스 구현체.
@@ -76,13 +77,23 @@ public class GuideServiceImpl implements GuideService {
 
         Guide guide = findEditableGuide(userSeq, isAdmin, guideSeq);
 
+        // 본문 변경 여부는 반드시 update() 로 덮어쓰기 '전에' 판단한다.
+        boolean contentChanged = !Objects.equals(guide.getContent(), request.getContent());
+
         guide.update(request.getTitle(), request.getContent(), request.getIsPublic());
 
-        // 기존 임베딩 데이터 제거
-        deleteEmbeddings(guideSeq);
-
-        // 새로운 임베딩 데이터 적재
-        saveEmbeddings(guide);
+        if (contentChanged) {
+            // 본문이 바뀌었을 때만 재임베딩한다 (선삭제 → 후적재)
+            deleteEmbeddings(guideSeq);
+            saveEmbeddings(guide);
+        } else if (updateEmbeddingMetadata(guide) == 0) {
+            // 본문이 그대로면 임베딩 API 를 부르지 않는다 — title·isPublic 은 청크 메타데이터라
+            // 벡터에 영향을 주지 않기 때문이다. 무료 티어 RPM 한도가 낮아 불필요한 재임베딩이
+            // 곧 429 로 이어진다(docs/architecture/RAG_VECTORSTORE_EMBEDDING_QUOTA_GUIDE.md).
+            // 다만 갱신된 청크가 0건이면 과거 적재가 실패해 벡터가 비어 있다는 뜻이므로 이때는 적재한다.
+            log.info("갱신할 임베딩 청크가 없어 신규 적재로 전환한다. GuideSeq: {}", guideSeq);
+            saveEmbeddings(guide);
+        }
 
         return new GuideResponseVo(guide);
     }
@@ -241,6 +252,31 @@ public class GuideServiceImpl implements GuideService {
     /**
      * 벡터 스토어 테이블에서 특정 가이드 문서에 속한 모든 청크를 직접 제거한다.
      */
+    /**
+     * 본문이 그대로일 때 쓰는 <b>메타데이터 전용</b> 갱신 — 임베딩 API 를 호출하지 않는다.
+     *
+     * <p>{@code title}·{@code isPublic} 은 청크 메타데이터일 뿐 임베딩 벡터에 반영되지 않으므로,
+     * 이 둘만 바뀐 수정에서 벡터를 다시 만드는 것은 순수한 낭비다(429 쿼터 소모의 주원인).
+     * jsonb 병합(||)으로 해당 키만 덮어써 본문 청크와 벡터는 그대로 둔다.
+     *
+     * @param guide 수정된 가이드 문서
+     * @return 갱신된 청크 수 (0이면 적재된 임베딩이 없다는 뜻)
+     */
+    private int updateEmbeddingMetadata(Guide guide) {
+        try {
+            String sql = "UPDATE vector_store"
+                    + " SET metadata = metadata || jsonb_build_object('title', ?::text, 'isPublic', ?::boolean)"
+                    + " WHERE (metadata->>'guideSeq')::bigint = ?";
+            int rows = jdbcTemplate.update(sql, guide.getTitle(), guide.getIsPublic(), guide.getGuideSeq());
+            log.info("본문 무변경 — 임베딩 없이 메타데이터만 갱신했다. 갱신 청크 수: {}개 (GuideSeq: {})",
+                    rows, guide.getGuideSeq());
+            return rows;
+        } catch (Exception e) {
+            log.error("벡터 스토어 메타데이터 갱신 실패 (GuideSeq: {}): {}", guide.getGuideSeq(), e.getMessage(), e);
+            throw new RuntimeException("RAG 벡터 DB 메타데이터 갱신에 실패했습니다.", e);
+        }
+    }
+
     private void deleteEmbeddings(Long guideSeq) {
         try {
             log.info("벡터 스토어 내 기존 청크 삭제 시작 (GuideSeq: {})", guideSeq);
