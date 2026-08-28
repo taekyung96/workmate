@@ -26,7 +26,7 @@
 | `src/test/resources/rageval/queries.json`                      | 실제 골든셋 (15문항+)                           |
 | `src/test/resources/rageval/sample-queries.json`               | 로더 테스트용 소형 픽스처                       |
 | `workmate-was/build.gradle`                                    | `ragEval` 태스크 추가 + 기본 test에서 태그 제외 |
-| `docs/development/rag-eval/REPORT-*.md`                        | 실행 산출물 (러너가 생성)                       |
+| `docs/features/rag-eval/REPORT-*.md`                        | 실행 산출물 (러너가 생성)                       |
 
 ---
 
@@ -525,7 +525,7 @@ tasks.register('ragEval', Test) {
     environment 'AES_SECRET_KEY', 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY='
     environment 'AES_SECRET_IV', 'MDEyMzQ1Njc4OWFiY2RlZg=='
     // 리포트 저장 위치를 저장소 루트 기준 절대경로로 넘긴다(테스트 작업 디렉토리 의존 제거)
-    systemProperty 'ragEval.reportDir', "${rootProject.projectDir}/docs/development/rag-eval"
+    systemProperty 'ragEval.reportDir', "${rootProject.projectDir}/docs/features/rag-eval"
     // 콘솔에 표를 보기 위해 표준출력 표시
     testLogging { showStandardStreams = true }
     // 코퍼스가 바뀌면 결과도 바뀌므로 항상 재실행
@@ -616,7 +616,7 @@ class RagEvalRunner {
         String markdown = writer.render(results, meta);
         System.out.println(markdown);
 
-        String reportDir = System.getProperty("ragEval.reportDir", "../docs/development/rag-eval");
+        String reportDir = System.getProperty("ragEval.reportDir", "../docs/features/rag-eval");
         Path file = writer.write(markdown, Path.of(reportDir), LocalDate.now());
 
         assertThat(Files.exists(file)).isTrue();
@@ -635,7 +635,7 @@ Expected:
 
 - 콘솔에 16행짜리 마크다운 표 출력
 - BUILD SUCCESSFUL
-- `docs/development/rag-eval/REPORT-<오늘날짜>.md` 생성
+- `docs/features/rag-eval/REPORT-<오늘날짜>.md` 생성
 
 > 실패 시 점검: `assertThat(guides).isNotEmpty()` 실패 → DB 미연결 또는 가이드 없음. `hitRate>0` 없음 → `expectedTitles` 가 실제 `title` 과 불일치(공백·표기 확인). 컨텍스트 로딩 실패 → GEMINI_API_KEY 미주입(.env 확인).
 
@@ -658,7 +658,7 @@ threshold 0.4→0.5 구간에서 Miss rate 가 5%→18% 로 뛰지만 Hit@4 는 
 ```bash
 git add workmate-was/build.gradle \
         workmate-was/src/test/java/com/workmate/was/rageval/RagEvalRunner.java \
-        docs/development/rag-eval/REPORT-*.md
+        docs/features/rag-eval/REPORT-*.md
 git commit -m "test(rag-eval): 스윕 러너 + ragEval 태스크 + 첫 평가 리포트"
 ```
 

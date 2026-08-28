@@ -83,5 +83,5 @@ tasks.register('ragEval', Test) {
     useJUnitPlatform { includeTags 'rag-eval' }
     evalEnv(it)
     // 리포트 저장 위치를 저장소 루트 기준 절대경로로 넘긴다(작업 디렉토리 의존 제거)
-    systemProperty 'ragEval.reportDir', "${rootProject.projectDir}/docs/development/rag-eval"
+    systemProperty 'ragEval.reportDir', "${rootProject.projectDir}/docs/features/rag-eval"
 }
