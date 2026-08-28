@@ -1,5 +1,7 @@
 # Workmate
 
+[![CI](https://github.com/taekyung96/workmate-v3/actions/workflows/ci.yml/badge.svg)](https://github.com/taekyung96/workmate-v3/actions/workflows/ci.yml)
+
 Spring AI로 만든 사내 업무 비서 웹앱이다. LLM 채팅을 중심으로 영수증 인식, 사내 가이드 검색(RAG), 회의록 요약 같은 업무 보조 기능을 한 화면에 모았다.
 
 Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 서버(WAS)로 나눈 3-tier 구조이며, 브라우저는 BFF만 바라본다. 이렇게 나눈 배경과 트레이드오프는 [ADR](docs/project/adr/)에 정리해 뒀다.
@@ -62,6 +64,59 @@ docker compose up -d db                 # pgvector PostgreSQL 17
 프론트만 따로 핫리로드로 개발할 때는 `cd workmate-vue && npm run dev` (5173, `/api`는 8080으로 프록시). DB 환경 구축은 [WSL2·Docker 셋업 가이드](docs/development/08_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
 
 DB를 처음 올리면 `db/init/`의 스키마와 데이터가 자동으로 들어간다. 가이드 문서 24건은 pgvector 임베딩까지 함께 시드되고, `demo.admin@example.com` / `Workmate!2026` 으로 로그인하면 위 화면들을 그대로 볼 수 있다. 위 이미지는 목 데이터가 아니라 이 상태의 앱을 찍은 것이다(`node scripts/capture-all-perfect.js`). 맨 위 채팅 화면만은 캡처할 때 실제로 질문을 던져 받은 답이라 실행할 때마다 내용이 달라진다.
+
+> **기존 볼륨을 재사용할 때** — `db/init/*.sql` 은 볼륨을 처음 만들 때만 실행된다. 이미 만들어 둔 `workmate-db` 볼륨에는 이후 추가된 스크립트가 적용되지 않아 `ddl-auto: validate` 가 실패한다. 이때는 누락분만 수동 적용한다 — 각 스크립트 머리말에 적용 명령이 적혀 있다. 예: `docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/15-chat-message-sources.sql`.
+
+## 검증
+
+기능이 "있다"가 아니라 "동작한다"를 남기기 위해, 자동화 테스트와 RAG 검색 품질 평가 하네스를 함께 둔다. 아래 수치는 모두 재현 명령과 측정 조건을 같이 적었다.
+
+### 자동화 테스트
+
+| 대상             | 테스트 |   결과 | 실행 명령                              |
+| ---------------- | -----: | -----: | -------------------------------------- |
+| **workmate-was** |     93 | 93 통과 | `./gradlew :workmate-was:test`         |
+| **workmate-web** |      9 |  9 통과 | `./gradlew :workmate-web:test`         |
+| **workmate-vue** |      3 |  3 통과 | `cd workmate-vue && npm run test:unit` |
+
+WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 위 결과는 `db/init/*.sql` 만으로 새로 만든 빈 DB 에 대해 측정했다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
+
+**측정 조건** — 2026-08-28 · Windows 10 · Temurin JDK 17.0.19 · Gradle 8.13 · Vitest 4.1.10 · pgvector/pgvector:pg17 · `--rerun-tasks` 로 캐시 없이 1회 전체 실행.
+
+같은 절차를 [GitHub Actions](.github/workflows/ci.yml)에서도 돌린다. push·PR 마다 PostgreSQL 컨테이너를 띄우고 `db/init/*.sql` 을 적용한 뒤 통합 테스트까지 실행하므로, 위 수치는 로컬 환경에만 의존하지 않는다.
+
+### RAG 검색 품질 평가
+
+검색이 "그럴듯해 보인다"에 그치지 않도록, 골든셋(질의–정답 문서 쌍) 33문항을 만들고 `topK`·`threshold` 를 격자로 훑어 **Hit@K·MRR·Miss rate** 를 재는 평가 하네스를 붙였다. 운영 기본값(`topK=4`·`threshold=0.4`)은 이 측정 결과를 근거로 정했다.
+
+```bash
+docker compose up -d db              # db/init 시드 → 가이드 24건
+./gradlew :workmate-was:seedGuides   # 평가용 면접 가이드 보충(멱등) → 34건
+./gradlew :workmate-was:ragEval      # 평가 실행 → docs/features/rag-eval/REPORT-<날짜>.md 생성
+```
+
+**측정 조건** — 2026-08-28 · 가이드 34건 · 골든셋 33문항 · dev DB(pgvector/pgvector:pg17) · 실제 Gemini 임베딩 · Temurin JDK 17.0.19 · 동일 조건 2회 실행에서 같은 값 재현.
+
+| 골든셋 | 코퍼스 | MRR (th 0.3~0.5) | Hit@K (th 0.6) | threshold 간 편차 |
+| --- | ---: | ---: | ---: | --- |
+| 23문항 (2026-07-29) | 17건 | 1.000 | 100.0% | 없음 — **포화** |
+| **33문항 (2026-08-28)** | **34건** | **0.970** | **97.0%** | **있음** |
+
+첫 골든셋은 주제가 뚜렷이 갈려 전 구간 Hit@K 100% 로 **포화**됐다. `topK`·`threshold` 를 바꿔도 결과가 변하지 않아 튜닝 여지가 드러나지 않았고, 이는 하네스 결함이 아니라 질의가 쉽다는 신호로 읽었다. 주제가 겹치는 문서를 늘리고(17건 → 34건) 교차·모호 주제 10문항을 더하자 비로소 트레이드오프가 관찰된다 — threshold 를 0.6 까지 올리면 재현율이 깎이고(Hit@K 97.0%), `topK` 는 2~8 전 구간에서 결과가 같아 늘릴수록 프롬프트 토큰만 는다. **기본값 `topK=4`·`threshold=0.4` 는 양쪽 손해를 피하는 지점이다.**
+
+재평가 첫 시도에서는 Hit@K 51.5% 가 나왔는데, `topK` 2·4·6·8 에서 값이 완전히 동일한 평탄한 형태였다. 검색 성능 저하라면 topK 에 따라 값이 움직여야 하므로 **정답 문서가 코퍼스에 없다**는 뜻으로 읽었고, 실제로 평가용 가이드 17건 중 7건만 DB 에 남아 있었다. 이 하네스는 검색 품질뿐 아니라 **코퍼스 무결성 회귀**도 잡는다. 전체 스윕표와 상세 해석은 [평가 리포트](docs/features/rag-eval/REPORT-2026-08-28.md) 참고.
+
+### 기술 판단과 기각한 대안
+
+선택만 적지 않고 **버린 선택지와 그 이유**를 남긴다. 전문은 [ADR](docs/project/adr/)에 있고, 핵심만 옮기면 다음과 같다.
+
+| 결정 | 채택 | 기각한 대안 → 이유 |
+| --- | --- | --- |
+| 서버 구성 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md)) | 얇은 WEB(BFF) + 내부망 WAS | **단일 Spring Boot 통합** → 주인공인 WAS 에 세션·SPA 서빙을 얹어야 함 · **SPA 가 WAS 직접 호출** → WAS 노출 + 인증 재설계 |
+| 인증 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md)) | 세션(httpOnly 쿠키) | **JWT** → stateless 라 계정잠금·중복로그인 차단에 필요한 **즉시 무효화**가 어려움. 대가로 CSRF 방어가 필요해져 Spring Security CSRF 활성화 |
+| 프론트 구조 ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md)) | 기능별 모듈 | **타입별 구조** → 현 규모엔 무난하나 모듈 경계·콜로케이션 이점을 못 살림 |
+| UI ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md)) | shadcn-vue + Tailwind v4 | **순수 CSS 유지** → 완성도 대비 시간 소모가 커 AI 작업 시간을 잠식 |
+| 권한 ([ADR-0003](docs/project/adr/0003-was-modifiable-and-guide-admin-authz.md)) | WAS 에서 소유자+관리자 판정 | **프론트에서 버튼만 숨김** → 화면과 동작 불일치 · **WEB 에서 권한 판단** → 로직이 중계 계층으로 새어 3-tier 위반 |
 
 ## 문서
 
