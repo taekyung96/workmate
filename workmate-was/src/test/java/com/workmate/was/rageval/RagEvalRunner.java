@@ -1,7 +1,9 @@
 package com.workmate.was.rageval;
 
+import com.workmate.was.chat.service.RagPromptBuilder;
 import com.workmate.was.guide.dao.GuideRepository;
 import com.workmate.was.guide.vo.Guide;
+import com.workmate.was.guide.vo.GuideSourceChunk;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -51,15 +53,19 @@ class RagEvalRunner {
     private VectorStore vectorStore;
     @Autowired
     private GuideRepository guideRepository;
+    @Autowired
+    private RagPromptBuilder ragPromptBuilder;
 
     /**
      * 검색 1회 결과의 청크 한 건 — 파라미터 스윕(threshold·topK·접근필터)을 메모리에서 재현하는 데 필요한 최소 정보.
      *
+     * @param guideSeq   출처 문서 식별자(프롬프트 블록 조립용)
      * @param title      청크 제목(메트릭은 title 시퀀스로 계산)
+     * @param content    청크 본문(프롬프트 컨텍스트 크기 측정용)
      * @param score      코사인 유사도 점수(threshold 재현용)
      * @param accessible 접근 가능 여부(본인·공개 문서 필터 재현용)
      */
-    private record ScoredChunk(String title, double score, boolean accessible) {
+    private record ScoredChunk(Long guideSeq, String title, String content, double score, boolean accessible) {
     }
 
     @Test
@@ -84,7 +90,9 @@ class RagEvalRunner {
                     .build());
             List<ScoredChunk> chunks = docs.stream()
                     .map(doc -> new ScoredChunk(
+                            toLong(doc.getMetadata().get("guideSeq")),
                             String.valueOf(doc.getMetadata().get("title")),
+                            doc.getText(),
                             doc.getScore() == null ? 0.0 : doc.getScore(),
                             isAccessible(doc, ownerSeq)))
                     .toList();
@@ -96,19 +104,25 @@ class RagEvalRunner {
         for (int topK : TOP_KS) {
             for (double threshold : THRESHOLDS) {
                 List<RetrievalMetrics.EvalCase> cases = new ArrayList<>(queries.size());
+                long contextCharSum = 0;
                 for (int i = 0; i < queries.size(); i++) {
                     // GuideRetriever 와 동일 순서: threshold(DB) → topK(DB) → 접근필터(Java)
-                    List<String> titles = perQueryChunks.get(i).stream()
+                    List<ScoredChunk> retained = perQueryChunks.get(i).stream()
                             .filter(c -> c.score() >= threshold)
                             .limit(topK)
                             .filter(ScoredChunk::accessible)
-                            .map(ScoredChunk::title)
                             .toList();
                     cases.add(new RetrievalMetrics.EvalCase(
-                            titles, new HashSet<>(queries.get(i).expectedTitles())));
+                            retained.stream().map(ScoredChunk::title).toList(),
+                            new HashSet<>(queries.get(i).expectedTitles())));
+                    // 프로덕션과 같은 빌더로 조립해, 리포트의 컨텍스트 크기가 실제 전송량과 어긋나지 않게 한다
+                    contextCharSum += ragPromptBuilder.build(retained.stream()
+                            .map(c -> new GuideSourceChunk(c.guideSeq(), c.title(), c.content()))
+                            .toList()).length();
                 }
                 results.add(new EvalReportWriter.SweepResult(
-                        topK, threshold, RetrievalMetrics.compute(cases)));
+                        topK, threshold, RetrievalMetrics.compute(cases),
+                        (double) contextCharSum / queries.size()));
             }
         }
 
@@ -138,5 +152,10 @@ class RagEvalRunner {
         Object owner = doc.getMetadata().get("userSeq");
         boolean owned = owner != null && owner.toString().equals(userSeq.toString());
         return isPublic || owned;
+    }
+
+    /** 메타데이터의 guideSeq 를 Long 으로 — 프로덕션 {@code GuideRetriever.toLong} 과 동일 규칙 */
+    private Long toLong(Object value) {
+        return value == null ? null : Long.valueOf(value.toString());
     }
 }

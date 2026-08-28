@@ -48,7 +48,8 @@ class ChatServiceImplStreamTest {
     @BeforeEach
     void setUp() {
         service = new ChatServiceImpl(chatRoomRepository, chatMessageRepository,
-                chatStreamClient, persister, rateLimiter, new ObjectMapper(), guideRetriever, commonCodeService);
+                chatStreamClient, persister, rateLimiter, new ObjectMapper(), guideRetriever,
+                new com.workmate.was.chat.service.RagPromptBuilder(), commonCodeService);
         ReflectionTestUtils.setField(service, "modelName", "gemini-2.5-flash");
     }
 

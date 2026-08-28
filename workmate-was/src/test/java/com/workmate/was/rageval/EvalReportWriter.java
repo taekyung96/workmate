@@ -15,8 +15,15 @@ public class EvalReportWriter {
 
     /**
      * 한 (topK,threshold) 조합의 결과 행.
+     *
+     * @param topK             상위 K
+     * @param threshold        최소 유사도 임계값
+     * @param metrics          검색 품질 지표
+     * @param avgContextChars  문항당 평균 RAG 자료 블록 길이(문자) — 프롬프트 비용에 비례한다.
+     *                         실제 전송값과 어긋나지 않도록 프로덕션 {@code RagPromptBuilder} 로 조립해 잰다.
      */
-    public record SweepResult(int topK, double threshold, RetrievalMetrics.ComboMetrics metrics) {
+    public record SweepResult(int topK, double threshold, RetrievalMetrics.ComboMetrics metrics,
+                              double avgContextChars) {
     }
 
     /**
@@ -38,13 +45,14 @@ public class EvalReportWriter {
         sb.append("- 실행일: ").append(meta.runDate()).append("\n");
         sb.append("- 가이드 개수: ").append(meta.guideCount()).append("\n");
         sb.append("- 평가 문항 수: ").append(meta.queryCount()).append("\n\n");
-        sb.append("| topK | threshold | Hit@K | MRR | Miss rate |\n");
-        sb.append("| ---: | ---: | ---: | ---: | ---: |\n");
+        sb.append("| topK | threshold | Hit@K | MRR | Miss rate | 평균 컨텍스트(자) |\n");
+        sb.append("| ---: | ---: | ---: | ---: | ---: | ---: |\n");
         for (SweepResult r : results) {
             // Locale.ROOT 로 소수점(.) 고정 — 지역설정이 콤마여도 표가 깨지지 않게
-            sb.append(String.format(Locale.ROOT, "| %d | %.2f | %.1f%% | %.3f | %.1f%% |\n",
+            sb.append(String.format(Locale.ROOT, "| %d | %.2f | %.1f%% | %.3f | %.1f%% | %,.0f |\n",
                     r.topK(), r.threshold(),
-                    r.metrics().hitRate() * 100, r.metrics().mrr(), r.metrics().missRate() * 100));
+                    r.metrics().hitRate() * 100, r.metrics().mrr(), r.metrics().missRate() * 100,
+                    r.avgContextChars()));
         }
         return sb.toString();
     }
