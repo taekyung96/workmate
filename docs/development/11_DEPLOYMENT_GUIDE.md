@@ -206,6 +206,7 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 | WAS 가 기동 직후 죽음           | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
 | `ddl-auto: validate` 실패       | 기존 볼륨에 신규 스키마 미적용 → §4                                                         |
 | 소셜 로그인 버튼이 안 됨        | 콜백 URL 미등록(§6) 또는 자격증명 미주입                                                    |
+| WEB 이 기동 직후 죽음 (`Client id of registration 'kakao' must not be empty`) | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
 | OAuth 리다이렉트가 `http://`    | `SERVER_FORWARD_HEADERS_STRATEGY` 누락                                                      |
 | Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행                                  |
 | 이미지가 옛 버전                | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다                                         |

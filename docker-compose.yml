@@ -68,12 +68,12 @@ services:
             WAS_BASE_URL: http://was:8081
             # 소셜 로그인(F1-1) 자격증명 — 미주입 시 not-configured 로 떨어져 버튼이 동작하지 않는다.
             # 배포 도메인에서 쓰려면 각 제공자 콘솔에 콜백 URL 도 등록해야 한다.
-            NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
-            NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
-            KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
-            KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
-            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+            NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-not-configured}
+            NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-not-configured}
+            KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-not-configured}
+            KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-not-configured}
+            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
+            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
         depends_on:
             - was
 
