@@ -64,7 +64,11 @@ public class GuideServiceImpl implements GuideService {
     }
 
     /**
-     * 기존 가이드 문서를 수정하고, 벡터 스토어의 기존 임베딩을 지운 뒤 새로 적재한다.
+     * 기존 가이드 문서를 수정한다.
+     *
+     * <p><b>본문이 바뀐 경우에만</b> 임베딩을 다시 만든다(선삭제 → 후적재). 본문이 그대로면
+     * 임베딩 API 를 호출하지 않고 {@code vector_store} 의 메타데이터만 갱신한다 —
+     * {@code title}·{@code isPublic} 은 청크 메타데이터라 임베딩 벡터에 영향이 없기 때문이다.
      *
      * @param guideSeq 가이드 문서 식별자
      * @param request 수정 요청 정보
@@ -250,9 +254,6 @@ public class GuideServiceImpl implements GuideService {
     }
 
     /**
-     * 벡터 스토어 테이블에서 특정 가이드 문서에 속한 모든 청크를 직접 제거한다.
-     */
-    /**
      * 본문이 그대로일 때 쓰는 <b>메타데이터 전용</b> 갱신 — 임베딩 API 를 호출하지 않는다.
      *
      * <p>{@code title}·{@code isPublic} 은 청크 메타데이터일 뿐 임베딩 벡터에 반영되지 않으므로,
@@ -277,6 +278,11 @@ public class GuideServiceImpl implements GuideService {
         }
     }
 
+    /**
+     * 벡터 스토어 테이블에서 특정 가이드 문서에 속한 모든 청크를 직접 제거한다.
+     *
+     * @param guideSeq 가이드 문서 식별자
+     */
     private void deleteEmbeddings(Long guideSeq) {
         try {
             log.info("벡터 스토어 내 기존 청크 삭제 시작 (GuideSeq: {})", guideSeq);

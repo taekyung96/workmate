@@ -24,7 +24,7 @@ jobs:
 
             - run: npm ci
             - run: npm run type-check
-            - run: npx vitest run
+            - run: npm run test:unit
             - run: npm run build-only
 
     backend:
@@ -53,7 +53,9 @@ jobs:
             SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/workmate_db
             SPRING_DATASOURCE_USERNAME: workmate
             SPRING_DATASOURCE_PASSWORD: ci-password
-            # 테스트는 FakeEmbeddingModel 을 쓰므로 실제 호출이 없다. 자동설정의 플레이스홀더 해석용 더미.
+            # 임베딩이 필요한 테스트는 모델을 스텁으로 갈아끼우므로 실제 호출이 없다.
+            # (실제 API 를 부르는 유지보수 유틸리티는 @Tag("maintenance") 로 기본 test 에서 제외)
+            # 이 키는 자동설정의 플레이스홀더 해석용 더미다.
             GEMINI_API_KEY: dummy-key-for-ci
 
         steps:

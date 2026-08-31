@@ -3,6 +3,7 @@ package com.workmate.was.guide;
 import com.workmate.was.guide.dao.GuideRepository;
 import com.workmate.was.guide.vo.Guide;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 개발 환경 전용 유틸리티 테스트.
- * DB direct SQL 인서트 등으로 guide 테이블과 vector_store 간 임베딩 데이터가 누락되었을 때,
+ * 개발 환경 전용 <b>유지보수 유틸리티</b> — 검증용 테스트가 아니다(단언 없음).
+ *
+ * <p>DB direct SQL 인서트 등으로 guide 테이블과 vector_store 간 임베딩 데이터가 누락되었을 때,
  * 1.5초 딜레이 간격을 두고 쿼터 차단 없이 안전하게 vector_store에 100% 임베딩을 채워 넣는다.
+ *
+ * <p><b>실제 임베딩 API 를 호출하고 공유 DB 를 변경</b>하므로 기본 {@code test} 에서 제외한다.
+ * 필요할 때만 수동 실행: {@code ./gradlew :workmate-was:syncEmbeddings}
+ * (GEMINI_API_KEY + 실행 중인 dev DB 필요)
  */
+@Tag("maintenance")
 @SpringBootTest
 @ActiveProfiles("local")
 class GuideEmbeddingSyncTest {

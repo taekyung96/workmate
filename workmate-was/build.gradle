@@ -44,8 +44,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform {
-        // 평가·시딩 하네스는 비용·API키·실행 중인 DB 가 필요하므로 평상시 test 에서 제외
-        excludeTags 'rag-eval', 'seed-guides'
+        // 평가·시딩·유지보수 하네스는 비용·API키·실행 중인 DB 가 필요하므로 평상시 test 에서 제외
+        excludeTags 'rag-eval', 'seed-guides', 'maintenance'
     }
     // CryptoProperties(app.crypto.*) 바인딩에 필요한 AES 키를 테스트 JVM 에 주입한다.
     // 운영/로컬은 .env 로 AES_SECRET_KEY/AES_SECRET_IV 를 주입하지만 테스트에는 환경변수가 없어
@@ -71,6 +71,16 @@ tasks.register('seedGuides', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform { includeTags 'seed-guides' }
+    evalEnv(it)
+}
+
+// guide 와 vector_store 사이의 임베딩 누락분을 채운다(유지보수). GEMINI_API_KEY + dev DB 필요.
+tasks.register('syncEmbeddings', Test) {
+    group = 'verification'
+    description = '누락된 가이드 임베딩 동기화(@Tag maintenance)'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'maintenance' }
     evalEnv(it)
 }
 

@@ -6,7 +6,7 @@ Spring AI로 만든 사내 업무 비서 웹앱이다. LLM 채팅을 중심으�
 
 Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 서버(WAS)로 나눈 3-tier 구조이며, 브라우저는 BFF만 바라본다. 이렇게 나눈 배경과 트레이드오프는 [ADR](docs/project/adr/)에 정리해 뒀다.
 
-개발 기간: 2026.07 ~ (1인 개발)
+개발 기간: 2026.07 ~ (1인 개발 · 실작업 약 2주)
 
 **스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
 
@@ -75,13 +75,13 @@ DB를 처음 올리면 `db/init/`의 스키마와 데이터가 자동으로 들�
 
 | 대상             | 테스트 |   결과 | 실행 명령                              |
 | ---------------- | -----: | -----: | -------------------------------------- |
-| **workmate-was** |    102 | 102 통과 | `./gradlew :workmate-was:test`         |
+| **workmate-was** |    101 | 101 통과 | `./gradlew :workmate-was:test`         |
 | **workmate-web** |      9 |  9 통과 | `./gradlew :workmate-web:test`         |
 | **workmate-vue** |      3 |  3 통과 | `cd workmate-vue && npm run test:unit` |
 
-WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 위 결과는 `db/init/*.sql` 만으로 새로 만든 빈 DB 에 대해 측정했다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
+WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 위 수치는 개발 DB 에서 측정했고, `db/init/*.sql` 만으로 만든 빈 DB 에서도 같은 결과가 나오는지는 아래 CI 가 매 push 마다 검증한다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
 
-**측정 조건** — 2026-08-28 · Windows 10 · Temurin JDK 17.0.19 · Gradle 8.13 · Vitest 4.1.10 · pgvector/pgvector:pg17 · `--rerun-tasks` 로 캐시 없이 1회 전체 실행.
+**측정 조건** — 2026-08-31 · Windows 10 · Oracle OpenJDK 17 (17+35) · Gradle 8.13 · Vitest 4.1.10 · pgvector/pgvector:pg17 · `--rerun-tasks` 로 캐시 없이 1회 전체 실행. (CI 는 Temurin 17)
 
 같은 절차를 [GitHub Actions](.github/workflows/ci.yml)에서도 돌린다. push·PR 마다 PostgreSQL 컨테이너를 띄우고 `db/init/*.sql` 을 적용한 뒤 통합 테스트까지 실행하므로, 위 수치는 로컬 환경에만 의존하지 않는다.
 
