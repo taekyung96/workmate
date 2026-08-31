@@ -220,14 +220,28 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 
 ## 9. 자주 막히는 곳
 
-| 증상                            | 원인                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------- |
-| WAS 가 기동 직후 죽음           | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
-| `ddl-auto: validate` 실패       | 기존 볼륨에 신규 스키마 미적용 → §4                                                         |
-| 소셜 로그인 버튼이 안 됨        | 콜백 URL 미등록(§6) 또는 자격증명 미주입                                                    |
-| 데모 계정으로 로그인이 안 됨(2) | 배포 후 `./scripts/bootstrap-demo-login.sh` 를 실행하지 않았다 → §2                          |
-| OAuth 리다이렉트가 `http://`    | `SERVER_FORWARD_HEADERS_STRATEGY` 누락                                                      |
-| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행                                  |
-| 이미지가 옛 버전                | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다                                         |
-| 데모 계정으로 로그인이 안 됨    | 배포 AES 키가 시드 생성 때와 다르다 → §2 '데모 계정은 어떻게 되나'                           |
-| 데모 계정에 관리자 메뉴가 없음  | 정상이다. 배포에서는 `ROLE_USER` 로 둔다 → §2                                                |
+### 기동이 안 될 때
+
+| 증상 | 원인 |
+| --- | --- |
+| WAS 가 기동 직후 죽음 | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
+| WEB 이 기동 직후 죽음<br>`Client id of registration 'kakao' must not be empty` | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. `${VAR:not-configured}` 기본값은 변수가 *없을 때만* 적용된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
+| DB 가 unhealthy · init 이 중간에 끊김 | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어, 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다 |
+| `ddl-auto: validate` 실패 | 기존 볼륨에 신규 스키마 미적용 → §4 |
+
+### 로그인·계정
+
+| 증상 | 원인 |
+| --- | --- |
+| 데모 계정으로 로그인이 안 됨 | 배포 AES 키가 시드 생성 때와 다르다. 배포 후 `./scripts/bootstrap-demo-login.sh` 를 1회 실행해야 한다 → §2 |
+| 데모 계정에 관리자 메뉴가 없음 | 정상이다. 공개 배포에서는 `ROLE_USER` 로 둔다 → §2 |
+| 회원가입이 403 | 의도된 동작. `/api/auth/signup` 은 `ROLE_ADMIN` 전용이다 |
+| 소셜 로그인 버튼이 안 됨 | 콜백 URL 미등록(§6) 또는 자격증명 미주입 |
+| OAuth 리다이렉트가 `http://` | `SERVER_FORWARD_HEADERS_STRATEGY` 누락 |
+
+### 그 밖에
+
+| 증상 | 원인 |
+| --- | --- |
+| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행 |
+| 이미지가 옛 버전 | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다 |
