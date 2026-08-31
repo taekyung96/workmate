@@ -24,6 +24,9 @@ services:
             POSTGRES_DB: ${POSTGRES_DB}
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            # 관측 스택(--profile obs)의 Grafana 읽기 전용 롤 비밀번호 — db/init/19-grafana-readonly.sh 가 읽는다.
+            # 값이 없으면 그 스크립트가 롤 생성을 건너뛴다(관측 스택을 안 쓰면 정상)
+            GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
         volumes:
             - workmate-db-data:/var/lib/postgresql/data
             # 스키마·시드는 볼륨을 처음 만들 때만 실행된다 (db/init/*.sql)
@@ -100,6 +103,42 @@ services:
             retries: 5
             start_period: 60s
 
+    # ↓ 관측 스택(F-OBS 슬라이스 5) — 'obs' 프로파일에서만 뜬다.
+    #   docker compose -f docker-compose.deploy.yml --profile obs up -d
+    prometheus:
+        profiles: ["obs"]
+        image: prom/prometheus:v2.55.1
+        container_name: workmate-prometheus
+        restart: unless-stopped
+        volumes:
+            - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - workmate-prometheus-data:/prometheus
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.retention.time=15d"
+        # 호스트에 포트를 공개하지 않는다 — 같은 도커 네트워크의 Grafana 만 접근 (§3-3)
+
+    grafana:
+        profiles: ["obs"]
+        image: grafana/grafana:11.4.0
+        container_name: workmate-grafana
+        restart: unless-stopped
+        ports:
+            # 루프백에만 바인딩 — 인터넷에 노출하지 않는다(§3-3). 밖에서 봐야 하면
+            # 앱과 다른 별도 호스트명 + Access 인증으로 Cloudflare Tunnel 을 따로 붙인다
+            - "127.0.0.1:3000:3000"
+        environment:
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+            # datasources.yml 의 ${POSTGRES_DB}·${GRAFANA_DB_PASSWORD} 치환용 — 없으면 DB 데이터소스가 조용히 깨진다
+            POSTGRES_DB: ${POSTGRES_DB}
+            GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+        volumes:
+            - ./docker/grafana/provisioning:/etc/grafana/provisioning
+            - workmate-grafana-data:/var/lib/grafana
+        depends_on:
+            - prometheus
+            - db
+
     # 외부 노출 — 아웃바운드 연결만 쓰므로 포트포워딩·DDNS·고정IP 가 필요 없다.
     # 터널 토큰을 발급받은 뒤에만 띄운다:
     #   docker compose -f docker-compose.deploy.yml --profile tunnel up -d
@@ -115,3 +154,5 @@ services:
 volumes:
     workmate-db-data:
     workmate-uploads:
+    workmate-prometheus-data:
+    workmate-grafana-data:
