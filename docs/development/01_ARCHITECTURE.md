@@ -3,7 +3,7 @@
 - **상태**: 설계 확정 (구현 대기)
 - **상위**: [HANDOVER](../project/HANDOVER.md) · **결정 근거**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)
 
-이 문서는 workmate-v3의 아키텍처를 확정한다. 프론트 디렉토리·계층 상세는 [02_FRONTEND_STRUCTURE_GUIDE](02_FRONTEND_STRUCTURE_GUIDE.md) 참조.
+이 문서는 workmate의 아키텍처를 확정한다. 프론트 디렉토리·계층 상세는 [02_FRONTEND_STRUCTURE_GUIDE](02_FRONTEND_STRUCTURE_GUIDE.md) 참조.
 
 ---
 

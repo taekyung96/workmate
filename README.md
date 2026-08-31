@@ -1,6 +1,6 @@
 # Workmate
 
-[![CI](https://github.com/taekyung96/workmate-v3/actions/workflows/ci.yml/badge.svg)](https://github.com/taekyung96/workmate-v3/actions/workflows/ci.yml)
+[![CI](https://github.com/taekyung96/workmate/actions/workflows/ci.yml/badge.svg)](https://github.com/taekyung96/workmate/actions/workflows/ci.yml)
 
 Spring AI로 만든 사내 업무 비서 웹앱이다. LLM 채팅을 중심으로 영수증 인식, 사내 가이드 검색(RAG), 회의록 요약 같은 업무 보조 기능을 한 화면에 모았다.
 

@@ -5,7 +5,7 @@
 
 ## 맥락 (Context)
 
-v2(현행 `taekyung96/workmate`)는 **Thymeleaf SSR + Vue UMD 하이브리드**다. Vue를 페이지에 부분 삽입만 해서
+v2(`taekyung96/workmate-old`)는 **Thymeleaf SSR + Vue UMD 하이브리드**다. Vue를 페이지에 부분 삽입만 해서
 Vue3의 핵심(Router·Pinia·Vite·Composition API)을 거의 활용하지 못한다. 이직 포트폴리오로서 프론트 매력이 약하다.
 목표는 **AI 백엔드를 주인공으로 유지**하면서 프론트를 "제대로 된 SPA"로 끌어올리는 것.
 

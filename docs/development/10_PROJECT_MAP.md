@@ -8,7 +8,7 @@
 ## 0. 전체 구조 한눈에
 
 ```
-workmate-v3/
+workmate/
 ├── workmate-vue/     프론트엔드 (Vue3 SPA) — 화면·라우팅·상태·API호출
 ├── workmate-web/     얇은 BFF (:8080) — 세션인증·CSRF·/api 프록시·SSE중계·SPA서빙
 ├── workmate-was/     비즈니스/AI (:8081) — Spring AI·JPA·DB (주인공, 대체로 유지·필요 시 수정)
@@ -79,7 +79,7 @@ workmate-v3/
 
 > **포트로 죽이는 이유**: `bootRun`을 백그라운드로 돌렸거나 실행 창을 닫아 PID를 모를 때, "그 포트를 물고 있는 프로세스"를 찾아 종료하는 게 확실하다.
 > Git Bash/cmd라면 `netstat -ano | findstr :8081` 로 PID를 찾고 `taskkill /PID <PID> /F` 로 종료해도 된다.
-> WSL에서 docker를 쓰는 환경이면 `wsl -e bash -lc "cd /mnt/c/…/workmate-v3 && docker compose down"` 형태로 감싸 실행한다.
+> WSL에서 docker를 쓰는 환경이면 `wsl -e bash -lc "cd <저장소 루트> && docker compose down"` 형태로 감싸 실행한다(WSL 안에서 Windows 경로는 `/mnt/c/...` 형태로 잡힌다).
 
 ---
 

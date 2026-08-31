@@ -35,6 +35,9 @@ application-local.yml
 .claude/
 .playwright-mcp/
 
+# 개인 작업 노트 — 공개 저장소에 넣지 않는다
+.notes/
+
 # 로컬 산출물
 docs/**/*.html
 
