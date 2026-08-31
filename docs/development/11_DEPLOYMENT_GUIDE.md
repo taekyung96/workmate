@@ -58,6 +58,24 @@ openssl rand -base64 24   # GRAFANA_* (관측 스택 쓸 때만)
 > **AES 키는 한 번 정하면 바꿀 수 없다.** 이메일·전화번호를 이 키로 암호화해 저장하므로,
 > 키가 바뀌면 기존 데이터를 복호화하지 못한다. 운영 시작 후 교체하려면 재암호화 마이그레이션이 필요하다.
 
+### 데모 계정은 어떻게 되나
+
+`db/init/13-seed-demo-data.sql` 은 데모 계정 3종을 **`ROLE_USER` 로** 넣는다.
+비밀번호(`Workmate!2026`)가 공개 README 에 적혀 있어, 관리자 권한이면 누구나
+사용자 관리·감사로그에 들어올 수 있기 때문이다.
+
+관리자 승격은 `db/init/20-demo-admin-role.sh` 가 하는데 `DEMO_ADMIN_ENABLED=true` 일 때만 동작한다.
+개발용 `docker-compose.yml` 은 이 값을 주고, **배포용 `docker-compose.deploy.yml` 은 주지 않는다.**
+따라서 공개 인스턴스의 방문자는 채팅·영수증·가이드·회의록까지 체험하고 관리자 화면에는 들어오지 못한다.
+
+> ⚠️ **데모 로그인은 AES 키가 같아야만 된다.** 이메일은 고정 IV 의 결정적 AES 로 암호화돼
+> 저장되고(`AesCipher`), 로그인은 입력 이메일을 같은 방식으로 암호화해 **암호문끼리** 비교한다
+> (`UserRepository.findByEmail`). 시드에 박힌 암호문은 개발 `.env` 키로 만든 값이라,
+> 배포 서버에 새 AES 키를 쓰면 `demo.admin@example.com` 이 조회되지 않아 **로그인이 실패한다.**
+> 방문자 체험을 열려면 배포 후 계정을 그 환경에서 새로 만들어야 한다 —
+> `scripts/seed-demo-accounts.js` 가 회원가입 API 를 타므로 앱이 배포 키로 암호화해 넣는다.
+> (콘텐츠 INSERT 는 `user_name` 기준이라 키와 무관하게 그대로 붙는다)
+
 ---
 
 ## 3. 기동
@@ -191,3 +209,5 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 | OAuth 리다이렉트가 `http://`    | `SERVER_FORWARD_HEADERS_STRATEGY` 누락                                                      |
 | Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행                                  |
 | 이미지가 옛 버전                | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다                                         |
+| 데모 계정으로 로그인이 안 됨    | 배포 AES 키가 시드 생성 때와 다르다 → §2 '데모 계정은 어떻게 되나'                           |
+| 데모 계정에 관리자 메뉴가 없음  | 정상이다. 배포에서는 `ROLE_USER` 로 둔다 → §2                                                |

@@ -27,6 +27,9 @@ services:
             # 관측 스택(--profile obs)의 Grafana 읽기 전용 롤 비밀번호 — db/init/19-grafana-readonly.sh 가 읽는다.
             # 값이 없으면 그 스크립트가 롤 생성을 건너뛴다(관측 스택을 안 쓰면 정상)
             GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
+            # DEMO_ADMIN_ENABLED 를 일부러 주지 않는다 — db/init/20-demo-admin-role.sh 가 건너뛴다.
+            # README 에 데모 비밀번호가 공개돼 있어, 공개 인스턴스에서 데모 계정은 ROLE_USER 여야 한다
+            # (방문자는 채팅·영수증·가이드·회의록까지 체험하고, 관리자 화면에는 못 들어온다)
         volumes:
             - workmate-db-data:/var/lib/postgresql/data
             # 스키마·시드는 볼륨을 처음 만들 때만 실행된다 (db/init/*.sql)

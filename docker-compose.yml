@@ -11,6 +11,10 @@ services:
             # 관측 스택(--profile obs)의 Grafana 읽기 전용 롤 비밀번호 — db/init/19-grafana-readonly.sh 가 읽는다.
             # 값이 없으면 그 스크립트가 롤 생성을 건너뛴다(관측 스택을 안 쓰면 정상)
             GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
+            # 데모 계정 '관리자 (데모)' 를 ROLE_ADMIN 으로 승격한다 — db/init/20-demo-admin-role.sh
+            # 로컬·데모 전용이다. 공개 배포(docker-compose.deploy.yml)는 이 값을 주지 않아
+            # 데모 계정이 ROLE_USER 로 남고, README 에 공개된 비밀번호로 관리자 화면에 들어올 수 없다
+            DEMO_ADMIN_ENABLED: "true"
         volumes:
             - workmate-db-data:/var/lib/postgresql/data
             - ./db/init:/docker-entrypoint-initdb.d
