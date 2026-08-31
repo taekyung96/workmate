@@ -4,14 +4,17 @@
 > 가장 먼저 읽는 문서다. 설계 단계(별도 세션)에서 내린 **모든 결정과 그 근거**,
 > 현재 상태, 다음 할 일을 담는다.
 
-- **현재 상태**: 기능 구현 완료. 지금은 **운영 준비 단계**다 — 아래 §0 참고.
+- **현재 상태**: 기능 구현 완료. **배포해서 돌아가는 중**이다(임시 주소) — 아래 §0 참고.
 - **관련 문서**: [ADR](adr/) · [아키텍처](../development/01_ARCHITECTURE.md) · [프론트 구조 가이드](../development/02_FRONTEND_STRUCTURE_GUIDE.md) · [로드맵](ROADMAP.md)
 
 ---
 
 ## 0. 지금 어디까지 왔나 (2026-08-31)
 
-기능 개발은 끝났고 **운영 준비 단계**다. 새 세션은 여기부터 보면 된다.
+기능 개발이 끝났고, **배포해서 실제로 돌아가고 있다.** 새 세션은 여기부터 보면 된다.
+
+- 운영 방법(기동·복구·주소 갱신·문제 대응)은 → **[12. 운영 가이드](../development/12_OPERATIONS.md)**
+- 처음 배포하는 절차는 → [11. 배포 가이드](../development/11_DEPLOYMENT_GUIDE.md)
 
 ### 갖춰진 것
 
@@ -22,18 +25,19 @@
 | CI | push·PR 마다 테스트, `main` 머지 시 GHCR 이미지 push |
 | 브랜치 | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수). [ADR-0004](adr/0004-github-flow-branching.md) |
 | 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull) |
+| **배포** | **WSL2 에서 가동 중.** Cloudflare Quick Tunnel 로 공개(임시 주소) — [12. 운영 가이드](../development/12_OPERATIONS.md) |
 | 관측 | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana |
 | 사용량 | LLM 호출 5지점의 토큰을 `llm_usage` 에 기록 (사용자별 집계 가능) |
 | RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회 |
 
 ### 다음에 할 일
 
-1. **실제 배포** — [11. 배포 가이드](../development/11_DEPLOYMENT_GUIDE.md) 그대로.
-   도메인 + Cloudflare Tunnel + 소셜 콜백 등록 + 자동 시작
-2. **부하 테스트** — k6 로 SSE 동시접속 한계 측정. **부하 생성기와 대상 서버를 분리**해야 숫자가 유효하다
+1. **도메인 연결** — 지금은 `trycloudflare.com` 임시 주소라 **재기동마다 바뀌고 소셜 로그인이 안 된다.**
+   도메인을 Cloudflare 에 올리고 정식 터널로 바꾸면 둘 다 해결된다 → [12. 운영 가이드 §8](../development/12_OPERATIONS.md)
+2. **Grafana 대시보드** — 데이터소스는 이미 등록돼 있다. 지금 앱이 돌고 있어 `llm_usage` 에 실데이터가
+   쌓이는 중이라 만들기 좋은 시점이다. UI 에서 만들어 export 후 `docker/grafana/provisioning/dashboards/` 에 커밋
 3. **프론트 테스트 보강** — 현재 3건. 공통 composable·store 위주로
-4. **Grafana 대시보드** — 데이터소스는 이미 등록돼 있다. UI 에서 만들어 export 후
-   `docker/grafana/provisioning/dashboards/` 에 커밋
+4. **부하 테스트** — k6 로 SSE 동시접속 한계 측정. **부하 생성기와 대상 서버를 분리**해야 숫자가 유효하다
 
 ### 알려진 한계 (숨기지 말고 설명할 것)
 
@@ -43,6 +47,25 @@
   `filterExpression` 으로 DB 단계에서 거는 것이 개선 방향
 - **임베딩 사용량은 토큰이 NULL** 이다. `VectorStore.add()` 가 usage 를 감춘다
 - **세션·SessionRegistry·레이트리미터가 인메모리**다. 인스턴스를 늘리면 조용히 깨진다 → Redis 필요
+- **데모 계정이 AES 키에 묶여 있다.** 시드의 이메일 암호문은 개발 키로 만든 값이라,
+  DB 볼륨을 새로 만들 때마다 `scripts/bootstrap-demo-login.sh` 를 한 번 돌려야 로그인된다
+- **`/api/auth/signup` 이 `ROLE_ADMIN` 전용**이다. 신규 배포에는 관리자가 없으므로
+  계정을 새로 만들 수 없다. 위 부트스트랩이 유일한 진입 경로다
+
+### 최근 변경 (2026-08-31)
+
+로컬 배포 리허설을 돌리면서 **실제 배포를 막는 버그들**을 찾아 고쳤다. 전부 CI·개발 compose 에서는
+드러나지 않고 **리눅스에 클론한 실배포 환경에서만** 재현되는 것들이었다.
+
+| PR | 내용 |
+| --- | --- |
+| [#4](https://github.com/taekyung96/workmate/pull/4) | README 이미지 경로 정정 · `.gitattributes` 로 `*.sh`·`gradlew` LF 고정 (CRLF 면 컨테이너에서 실행 불가) |
+| [#5](https://github.com/taekyung96/workmate/pull/5) | 데모 계정을 `ROLE_USER` 로 시드. 관리자 승격은 `DEMO_ADMIN_ENABLED` 로 로컬 전용 분리 |
+| [#6](https://github.com/taekyung96/workmate/pull/6) | init `.sh` 의 조기 `exit` 가 DB 초기화를 끊던 문제 · 소셜 자격증명 빈 값이면 WEB 이 기동 실패하던 문제 |
+| [#7](https://github.com/taekyung96/workmate/pull/7) | `scripts/bootstrap-demo-login.sh` — 배포 환경 AES 키로 데모 계정 로그인을 살린다 |
+| [#8](https://github.com/taekyung96/workmate/pull/8) | `scripts/update-demo-url.sh` — 임시 터널 주소를 README 에 반영 |
+
+각 PR 본문에 증상·원인·재현·검증 로그가 들어 있다.
 
 ---
 
