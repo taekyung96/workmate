@@ -101,3 +101,55 @@ jobs:
                       workmate-was/build/reports/tests/test
                       workmate-web/build/reports/tests/test
                   retention-days: 7
+
+    publish:
+        name: 이미지 빌드·푸시 (GHCR)
+        # 테스트가 통과한 커밋만 이미지로 만든다. PR 에서는 돌리지 않는다
+        # (포크 PR 은 패키지 쓰기 권한이 없고, 검증은 위 두 잡으로 충분하다)
+        needs: [frontend, backend]
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+            packages: write
+
+        # was·web 두 이미지를 병렬로 만든다. 빌드 컨텍스트는 둘 다 저장소 루트다
+        # (모노레포 settings.gradle 이 web/was 를 함께 include 하므로)
+        strategy:
+            matrix:
+                service: [workmate-was, workmate-web]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: docker/setup-buildx-action@v3
+
+            - name: GHCR 로그인
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: 태그·라벨 생성
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}
+                  # latest 는 배포용, sha 태그는 특정 커밋으로 롤백할 때 쓴다
+                  tags: |
+                      type=raw,value=latest
+                      type=sha,format=long
+
+            - name: 빌드·푸시
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  file: ${{ matrix.service }}/Dockerfile
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  # Gradle 의존성·npm ci 레이어를 캐시해 재빌드를 줄인다
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
