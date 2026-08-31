@@ -8,7 +8,13 @@
 --        복호화·로그인이 되지 않는다. 그런 경우 계정만 앱의 회원가입으로 새로 만들고
 --        (scripts/seed-demo-accounts.js) 아래 콘텐츠 INSERT 를 쓰면 된다.
 --
--- 데모 로그인: demo.admin@example.com / Workmate!2026  (ROLE_ADMIN)
+-- 데모 로그인: demo.admin@example.com / Workmate!2026
+--
+-- [권한] 이 파일은 세 계정을 모두 ROLE_USER 로 넣는다. 공개 배포 인스턴스에도 이 시드가
+--        그대로 들어가는데 README 에 비밀번호가 공개돼 있어, ROLE_ADMIN 으로 두면
+--        누구나 사용자 관리·감사로그 화면에 들어올 수 있기 때문이다.
+--        로컬·데모 환경에서만 20-demo-admin-role.sh 가 '관리자 (데모)' 를 ROLE_ADMIN 으로 승격한다
+--        (docker-compose.yml 의 DEMO_ADMIN_ENABLED=true). 배포 compose 는 이 값을 주지 않는다.
 --
 -- 기존 볼륨 환경에 수동 적용:
 --   docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/13-seed-demo-data.sql
@@ -16,7 +22,7 @@
 
 -- 데모 계정 3종 (이메일·전화번호는 앱이 AES 암호화한 값, 비밀번호는 BCrypt 해시)
 INSERT INTO app_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
-SELECT $wm$xR+UiqFJm3Zh51mjrCxuexTBixamx2JtRn4QzsN5P3o=$wm$, $wm$$2a$10$9Vfw6SMeojcOZfrUbH4QkeraxgsbuB1yY7op38kNjby2SZXXKdltm$wm$, $wm$관리자 (데모)$wm$, $wm$KwHxJTo9iTEyqRKuhmEbHA==$wm$, $wm$ROLE_ADMIN$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
+SELECT $wm$xR+UiqFJm3Zh51mjrCxuexTBixamx2JtRn4QzsN5P3o=$wm$, $wm$$2a$10$9Vfw6SMeojcOZfrUbH4QkeraxgsbuB1yY7op38kNjby2SZXXKdltm$wm$, $wm$관리자 (데모)$wm$, $wm$KwHxJTo9iTEyqRKuhmEbHA==$wm$, $wm$ROLE_USER$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
 WHERE NOT EXISTS (SELECT 1 FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$);
 INSERT INTO app_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
 SELECT $wm$06oNEuB4v1ZJ7mabHIBvp0adl0XA7N+c8b+ldYGidd0=$wm$, $wm$$2a$10$WQY3iym9t9aZj1.WtytT8.AnDB9NZwR5BU4Q9RqLoZzcHZoc3QwKe$wm$, $wm$홍길동 (데모)$wm$, $wm$eUAGlwIanpGDpMYvE8WQxg==$wm$, $wm$ROLE_USER$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
