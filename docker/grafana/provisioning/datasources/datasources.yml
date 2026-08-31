@@ -1,0 +1,33 @@
+# =============================================================
+# Grafana 데이터소스 자동 등록 (F-OBS)
+#
+# 둘을 함께 두는 이유: 성격이 다른 질문에 답하기 때문이다.
+#   Prometheus  — "시스템이 건강한가" (저차원 라벨, 시계열)
+#   PostgreSQL  — "누가 얼마나 썼나" (user_seq 고차원, llm_usage 테이블)
+# user_seq 를 Prometheus 라벨로 넣으면 카디널리티가 폭발하므로 저장소를 나눴다.
+#
+# DB 는 읽기 전용 롤(grafana_ro)로 붙는다 — db/init/19-grafana-readonly.sh 참고.
+# 개인정보가 든 app_user 에는 권한이 없어 대시보드는 user_seq 숫자만 쓴다.
+# =============================================================
+apiVersion: 1
+
+datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      editable: false
+
+    - name: workmate-db
+      type: postgres
+      access: proxy
+      url: db:5432
+      database: ${POSTGRES_DB}
+      user: grafana_ro
+      secureJsonData:
+          password: ${GRAFANA_DB_PASSWORD}
+      jsonData:
+          sslmode: disable
+          postgresVersion: 1700
+      editable: false
