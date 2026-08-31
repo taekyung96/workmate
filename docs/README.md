@@ -51,6 +51,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [09. 버전 호환성 매트릭스](development/09_COMPATIBILITY_MATRIX.md)                       | 스택 버전 호환 정보                           |
 | [10. 프로젝트 지도](development/10_PROJECT_MAP.md)                                       | "뭘 하려면 어디를 봐야 하나" 탐색 지도        |
 | [11. 배포 가이드](development/11_DEPLOYMENT_GUIDE.md)                                    | GHCR pull·터널·스키마 반영·자주 막히는 곳     |
+| [12. 운영 가이드](development/12_OPERATIONS.md)                                          | 돌아가는 배포를 다루는 법 — 기동·복구·주소 갱신·전환 |
 
 ---
 
