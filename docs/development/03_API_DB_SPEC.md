@@ -132,7 +132,7 @@ event: error    data: {"message": "응답이 중단되었습니다"}            
 
 ### 3.3 영수증 분석 — `POST /api/v1/receipts/analyze` (multipart)
 
-요청: `file` (이미지). 응답 3분기:
+요청: `file` (이미지) + `X-User-Seq` 헤더(사용량 기록 귀속용, F-OBS). 응답 3분기:
 
 ```json
 // ① 영수증 아님 (F3-02a) — 이력 미저장
@@ -272,6 +272,44 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 - 오디오 원본은 DB가 아니라 `app.upload.voice-dir`(기본 `uploads/voice`)에 파일로 보관하고, DB에는 파일명만 남긴다.
 - `idx_voice_record_user`(user_seq)로 사용자별 최신순 목록을 커버.
 
+### 4.8 user_social_account (F1-1 — 소셜 로그인)
+
+| 컬럼             | 타입            | 제약                 | 설명                                       |
+| ---------------- | --------------- | -------------------- | ------------------------------------------ |
+| social_seq       | bigint identity | PK                   |                                            |
+| user_seq         | bigint          | NOT NULL FK          | 연결된 계정 (app_user)                     |
+| provider         | varchar(20)     | NOT NULL             | `naver` \| `kakao` \| `google`             |
+| provider_user_id | varchar(255)    | NOT NULL             | 제공자가 발급한 고유 사용자 ID             |
+| created_at       | timestamp       | NOT NULL DEFAULT now |                                            |
+
+- 계정 하나에 제공자를 여러 개 매달기 위해 `app_user` 와 분리했다.
+- `provider` + `provider_user_id` 조합으로 계정을 찾는다. 없으면 신규 가입으로 이어진다.
+- 일반 회원가입은 관리자 전용이라, 일반 사용자의 유일한 가입 경로가 이 테이블이다.
+
+### 4.9 llm_usage (F-OBS — 사용자별 LLM 사용량)
+
+| 컬럼          | 타입            | 제약                 | 설명                                              |
+| ------------- | --------------- | -------------------- | ------------------------------------------------- |
+| usage_seq     | bigint identity | PK                   |                                                   |
+| user_seq      | bigint          | NOT NULL             | 사용한 사용자 (app_user)                          |
+| feature       | varchar(20)     | NOT NULL             | `CHAT`·`OCR`·`STT`·`SUMMARY`·`EMBEDDING`          |
+| model_name    | varchar(50)     | NULL                 | 실제 호출된 모델명 (별칭이 아닌 응답이 알려준 값) |
+| input_tokens  | integer         | NULL                 | 입력 토큰 — 임베딩 경로에서는 NULL                |
+| output_tokens | integer         | NULL                 | 출력 토큰 — 임베딩 경로에서는 NULL                |
+| created_at    | timestamp       | NOT NULL DEFAULT now |                                                   |
+
+- **append-only.** 과금·쿼터·남용 조사의 근거라 UPDATE/DELETE 하지 않는다 (`admin_audit_log` 와 같은 성격).
+- **왜 DB 인가** — 제공자(Google)는 "우리 앱"까지만 알고 "우리 앱의 사용자"는 모른다.
+  응답에 실려오는 토큰 수를 받아 우리 `user_seq` 와 함께 남기는 것 말고는 방법이 없다.
+- **왜 Prometheus 가 아닌가** — `user_seq` 를 지표 라벨로 넣으면 시계열이 사용자 수만큼 늘어난다
+  (카디널리티 폭발). 운영 지표는 저차원 라벨로 Prometheus, 사용자별 사용량은 이 테이블.
+- **임베딩만 토큰이 NULL** — `VectorStore.add()` 가 `EmbeddingResponse`(usage)를 감춰서다.
+  추정치를 쓰지 않고 "누가·언제 임베딩했는지"만 정확히 남긴다. 전체 임베딩 토큰량은
+  Prometheus 의 `gen_ai_client_token_usage_total` 로 본다.
+- LLM 호출 5개 지점(채팅·영수증 OCR·음성 STT·회의록 요약·가이드 임베딩)이 모두
+  공통 `LlmUsageService` 를 통해 기록한다.
+- `idx_llm_usage_user_created`(사용자별 기간 집계)·`idx_llm_usage_feature_created`(기능별 추세).
+
 ## 5. 테이블 ↔ 마일스톤 요약
 
 | 마일스톤 | DB 작업                                                                         |
@@ -281,3 +319,5 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 | 3        | 없음 (guide·vector_store 기존)                                                  |
 | 4        | `common_code_group`·`common_code` 신규 + AI_MODEL 초기 데이터                   |
 | 5        | `voice_record` 신규(09) + 오디오 컬럼 4개 추가(12) (§4.7)                       |
+| F1-1     | `user_social_account` 신규(14) (§4.8)                                           |
+| F-OBS    | `llm_usage` 신규(16) (§4.9) · 전 테이블 코멘트(17) · `admin_user`→`app_user`(18) |
