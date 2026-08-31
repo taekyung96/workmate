@@ -64,6 +64,13 @@ app:
         success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:http://localhost:5173/chat}
         failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:5173/login}
 
+# 요청 추적 ID(F-OBS) 를 모든 로그 줄에 찍는다. 값이 없으면 빈 문자열(-)
+# 구조화 로깅(JSON)이 켜지는 docker 프로파일에서는 MDC 값이 JSON 필드로 자동 포함되므로 이 패턴은 의미가 없다 —
+# local 프로파일(사람이 읽는 텍스트 로그)에서만 쓰인다.
+logging:
+    pattern:
+        level: "%5p [%X{requestId:-}]"
+
 # 관측(Observability) — 지표는 관리 포트로만 낸다.
 # WEB 은 인터넷에 노출되므로 앱 포트(8080)에 actuator 를 붙이면 안 된다.
 # 관리 포트(9080)는 compose 에서 호스트에 공개하지 않는다.

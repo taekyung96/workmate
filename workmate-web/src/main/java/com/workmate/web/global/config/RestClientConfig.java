@@ -1,5 +1,7 @@
 package com.workmate.web.global.config;
 
+import com.workmate.web.global.logging.RequestIdFilter;
+import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +39,12 @@ public class RestClientConfig {
                     if (auth != null && auth.getPrincipal() instanceof com.workmate.web.global.security.LoginUser loginUser) {
                         request.getHeaders().set("X-User-Seq", String.valueOf(loginUser.getUserSeq()));
                         request.getHeaders().set("X-User-Role", loginUser.getRole());
+                    }
+                    // 요청 추적 ID 전파 (F-OBS) — RestClient 는 블로킹이라 인터셉터가 요청 스레드에서
+                    // 실행되므로 MDC 가 살아 있다. WAS 로 그대로 이어 보내 WEB·WAS 로그를 잇는다.
+                    String requestId = MDC.get(RequestIdFilter.MDC_KEY);
+                    if (requestId != null) {
+                        request.getHeaders().set(RequestIdFilter.HEADER, requestId);
                     }
                     return execution.execute(request, body);
                 })

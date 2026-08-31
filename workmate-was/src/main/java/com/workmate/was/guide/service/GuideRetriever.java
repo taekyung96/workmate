@@ -1,6 +1,7 @@
 package com.workmate.was.guide.service;
 
 import com.workmate.was.guide.vo.GuideSourceChunk;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -21,6 +22,10 @@ import java.util.List;
 public class GuideRetriever {
 
     private final VectorStore vectorStore;
+    private final MeterRegistry meterRegistry;
+
+    /** RAG 검색 결과 카운터 이름 (F-OBS) — "RAG 를 켰는데 근거를 못 찾은 비율"을 본다 */
+    private static final String METRIC_NAME = "workmate.rag.retrieval";
 
     /** 유사도 상위 K개 (F4-06) */
     @Value("${app.chat.rag-top-k:4}")
@@ -44,15 +49,20 @@ public class GuideRetriever {
                     .topK(topK)
                     .similarityThreshold(threshold)
                     .build());
-            return docs.stream()
+            List<GuideSourceChunk> chunks = docs.stream()
                     .filter(doc -> isAccessible(doc, userSeq))
                     .map(doc -> new GuideSourceChunk(
                             toLong(doc.getMetadata().get("guideSeq")),
                             String.valueOf(doc.getMetadata().get("title")),
                             doc.getText()))
                     .toList();
+            // 검색은 성공했지만 근거를 못 찾은 경우(miss)와 찾은 경우(hit)를 구분해서 잰다 (F-OBS)
+            meterRegistry.counter(METRIC_NAME, "result", chunks.isEmpty() ? "miss" : "hit").increment();
+            return chunks;
         } catch (Exception e) {
             // 검색 실패는 RAG 미적용(일반 답변)으로 폴백 — 채팅 자체를 막지 않는다
+            // hit/miss 와는 원인이 다른 상태(검색 자체가 죽음)라 error 로 별도 태그를 붙인다
+            meterRegistry.counter(METRIC_NAME, "result", "error").increment();
             log.error("RAG 검색 실패 — 일반 답변으로 폴백", e);
             return List.of();
         }

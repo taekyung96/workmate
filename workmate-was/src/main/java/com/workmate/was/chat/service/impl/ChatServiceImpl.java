@@ -18,6 +18,8 @@ import com.workmate.was.chat.vo.ChatStreamRequestVo;
 import com.workmate.was.common.service.CommonCodeService;
 import com.workmate.was.guide.service.GuideRetriever;
 import com.workmate.was.guide.vo.GuideSourceChunk;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 채팅 비즈니스 로직 구현체.
@@ -52,6 +55,7 @@ public class ChatServiceImpl implements ChatService {
     private final GuideRetriever guideRetriever;
     private final RagPromptBuilder ragPromptBuilder;
     private final CommonCodeService commonCodeService;
+    private final MeterRegistry meterRegistry;
 
     /** AI 모델 화이트리스트 그룹 (F9-04) */
     private static final String MODEL_GROUP = "AI_MODEL";
@@ -163,12 +167,22 @@ public class ChatServiceImpl implements ChatService {
         Flux<ServerSentEvent<String>> sourceEvents = Flux.fromIterable(sources)
                 .map(s -> sse("source", Map.of("guideSeq", s.guideSeq(), "title", s.title())));
 
+        // TTFT(첫 토큰까지 지연, F-OBS) — 사용자 체감에 가장 가까운 지표라 스트림 진입 시점부터 잰다.
+        // AtomicBoolean 으로 첫 토큰에서만 기록되게 막는다(ChatStreamClientImpl 의 tokenEmitted 와 같은 패턴).
+        Timer.Sample ttftSample = Timer.start(meterRegistry);
+        AtomicBoolean ttftRecorded = new AtomicBoolean(false);
+
         // 토큰 스트림 — 응답 전문을 누적해 done 시점에 저장
         StringBuilder accumulated = new StringBuilder();
         Flux<ServerSentEvent<String>> tokenEvents = chatStreamClient
                 .stream(userSeq, effectiveModel, effectiveSystemPrompt, prepared.history(),
                         request.getMessage(), imageData, imageMimeType)
                 .doOnNext(accumulated::append)
+                .doOnNext(token -> {
+                    if (ttftRecorded.compareAndSet(false, true)) {
+                        ttftSample.stop(meterRegistry.timer("workmate.chat.ttft"));
+                    }
+                })
                 .map(token -> sse("token", Map.of("delta", token)));
 
         // 스트림 완료 후 assistant 메시지 저장(블로킹 JPA → boundedElastic) + done 이벤트
@@ -185,6 +199,7 @@ public class ChatServiceImpl implements ChatService {
                     // Google 429(무료 할당량/요청限 초과)면 원인을 명확히 안내하고 status 를 실어 화면이 배너로 띄우게 한다.
                     // 이 실패는 사용자 메시지 저장 이후(post-save)라 자동 재시도(retryable)는 주지 않는다(중복 저장 방지).
                     if (isQuotaError(e)) {
+                        meterRegistry.counter("workmate.chat.error", "type", "quota").increment();
                         return Flux.just(sse("error", Map.of(
                                 "message", "AI 무료 사용량(할당량)을 초과했어요. 잠시 후 다시 시도해주세요.",
                                 "status", 429)));
@@ -192,10 +207,12 @@ public class ChatServiceImpl implements ChatService {
                     // 제공자 쪽 일시적 장애 — 우리 사용량 문제가 아니라 다시 시도하면 되는 상황임을 알린다.
                     // 429 와 같은 이유로 자동 재시도는 주지 않는다(사용자 메시지가 이미 저장된 뒤라 중복된다).
                     if (isProviderUnavailableError(e)) {
+                        meterRegistry.counter("workmate.chat.error", "type", "provider_unavailable").increment();
                         return Flux.just(sse("error", Map.of(
                                 "message", "AI 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.",
                                 "status", 503)));
                     }
+                    meterRegistry.counter("workmate.chat.error", "type", "other").increment();
                     return Flux.just(sse("error", Map.of("message", "응답이 중단되었습니다")));
                 });
     }

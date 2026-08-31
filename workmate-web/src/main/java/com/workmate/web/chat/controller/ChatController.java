@@ -1,9 +1,11 @@
 package com.workmate.web.chat.controller;
 
 import com.workmate.web.chat.service.ChatService;
+import com.workmate.web.global.logging.RequestIdFilter;
 import com.workmate.web.global.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
@@ -51,12 +53,15 @@ public class ChatController {
      * 메시지 전송 + AI 응답 SSE 스트리밍 relay (C3, F2-06).
      * 인증 principal 은 요청(서블릿) 스레드에서 @AuthenticationPrincipal 로 캡처해
      * 리액티브 relay 로 넘긴다 — 리액터 스레드에서 SecurityContext 를 읽지 않기 위함.
+     * 요청 추적 ID(F-OBS)도 같은 이유로 여기서 MDC 를 읽어 넘긴다 — MDC 는 ThreadLocal 이라
+     * WebClient 교환이 일어나는 리액터 스레드로는 넘어가지 않는다.
      */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> stream(
             @RequestBody String requestBody,
             @AuthenticationPrincipal LoginUser loginUser) {
-        return chatService.stream(loginUser.getUserSeq(), loginUser.getRole(), requestBody);
+        String requestId = MDC.get(RequestIdFilter.MDC_KEY);
+        return chatService.stream(loginUser.getUserSeq(), loginUser.getRole(), requestId, requestBody);
     }
 
     /** WAS 응답의 상태코드·본문을 유지하며 JSON 컨텐츠 타입으로 화면에 전달한다. */

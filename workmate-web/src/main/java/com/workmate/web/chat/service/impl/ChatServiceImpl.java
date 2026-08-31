@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workmate.web.chat.service.ChatService;
+import com.workmate.web.global.logging.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -58,13 +59,18 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public Flux<ServerSentEvent<String>> stream(Long userSeq, String role, String requestBody) {
+    public Flux<ServerSentEvent<String>> stream(Long userSeq, String role, String requestId, String requestBody) {
         log.info("채팅 스트리밍 relay - userSeq: {}", userSeq);
-        return wasWebClient.post()
+        WebClient.RequestBodySpec req = wasWebClient.post()
                 .uri("/api/v1/chat/stream")
                 .header("X-User-Seq", String.valueOf(userSeq))
-                .header("X-User-Role", role)
-                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-User-Role", role);
+        // 요청 추적 ID 전파 (F-OBS) — .header(...) 는 조립 시점(서블릿 스레드)에 실행되므로 안전하다.
+        // null 이면 WebClient 가 예외를 던지므로 값이 있을 때만 붙인다.
+        if (requestId != null) {
+            req = req.header(RequestIdFilter.HEADER, requestId);
+        }
+        return req.contentType(MediaType.APPLICATION_JSON)
                 // 성공은 SSE로 받되, 스트림 시작 전 오류(429·400)는 WAS가 JSON(ApiResponse)으로 응답한다.
                 // Accept에 JSON을 함께 넣지 않으면 WAS의 오류 응답이 콘텐츠 협상(406)에 걸려 본문이 사라진다.
                 .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON)
