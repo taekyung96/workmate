@@ -15,10 +15,12 @@
 # =============================================================
 set -e
 
+# [주의] 여기서 "exit 0" 을 쓰면 안 된다. 이 파일이 실행권한 없이 배치되면 postgres
+# 엔트리포인트가 실행(subprocess)이 아니라 source(.) 로 읽어서, exit 가 엔트리포인트
+# 자체를 끝내 버린다 → 뒤따르는 초기화 스크립트가 통째로 실행되지 않는다.
 if [ -z "${GRAFANA_DB_PASSWORD}" ]; then
     echo "[19-grafana-readonly] GRAFANA_DB_PASSWORD 가 없어 건너뜁니다. (관측 스택을 안 쓰면 정상)"
-    exit 0
-fi
+else
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     DO \$\$
@@ -41,3 +43,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 EOSQL
 
 echo "[19-grafana-readonly] grafana_ro 롤 준비 완료 (llm_usage 읽기 전용)"
+
+fi
