@@ -75,7 +75,7 @@ DB를 처음 올리면 `db/init/`의 스키마와 데이터가 자동으로 들�
 
 | 대상             | 테스트 |   결과 | 실행 명령                              |
 | ---------------- | -----: | -----: | -------------------------------------- |
-| **workmate-was** |    101 | 101 통과 | `./gradlew :workmate-was:test`         |
+| **workmate-was** |    105 | 105 통과 | `./gradlew :workmate-was:test`         |
 | **workmate-web** |      9 |  9 통과 | `./gradlew :workmate-web:test`         |
 | **workmate-vue** |      3 |  3 통과 | `cd workmate-vue && npm run test:unit` |
 

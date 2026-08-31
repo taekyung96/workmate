@@ -1,6 +1,8 @@
 package com.workmate.was.guide.service.impl;
 
 import com.workmate.was.guide.dao.GuideRepository;
+import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.guide.service.GuideService;
 import com.workmate.was.guide.vo.Guide;
 import com.workmate.was.guide.vo.GuidePageVo;
@@ -35,6 +37,7 @@ public class GuideServiceImpl implements GuideService {
     private final GuideRepository guideRepository;
     private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
+    private final LlmUsageService llmUsageService;
 
     /**
      * 새로운 가이드 문서를 등록하고 본문을 청크 분할하여 벡터 스토어에 적재한다.
@@ -244,6 +247,12 @@ public class GuideServiceImpl implements GuideService {
             // 벡터 스토어에 적재 (EmbeddingModel 호출 및 DB 저장 자동 수행)
             vectorStore.add(chunks);
             log.info("벡터 스토어 임베딩 적재 완료. (GuideSeq: {})", guide.getGuideSeq());
+
+            // 사용량 기록 (F-OBS) — 토큰 수는 null 이다.
+            // VectorStore.add() 가 EmbeddingModel 호출을 감싸버려 EmbeddingResponse(usage)를
+            // 돌려주지 않기 때문이다. 추정치를 지어내는 대신 "누가·언제·몇 청크를 임베딩했는지"만
+            // 정확히 남긴다. 전체 임베딩 토큰 총량은 Prometheus 의 gen_ai 지표로 따로 볼 수 있다.
+            llmUsageService.record(guide.getUserSeq(), LlmFeature.EMBEDDING, null, null, null);
 
         } catch (Exception e) {
             log.error("벡터 스토어 임베딩 적재 실패 (GuideSeq: {}): {}", guide.getGuideSeq(), e.getMessage(), e);

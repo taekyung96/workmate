@@ -37,14 +37,17 @@ public class ReceiptApiController {
     /**
      * 업로드된 영수증 이미지를 분석하여 데이터 후보군 및 도메인 검증 결과를 반환한다.
      *
+     * @param userSeq 인증 세션에서 WEB 이 주입한 사용자 식별자 (X-User-Seq 헤더) — 사용량 기록 귀속 대상
      * @param file 영수증 이미지 파일
      * @return 분석 결과 DTO 공통 응답
      * @throws IOException 파일 처리 중 에러
      */
     @PostMapping("/analyze")
-    public ApiResponse<ReceiptAnalysisResponseVo> analyzeReceipt(@RequestParam("file") MultipartFile file) throws IOException {
-        log.info("영수증 이미지 분석 API 호출. 파일명: {}", file.getOriginalFilename());
-        ReceiptAnalysisResponseVo response = receiptService.analyzeUploadedReceipt(file);
+    public ApiResponse<ReceiptAnalysisResponseVo> analyzeReceipt(
+            @RequestHeader("X-User-Seq") Long userSeq,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        log.info("영수증 이미지 분석 API 호출. userSeq: {}, 파일명: {}", userSeq, file.getOriginalFilename());
+        ReceiptAnalysisResponseVo response = receiptService.analyzeUploadedReceipt(userSeq, file);
         return ApiResponse.success(response);
     }
 

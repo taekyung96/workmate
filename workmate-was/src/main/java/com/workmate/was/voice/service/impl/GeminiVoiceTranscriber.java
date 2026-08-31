@@ -1,8 +1,11 @@
 package com.workmate.was.voice.service.impl;
 
+import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.voice.service.VoiceTranscriber;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
@@ -18,9 +21,11 @@ import org.springframework.util.MimeTypeUtils;
 public class GeminiVoiceTranscriber implements VoiceTranscriber {
 
     private final ChatClient chatClient;
+    private final LlmUsageService llmUsageService;
 
-    public GeminiVoiceTranscriber(ChatClient.Builder chatClientBuilder) {
+    public GeminiVoiceTranscriber(ChatClient.Builder chatClientBuilder, LlmUsageService llmUsageService) {
         this.chatClient = chatClientBuilder.build();
+        this.llmUsageService = llmUsageService;
     }
 
     private static final String SYSTEM_PROMPT =
@@ -30,17 +35,26 @@ public class GeminiVoiceTranscriber implements VoiceTranscriber {
 
     /** {@inheritDoc} */
     @Override
-    public String transcribe(Resource audio, String mimeType) {
+    public String transcribe(Long userSeq, Resource audio, String mimeType) {
         MimeType mediaType = parseMimeType(mimeType);
         log.info("음성 전사 요청 시작 (MimeType: {})", mediaType);
 
-        String text = chatClient.prompt()
+        // content() 대신 chatResponse() — 사용량(usage) 을 함께 받기 위함 (F-OBS)
+        ChatResponse response = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
                 .user(userSpec -> userSpec
                         .text("이 회의 오디오의 내용을 한국어 텍스트로 받아써 주세요. 다른 설명 없이 전사문만 출력하세요.")
                         .media(mediaType, audio))
                 .call()
-                .content();
+                .chatResponse();
+
+        if (response != null && response.getMetadata() != null) {
+            llmUsageService.record(userSeq, LlmFeature.STT,
+                    response.getMetadata().getModel(), response.getMetadata().getUsage());
+        }
+        String text = (response == null || response.getResult() == null
+                || response.getResult().getOutput() == null)
+                ? null : response.getResult().getOutput().getText();
 
         log.info("음성 전사 완료 (길이: {}자)", text != null ? text.length() : 0);
         return text != null ? text : "";

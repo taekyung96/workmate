@@ -63,3 +63,20 @@ app:
         # prod/docker 프로파일이 상대경로로 재정의한다.
         success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:http://localhost:5173/chat}
         failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:5173/login}
+
+# 관측(Observability) — 지표는 관리 포트로만 낸다.
+# WEB 은 인터넷에 노출되므로 앱 포트(8080)에 actuator 를 붙이면 안 된다.
+# 관리 포트(9080)는 compose 에서 호스트에 공개하지 않는다.
+management:
+    server:
+        port: 9080
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus
+    endpoint:
+        health:
+            show-details: never
+    metrics:
+        tags:
+            application: workmate-web

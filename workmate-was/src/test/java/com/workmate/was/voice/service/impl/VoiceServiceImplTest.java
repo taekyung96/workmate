@@ -26,9 +26,10 @@ class VoiceServiceImplTest {
     private VoiceServiceImpl service() {
         ChatClient.Builder builder = mock(ChatClient.Builder.class);
         when(builder.build()).thenReturn(mock(ChatClient.class));
-        return new VoiceServiceImpl(transcriber, repository, audioStore, builder) {
+        return new VoiceServiceImpl(transcriber, repository, audioStore, builder,
+                mock(com.workmate.was.usage.service.LlmUsageService.class)) {
             @Override
-            protected String summarize(String sttText) {
+            protected String summarize(Long userSeq, String sttText) {
                 return "### 📌 핵심 요약\n- 요약";
             }
         };
@@ -50,7 +51,7 @@ class VoiceServiceImplTest {
         VoiceServiceImpl service = service();
         MockMultipartFile file = new MockMultipartFile(
                 "file", "2026 회의.m4a", "audio/mp4", "bytes".getBytes());
-        when(transcriber.transcribe(any(), any())).thenReturn("전사된 텍스트");
+        when(transcriber.transcribe(any(), any(), any())).thenReturn("전사된 텍스트");
         when(audioStore.store(file)).thenReturn("uuid-1.m4a");
         when(repository.save(any(VoiceRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 

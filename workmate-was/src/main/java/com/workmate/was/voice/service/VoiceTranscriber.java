@@ -11,9 +11,10 @@ public interface VoiceTranscriber {
     /**
      * 오디오를 텍스트로 전사한다.
      *
+     * @param userSeq  요청 사용자 — LLM 사용량 기록(F-OBS)의 귀속 대상
      * @param audio    오디오 리소스
      * @param mimeType 오디오 MIME 타입 (예: audio/mpeg, audio/wav, audio/webm)
      * @return 전사된 텍스트
      */
-    String transcribe(Resource audio, String mimeType);
+    String transcribe(Long userSeq, Resource audio, String mimeType);
 }

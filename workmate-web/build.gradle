@@ -22,6 +22,10 @@ dependencies {
     // 실제 OS 환경변수(운영 서버 등)가 있으면 그게 우선되고 .env는 로컬 폴백으로만 쓰인다
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    // 관측(F-OBS) — /actuator/prometheus 로 지표 노출. 관리 포트는 앱 포트와 분리해 외부에 열지 않는다.
+    // Spring AI 는 Micrometer 가 있으면 gen_ai.* (토큰 사용량 등)를 자동 계측한다
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     // WebClient(리액티브) — 채팅 SSE 스트리밍의 무버퍼 relay 전용 (F2-06). 블로킹 프록시는 RestClient 유지
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'

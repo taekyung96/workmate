@@ -11,7 +11,7 @@ import java.util.List;
 /** 영수증 비즈니스 로직 처리 서비스 인터페이스. */
 public interface ReceiptService {
 
-    ReceiptAnalysisResponseVo analyzeUploadedReceipt(MultipartFile file) throws IOException;
+    ReceiptAnalysisResponseVo analyzeUploadedReceipt(Long userSeq, MultipartFile file) throws IOException;
 
     Receipt saveConfirmedReceipt(Long userSeq, ReceiptSaveRequestVo request);
 

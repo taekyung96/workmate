@@ -10,7 +10,10 @@ import com.workmate.was.voice.vo.VoiceRecord;
 import com.workmate.was.voice.vo.VoiceRecordPageVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.extern.slf4j.Slf4j;
+import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.usage.vo.LlmFeature;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,15 +40,18 @@ public class VoiceServiceImpl implements VoiceService {
     private final VoiceRecordRepository voiceRecordRepository;
     private final VoiceAudioStore audioStore;
     private final ChatClient chatClient;
+    private final LlmUsageService llmUsageService;
 
     public VoiceServiceImpl(VoiceTranscriber transcriber,
                             VoiceRecordRepository voiceRecordRepository,
                             VoiceAudioStore audioStore,
-                            ChatClient.Builder chatClientBuilder) {
+                            ChatClient.Builder chatClientBuilder,
+                            LlmUsageService llmUsageService) {
         this.transcriber = transcriber;
         this.voiceRecordRepository = voiceRecordRepository;
         this.audioStore = audioStore;
         this.chatClient = chatClientBuilder.build();
+        this.llmUsageService = llmUsageService;
     }
 
     /** 회의록 요약 시스템 지시 — 3단 구조(핵심 요약/결정 사항/Action Items)의 마크다운을 강제한다 */
@@ -66,13 +72,13 @@ public class VoiceServiceImpl implements VoiceService {
         log.info("음성 회의록 분석 요청 - userSeq: {}, 파일: {}", userSeq, file.getOriginalFilename());
 
         // 1) 전사(STT) — 교체 가능한 VoiceTranscriber 에 위임
-        String sttText = transcriber.transcribe(file.getResource(), file.getContentType());
+        String sttText = transcriber.transcribe(userSeq, file.getResource(), file.getContentType());
         if (sttText.isBlank()) {
             throw new IllegalStateException("음성에서 텍스트를 추출하지 못했습니다. 오디오 품질을 확인해주세요.");
         }
 
         // 2) 구조화 요약 — 전사문을 Gemini 텍스트 모델로 3단 마크다운 요약
-        String summaryMd = summarize(sttText);
+        String summaryMd = summarize(userSeq, sttText);
 
         // 3) 오디오 원본 저장 — 이력에서 다시 재생할 수 있어야 하므로 파일을 보관한다
         String audioFileName = audioStore.store(file);
@@ -192,12 +198,21 @@ public class VoiceServiceImpl implements VoiceService {
     }
 
     /** 전사문을 3단 구조 마크다운 회의록으로 요약한다 */
-    protected String summarize(String sttText) {
-        String md = chatClient.prompt()
+    protected String summarize(Long userSeq, String sttText) {
+        // content() 대신 chatResponse() — 사용량(usage) 을 함께 받기 위함 (F-OBS)
+        ChatResponse response = chatClient.prompt()
                 .system(SUMMARY_SYSTEM_PROMPT)
                 .user(sttText)
                 .call()
-                .content();
+                .chatResponse();
+
+        if (response != null && response.getMetadata() != null) {
+            llmUsageService.record(userSeq, LlmFeature.SUMMARY,
+                    response.getMetadata().getModel(), response.getMetadata().getUsage());
+        }
+        String md = (response == null || response.getResult() == null
+                || response.getResult().getOutput() == null)
+                ? null : response.getResult().getOutput().getText();
         return md != null ? md : "";
     }
 

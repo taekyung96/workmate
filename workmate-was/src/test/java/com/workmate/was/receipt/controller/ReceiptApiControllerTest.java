@@ -68,10 +68,12 @@ class ReceiptApiControllerTest {
                 .items(List.of(new OcrResultVo("롯데법인카드", 15000, "20260713", "2208162517")))
                 .build();
 
-        given(receiptService.analyzeUploadedReceipt(any())).willReturn(mockResponse);
+        given(receiptService.analyzeUploadedReceipt(any(), any())).willReturn(mockResponse);
 
         // when & then
-        mockMvc.perform(multipart("/api/v1/receipts/analyze").file(file))
+        // 분석 API 도 사용량 기록 귀속을 위해 X-User-Seq 를 요구한다 (F-OBS)
+        mockMvc.perform(multipart("/api/v1/receipts/analyze").file(file)
+                        .header("X-User-Seq", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.result.payAmount").value(15000))

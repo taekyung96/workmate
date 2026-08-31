@@ -55,7 +55,7 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     @Override
-    public ReceiptAnalysisResponseVo analyzeUploadedReceipt(MultipartFile file) throws IOException {
+    public ReceiptAnalysisResponseVo analyzeUploadedReceipt(Long userSeq, MultipartFile file) throws IOException {
         Path uploadPath = rootDir;
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
@@ -72,7 +72,7 @@ public class ReceiptServiceImpl implements ReceiptService {
         log.info("영수증 이미지 임시 저장 성공: {}", targetFilePath);
 
         Resource imageResource = new FileSystemResource(targetFilePath.toFile());
-        List<OcrResultVo> ocrResults = ocrService.analyzeReceipt(imageResource, file.getContentType());
+        List<OcrResultVo> ocrResults = ocrService.analyzeReceipt(userSeq, imageResource, file.getContentType());
         String rawJson = ocrService.toJsonString(ocrResults);
 
         List<String> cardNames = ocrResults.stream()
