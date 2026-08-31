@@ -72,9 +72,28 @@ openssl rand -base64 24   # GRAFANA_* (관측 스택 쓸 때만)
 > 저장되고(`AesCipher`), 로그인은 입력 이메일을 같은 방식으로 암호화해 **암호문끼리** 비교한다
 > (`UserRepository.findByEmail`). 시드에 박힌 암호문은 개발 `.env` 키로 만든 값이라,
 > 배포 서버에 새 AES 키를 쓰면 `demo.admin@example.com` 이 조회되지 않아 **로그인이 실패한다.**
-> 방문자 체험을 열려면 배포 후 계정을 그 환경에서 새로 만들어야 한다 —
-> `scripts/seed-demo-accounts.js` 가 회원가입 API 를 타므로 앱이 배포 키로 암호화해 넣는다.
-> (콘텐츠 INSERT 는 `user_name` 기준이라 키와 무관하게 그대로 붙는다)
+> 계정을 새로 만드는 방법은 **막혀 있다.** `POST /api/auth/signup` 은 `ROLE_ADMIN` 전용인데
+> (`SecurityConfig`) 신규 배포에는 관리자가 한 명도 없다. `scripts/seed-demo-accounts.js` 도
+> 같은 엔드포인트를 쓰므로 함께 막힌다. 즉 **그냥 두면 로그인 가능한 계정이 하나도 없다.**
+
+**해결 — 배포 직후 한 번 실행한다.**
+
+```bash
+./scripts/bootstrap-demo-login.sh
+```
+
+시드된 데모 3계정의 `email`·`phone` 을 **이 배포의 AES 키로 다시 암호화해 UPDATE** 한다.
+비밀번호는 BCrypt(단방향, 키와 무관)라 그대로 쓴다. 계정과 콘텐츠는 이미 들어가 있으므로
+새로 만들 필요가 없다. 멱등이라 여러 번 실행해도 안전하다.
+
+권한은 건드리지 않아 데모 계정은 `ROLE_USER` 로 남는다. 관리자 화면 시연이 필요한
+**비공개** 환경에서만 `--grant-admin` 을 붙인다(공개 인스턴스에는 쓰지 말 것).
+
+```
+demo.admin@example.com / Workmate!2026
+hong@example.com       / Workmate!2026
+kim@example.com        / Workmate!2026
+```
 
 ---
 
@@ -201,15 +220,28 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 
 ## 9. 자주 막히는 곳
 
-| 증상                            | 원인                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------- |
-| WAS 가 기동 직후 죽음           | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
-| `ddl-auto: validate` 실패       | 기존 볼륨에 신규 스키마 미적용 → §4                                                         |
-| 소셜 로그인 버튼이 안 됨        | 콜백 URL 미등록(§6) 또는 자격증명 미주입                                                    |
-| WEB 이 기동 직후 죽음 (`Client id of registration 'kakao' must not be empty`) | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
-| OAuth 리다이렉트가 `http://`    | `SERVER_FORWARD_HEADERS_STRATEGY` 누락                                                      |
-| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행                                  |
-| 이미지가 옛 버전                | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다                                         |
-| DB 가 unhealthy · init 이 중간에 끊김 | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다 |
-| 데모 계정으로 로그인이 안 됨    | 배포 AES 키가 시드 생성 때와 다르다 → §2 '데모 계정은 어떻게 되나'                           |
-| 데모 계정에 관리자 메뉴가 없음  | 정상이다. 배포에서는 `ROLE_USER` 로 둔다 → §2                                                |
+### 기동이 안 될 때
+
+| 증상 | 원인 |
+| --- | --- |
+| WAS 가 기동 직후 죽음 | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
+| WEB 이 기동 직후 죽음<br>`Client id of registration 'kakao' must not be empty` | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. `${VAR:not-configured}` 기본값은 변수가 *없을 때만* 적용된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
+| DB 가 unhealthy · init 이 중간에 끊김 | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어, 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다 |
+| `ddl-auto: validate` 실패 | 기존 볼륨에 신규 스키마 미적용 → §4 |
+
+### 로그인·계정
+
+| 증상 | 원인 |
+| --- | --- |
+| 데모 계정으로 로그인이 안 됨 | 배포 AES 키가 시드 생성 때와 다르다. 배포 후 `./scripts/bootstrap-demo-login.sh` 를 1회 실행해야 한다 → §2 |
+| 데모 계정에 관리자 메뉴가 없음 | 정상이다. 공개 배포에서는 `ROLE_USER` 로 둔다 → §2 |
+| 회원가입이 403 | 의도된 동작. `/api/auth/signup` 은 `ROLE_ADMIN` 전용이다 |
+| 소셜 로그인 버튼이 안 됨 | 콜백 URL 미등록(§6) 또는 자격증명 미주입 |
+| OAuth 리다이렉트가 `http://` | `SERVER_FORWARD_HEADERS_STRATEGY` 누락 |
+
+### 그 밖에
+
+| 증상 | 원인 |
+| --- | --- |
+| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행 |
+| 이미지가 옛 버전 | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다 |
