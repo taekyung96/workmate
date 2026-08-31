@@ -4,8 +4,45 @@
 > 가장 먼저 읽는 문서다. 설계 단계(별도 세션)에서 내린 **모든 결정과 그 근거**,
 > 현재 상태, 다음 할 일을 담는다.
 
-- **현재 상태**: v2 이관과 SPA 전환 완료. [로드맵](ROADMAP.md) 5단계까지 구현됐고, 이후 회의록 요약(F8-1) 등이 추가됐다.
+- **현재 상태**: 기능 구현 완료. 지금은 **운영 준비 단계**다 — 아래 §0 참고.
 - **관련 문서**: [ADR](adr/) · [아키텍처](../development/01_ARCHITECTURE.md) · [프론트 구조 가이드](../development/02_FRONTEND_STRUCTURE_GUIDE.md) · [로드맵](ROADMAP.md)
+
+---
+
+## 0. 지금 어디까지 왔나 (2026-08-31)
+
+기능 개발은 끝났고 **운영 준비 단계**다. 새 세션은 여기부터 보면 된다.
+
+### 갖춰진 것
+
+| 영역 | 상태 |
+| --- | --- |
+| 기능 | 채팅(SSE·RAG)·영수증·가이드·회의록·관리자·소셜 로그인 |
+| 테스트 | WAS 105 · WEB 9 · Vue 3 (`./gradlew :workmate-was:test` 등) |
+| CI | push·PR 마다 테스트, `main` 머지 시 GHCR 이미지 push |
+| 브랜치 | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수). [ADR-0004](adr/0004-github-flow-branching.md) |
+| 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull) |
+| 관측 | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana |
+| 사용량 | LLM 호출 5지점의 토큰을 `llm_usage` 에 기록 (사용자별 집계 가능) |
+| RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회 |
+
+### 다음에 할 일
+
+1. **실제 배포** — [11. 배포 가이드](../development/11_DEPLOYMENT_GUIDE.md) 그대로.
+   도메인 + Cloudflare Tunnel + 소셜 콜백 등록 + 자동 시작
+2. **부하 테스트** — k6 로 SSE 동시접속 한계 측정. **부하 생성기와 대상 서버를 분리**해야 숫자가 유효하다
+3. **프론트 테스트 보강** — 현재 3건. 공통 composable·store 위주로
+4. **Grafana 대시보드** — 데이터소스는 이미 등록돼 있다. UI 에서 만들어 export 후
+   `docker/grafana/provisioning/dashboards/` 에 커밋
+
+### 알려진 한계 (숨기지 말고 설명할 것)
+
+- **DB 마이그레이션 도구가 없다.** `db/init/*.sql` 은 볼륨 최초 생성 시에만 실행되므로
+  기존 서버에는 수동 적용해야 한다. Flyway 도입이 후속 과제
+- **RAG 접근 필터가 topK 뒤에 있다.** 비공개 타인 문서가 상위를 차지하면 결과 건수가 줄어든다.
+  `filterExpression` 으로 DB 단계에서 거는 것이 개선 방향
+- **임베딩 사용량은 토큰이 NULL** 이다. `VectorStore.add()` 가 usage 를 감춘다
+- **세션·SessionRegistry·레이트리미터가 인메모리**다. 인스턴스를 늘리면 조용히 깨진다 → Redis 필요
 
 ---
 
@@ -85,7 +122,7 @@ v3는 빈 저장소에서 시작해, v2에서 쓸 만한 것만 골라 옮겨온
 
 ---
 
-## 5. 구현 순서 (리스크 낮은 것부터)
+## 5. 구현 순서 (초기 계획 — **전부 완료됨**, 기록용)
 
 1. **골격 + 로그인** — router·layout·authStore + 로그인/회원가입 (인증·가드가 뼈대)
 2. **가이드 목록·상세** — 가장 단순한 CRUD로 "프록시→화면" 왕복 패턴 확립
