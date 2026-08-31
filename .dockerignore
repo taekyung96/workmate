@@ -4,8 +4,10 @@
 **/build
 **/.gradle
 
-# workmate-vue 는 Gradle 모듈이 아니며, UMD 산출물은 이미 workmate-web static 에 커밋됨
-workmate-vue
+# SPA 소스는 이미지 빌드에 필요하다 — Dockerfile 의 node 스테이지가 직접 빌드한다.
+# 의존성·산출물만 제외한다 (이미지 안에서 npm ci 로 다시 만든다)
+**/node_modules
+workmate-vue/dist
 
 # 비밀값 (컨테이너는 docker 프로파일 + 환경변수로 접속하므로 이미지에 넣지 않는다)
 .env

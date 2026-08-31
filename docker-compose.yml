@@ -40,6 +40,10 @@ services:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
             GEMINI_API_KEY: ${GEMINI_API_KEY}
+            # 개인정보 AES 암복호화 키 — 이미지에 .env 를 넣지 않으므로 여기서 주입한다
+            # (없으면 AesCryptoConverter 생성 실패로 컨텍스트 로딩이 깨진다)
+            AES_SECRET_KEY: ${AES_SECRET_KEY}
+            AES_SECRET_IV: ${AES_SECRET_IV}
         depends_on:
             db:
                 condition: service_healthy
@@ -55,6 +59,14 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             WAS_BASE_URL: http://was:8081
+            # 소셜 로그인(F1-1) 자격증명 — 미주입 시 not-configured 로 떨어져 버튼이 동작하지 않는다.
+            # 배포 도메인에서 쓰려면 각 제공자 콘솔에 콜백 URL 도 등록해야 한다.
+            NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+            NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+            KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+            KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
         depends_on:
             - was
 

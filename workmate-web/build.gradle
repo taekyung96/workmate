@@ -53,6 +53,9 @@ tasks.register('buildVue', Exec) {
     description = 'workmate-vue 를 프로덕션 빌드한다 (npm run build)'
     group = 'build'
     workingDir vueDir
+    // 컨테이너 빌드는 SPA 를 전용 node 스테이지에서 미리 만들어 dist 를 넣어주므로 건너뛴다
+    // (이미지에 Node 를 설치하지 않기 위함 — workmate-web/Dockerfile 참고)
+    onlyIf { !project.hasProperty('skipVueBuild') }
     def isWindows = System.getProperty('os.name').toLowerCase().contains('win')
     if (isWindows) {
         commandLine 'cmd', '/c', 'npm', 'run', 'build'
