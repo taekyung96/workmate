@@ -161,6 +161,33 @@ docker exec -i -e GRAFANA_DB_PASSWORD="$GRAFANA_DB_PASSWORD" workmate-db \
 
 ## 5. Cloudflare Tunnel (외부 노출)
 
+### 도메인 없이 임시로 열기 — Quick Tunnel
+
+도메인을 아직 안 정했다면 `trycloudflare.com` 임시 주소로 먼저 열어볼 수 있다. 계정도 토큰도 필요 없다.
+
+```bash
+docker run -d --name wm-quicktunnel --restart unless-stopped \
+    --network <compose 네트워크명> \
+    cloudflare/cloudflared:latest tunnel --url http://web:8080
+
+docker logs wm-quicktunnel | grep trycloudflare.com   # 발급된 주소 확인
+```
+
+**주소는 cloudflared 가 다시 뜰 때마다 새로 발급된다** — 재부팅·도커 재시작·WSL 종료가 모두 해당한다.
+실측으로 `docker restart` 와 `stop`→`start` 양쪽에서 바뀌는 것을 확인했다. 프로세스가 살아 있는
+동안은 유지된다.
+
+바뀐 주소를 README 에 반영하려면:
+
+```bash
+./scripts/update-demo-url.sh          # 터널 컨테이너에서 자동 탐지
+./scripts/update-demo-url.sh <주소>   # 저장소와 docker 가 다른 환경일 때
+```
+
+Quick Tunnel 은 Cloudflare 가 **운영용이 아니라고 명시**한다(가용성 보장 없음). 고정 도메인에만
+등록할 수 있는 소셜 로그인 콜백도 쓸 수 없다. 상시 공개용으로는 아래 정식 터널로 간다.
+
+
 가정용 회선은 인바운드가 막혀 있는 경우가 많고, 공유기에 포트를 여는 것도 바람직하지 않다.
 터널은 **아웃바운드 연결만** 쓰므로 이 문제를 통째로 우회한다.
 
