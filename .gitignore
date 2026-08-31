@@ -65,6 +65,7 @@ scripts/*
 !scripts/capture-all-perfect.js
 !scripts/seed-demo-accounts.js
 !scripts/bootstrap-demo-login.sh
+!scripts/update-demo-url.sh
 !scripts/gen-brand-assets.js
 !scripts/package.json
 !scripts/package-lock.json
