@@ -9,7 +9,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 개발 기간: 2026.07 ~ (1인 개발 · 실작업 약 2주)
 
 <!-- demo-url:start -->
-> 🔗 **라이브 데모** — <https://throwing-happy-largest-amended.trycloudflare.com>
+> 🔗 **라이브 데모** — <https://ranks-bunny-modified-bob.trycloudflare.com>
 >
 > `demo.admin@example.com` / `Workmate!2026` 으로 로그인하면 아래 화면을 그대로 볼 수 있다.
 > 무료 임시 터널(Cloudflare Quick Tunnel)이라 **주소가 바뀌거나 꺼져 있을 수 있다.**
