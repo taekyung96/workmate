@@ -23,10 +23,11 @@
 # =============================================================
 set -e
 
+# [주의] 19-grafana-readonly.sh 와 같은 이유로 "exit 0" 을 쓰지 않는다.
+# 실행권한 없이 배치되면 엔트리포인트가 source(.) 로 읽어, exit 가 초기화 전체를 끊는다.
 if [ "${DEMO_ADMIN_ENABLED}" != "true" ]; then
     echo "[20-demo-admin-role] DEMO_ADMIN_ENABLED 가 true 가 아니라 건너뜁니다. (공개 배포에서는 정상)"
-    exit 0
-fi
+else
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     UPDATE app_user
@@ -36,3 +37,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 EOSQL
 
 echo "[20-demo-admin-role] '관리자 (데모)' 를 ROLE_ADMIN 으로 승격했습니다. (로컬·데모 전용)"
+
+fi

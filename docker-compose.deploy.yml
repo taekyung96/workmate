@@ -90,12 +90,12 @@ services:
             # 없으면 OAuth 리다이렉트 URI 가 http 로 만들어지고 세션 쿠키의 Secure 판정도 틀어진다
             SERVER_FORWARD_HEADERS_STRATEGY: framework
             # 소셜 로그인(F1-1) — 배포 도메인의 콜백 URL 을 각 제공자 콘솔에 등록해야 동작한다
-            NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
-            NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
-            KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
-            KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
-            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+            NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-not-configured}
+            NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-not-configured}
+            KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-not-configured}
+            KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-not-configured}
+            GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
+            GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
         depends_on:
             was:
                 condition: service_healthy
