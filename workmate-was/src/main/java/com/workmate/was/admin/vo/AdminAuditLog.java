@@ -33,11 +33,11 @@ public class AdminAuditLog {
     @Column(name = "audit_seq")
     private Long auditSeq;
 
-    /** 조치를 수행한 관리자 (admin_user.user_seq) */
+    /** 조치를 수행한 관리자 (app_user.user_seq) */
     @Column(name = "admin_user_seq", nullable = false)
     private Long adminUserSeq;
 
-    /** 조치 대상 사용자 (admin_user.user_seq) */
+    /** 조치 대상 사용자 (app_user.user_seq) */
     @Column(name = "target_user_seq", nullable = false)
     private Long targetUserSeq;
 

@@ -20,7 +20,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 |                   회의록 AI 요약                    |                    회의록 이력                     |
 |   ![회의록 요약](docs/images/09_voice_detail.png)   |  ![회의록 이력](docs/images/08_voice_history.png)  |
 |                  사내 가이드 상세                   |                관리자 · 사용자 관리                |
-|   ![가이드 상세](docs/images/06_guide_detail.png)   |     ![관리자](docs/images/10_admin_users.png)      |
+|   ![가이드 상세](docs/images/06_guide_detail.png)   |     ![관리자](docs/images/10_app_users.png)      |
 
 ## 주요 기능
 

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS voice_record (
     summary_md  text         NOT NULL,             -- AI 구조화 요약(마크다운)
     created_at  timestamptz  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT voice_record_pk PRIMARY KEY (record_seq),
-    CONSTRAINT voice_record_user_seq_fk FOREIGN KEY (user_seq) REFERENCES admin_user(user_seq)
+    CONSTRAINT voice_record_user_seq_fk FOREIGN KEY (user_seq) REFERENCES app_user(user_seq)
 );
 
 CREATE INDEX IF NOT EXISTS idx_voice_record_user ON voice_record(user_seq, created_at DESC);

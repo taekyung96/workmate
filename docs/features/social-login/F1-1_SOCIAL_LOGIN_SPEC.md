@@ -103,7 +103,7 @@ README에 데모 계정(`demo.admin@example.com`)이 박혀 있고, 이 저장�
 
 ```sql
 -- 소셜 가입자는 비밀번호가 없다
-ALTER TABLE admin_user ALTER COLUMN password DROP NOT NULL;
+ALTER TABLE app_user ALTER COLUMN password DROP NOT NULL;
 
 -- 계정 하나에 제공자 여러 개를 매단다 (구글로 가입 → 나중에 네이버 연동)
 CREATE TABLE IF NOT EXISTS user_social_account (
@@ -113,14 +113,14 @@ CREATE TABLE IF NOT EXISTS user_social_account (
     provider_user_id  varchar(255) NOT NULL,   -- 제공자가 주는 고유 식별자
     created_at        timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT user_social_account_social_seq_pk PRIMARY KEY (social_seq),
-    CONSTRAINT user_social_account_user_seq_fk FOREIGN KEY (user_seq) REFERENCES admin_user(user_seq),
+    CONSTRAINT user_social_account_user_seq_fk FOREIGN KEY (user_seq) REFERENCES app_user(user_seq),
     CONSTRAINT user_social_account_provider_uk UNIQUE (provider, provider_user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_social_account_user ON user_social_account (user_seq);
 ```
 
-`provider`와 `provider_user_id`를 별도 테이블로 뺀 이유는 한 계정에 제공자가 여러 개 붙을 수 있어야 하기 때문이다. `admin_user`에 컬럼 두 개로 넣으면 구글로 가입한 사람이 네이버를 추가로 연결할 수 없다.
+`provider`와 `provider_user_id`를 별도 테이블로 뺀 이유는 한 계정에 제공자가 여러 개 붙을 수 있어야 하기 때문이다. `app_user`에 컬럼 두 개로 넣으면 구글로 가입한 사람이 네이버를 추가로 연결할 수 없다.
 
 나중에 카카오가 붙어도 행 하나 추가로 끝나고, CI를 받을 수 있는 상황이 오면 연동 기준만 교체하면 된다.
 
@@ -136,7 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_user_social_account_user ON user_social_account (
 | :------------------------------------------ | :------------------------------------------------- |
 | `(provider, provider_user_id)` 가 이미 있다 | 그 계정으로 로그인                                 |
 | 없는데 이메일이 같은 계정이 있다            | 그 계정에 소셜 계정을 연결한 뒤 로그인 (자동 연동) |
-| 둘 다 없다                                  | `admin_user` 생성 후 소셜 계정 연결                |
+| 둘 다 없다                                  | `app_user` 생성 후 소셜 계정 연결                |
 
 신규 생성 시 값은 이렇게 채운다.
 
@@ -244,7 +244,7 @@ NAVER_CLIENT_SECRET=
 
 - [ ] 네이버로 처음 로그인하면 계정이 생성되고 바로 채팅 화면에 진입한다
 - [ ] 같은 네이버 계정으로 다시 로그인하면 새 계정이 생기지 않고 기존 계정으로 들어간다
-- [ ] 구글로 가입한 뒤 같은 이메일의 네이버로 로그인하면 기존 계정에 연결된다 (`user_social_account` 2행, `admin_user` 1행)
+- [ ] 구글로 가입한 뒤 같은 이메일의 네이버로 로그인하면 기존 계정에 연결된다 (`user_social_account` 2행, `app_user` 1행)
 - [ ] 데모 계정 `demo.admin@example.com` 이메일 로그인이 그대로 동작한다
 - [ ] 소셜 로그인 후에도 중복 로그인 차단(F1-08)이 동작한다
 - [ ] 비로그인 상태에서 `POST /api/auth/signup` 호출 시 403

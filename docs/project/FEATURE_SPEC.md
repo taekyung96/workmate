@@ -316,7 +316,7 @@
 
 설계 문서와 별개로, 저장소에는 이미 일부 선행 구현이 있다 (`docs/notes/WORK_TRANSITION_NOTE.md`):
 
-- **DB**: `receipt`·`guide`·`vector_store` 테이블 SQL 존재. **인증(`admin_user`)·채팅(`chat_room`/`chat_message`) 테이블은 미작성** — 마일스톤 1에서 추가 필요
+- **DB**: `receipt`·`guide`·`vector_store` 테이블 SQL 존재. **인증(`app_user`)·채팅(`chat_room`/`chat_message`) 테이블은 미작성** — 마일스톤 1에서 추가 필요
 - **영수증(F3)**: Entity·Repository·Validator·OcrService·Controller·테스트 선행 구현됨 → 본 명세와 대조 검증 후 재사용
 - **가이드(F4)**: Entity·Service·FakeEmbeddingModel 테스트 일부 선행 구현됨
 

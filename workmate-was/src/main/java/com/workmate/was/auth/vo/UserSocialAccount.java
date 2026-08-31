@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 /**
  * 소셜 계정 연결 Entity (user_social_account 테이블 매핑, F1-1).
  *
- * <p>계정 하나에 제공자를 여러 개 매달기 위해 admin_user 와 분리했다.
+ * <p>계정 하나에 제공자를 여러 개 매달기 위해 app_user 와 분리했다.
  * 구글로 가입한 뒤 같은 이메일의 네이버로 로그인하면 이 테이블에 행이 하나 더 생긴다.</p>
  */
 @Entity
@@ -25,7 +25,7 @@ public class UserSocialAccount {
     @Column(name = "social_seq")
     private Long socialSeq;
 
-    /** 연결된 계정 (admin_user.user_seq) */
+    /** 연결된 계정 (app_user.user_seq) */
     @Column(name = "user_seq", nullable = false)
     private Long userSeq;
 

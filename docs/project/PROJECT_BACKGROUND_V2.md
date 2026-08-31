@@ -124,7 +124,7 @@ com.workmate.was/
 네이밍: 소문자 snake_case, 테이블명 단수형, 제약조건 `테이블명_컬럼명_제약` 형식.
 
 ```sql
--- v1 이식: admin_user (이메일·전화번호 AES-256, 계정잠금 필드)
+-- v1 이식: app_user (이메일·전화번호 AES-256, 계정잠금 필드)
 
 chat_room     (room_seq PK, user_seq FK, title, use_yn, created_at)
 chat_message  (message_seq PK, room_seq FK, role,      -- 'user' | 'assistant'

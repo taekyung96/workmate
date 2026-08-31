@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 회원 Entity (admin_user 테이블 매핑, 04 문서 §4.1).
+ * 회원 Entity (app_user 테이블 매핑, 04 문서 §4.1).
  * email·phone 은 AES-256 투명 암호화 컬럼 — DB 에는 암호문이 저장된다 (F1-03).
  */
 @Entity
-@Table(name = "admin_user")
+@Table(name = "app_user")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {

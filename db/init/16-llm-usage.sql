@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_llm_usage_feature_created ON llm_usage (feature, 
 -- 테이블·컬럼 코멘트 (프로젝트 규칙: 모든 테이블·컬럼에 COMMENT 를 단다)
 COMMENT ON TABLE  llm_usage               IS 'LLM 사용량 기록 (F-OBS) — 사용자별 토큰 사용량. append-only, 과금·쿼터·남용 조사 근거';
 COMMENT ON COLUMN llm_usage.usage_seq     IS '사용량 기록 식별자 (PK)';
-COMMENT ON COLUMN llm_usage.user_seq      IS '사용한 사용자 식별자 (admin_user.user_seq)';
+COMMENT ON COLUMN llm_usage.user_seq      IS '사용한 사용자 식별자 (app_user.user_seq)';
 COMMENT ON COLUMN llm_usage.feature       IS '호출 기능 — CHAT(채팅)·OCR(영수증)·STT(음성전사)·SUMMARY(회의록요약)·EMBEDDING(가이드임베딩)';
 COMMENT ON COLUMN llm_usage.model_name    IS '실제 호출된 모델명 — 별칭(gemini-flash-latest)이 아니라 응답이 알려준 실모델';
 COMMENT ON COLUMN llm_usage.input_tokens  IS '입력(프롬프트) 토큰 수 — 제공자가 usage 를 주지 않는 경로(임베딩)에서는 NULL';

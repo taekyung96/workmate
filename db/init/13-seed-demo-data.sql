@@ -15,21 +15,21 @@
 -- =============================================================
 
 -- 데모 계정 3종 (이메일·전화번호는 앱이 AES 암호화한 값, 비밀번호는 BCrypt 해시)
-INSERT INTO admin_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
+INSERT INTO app_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
 SELECT $wm$xR+UiqFJm3Zh51mjrCxuexTBixamx2JtRn4QzsN5P3o=$wm$, $wm$$2a$10$9Vfw6SMeojcOZfrUbH4QkeraxgsbuB1yY7op38kNjby2SZXXKdltm$wm$, $wm$관리자 (데모)$wm$, $wm$KwHxJTo9iTEyqRKuhmEbHA==$wm$, $wm$ROLE_ADMIN$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
-WHERE NOT EXISTS (SELECT 1 FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$);
-INSERT INTO admin_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
+WHERE NOT EXISTS (SELECT 1 FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$);
+INSERT INTO app_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
 SELECT $wm$06oNEuB4v1ZJ7mabHIBvp0adl0XA7N+c8b+ldYGidd0=$wm$, $wm$$2a$10$WQY3iym9t9aZj1.WtytT8.AnDB9NZwR5BU4Q9RqLoZzcHZoc3QwKe$wm$, $wm$홍길동 (데모)$wm$, $wm$eUAGlwIanpGDpMYvE8WQxg==$wm$, $wm$ROLE_USER$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
-WHERE NOT EXISTS (SELECT 1 FROM admin_user WHERE user_name = $wm$홍길동 (데모)$wm$);
-INSERT INTO admin_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
+WHERE NOT EXISTS (SELECT 1 FROM app_user WHERE user_name = $wm$홍길동 (데모)$wm$);
+INSERT INTO app_user (email, password, user_name, phone, role, login_fail_count, use_yn, created_at)
 SELECT $wm$tXqE/fWsgIqW2xdZ05s7Wg==$wm$, $wm$$2a$10$NkbUPahdMzt/wsyEKIcf1e0vW.lESgWkESqK7JePHASUWVbfJVXQm$wm$, $wm$김서연 (데모)$wm$, $wm$La+xF8tLbDq5iq58HK1tZg==$wm$, $wm$ROLE_USER$wm$, 0, true, TIMESTAMP '2026-08-25 03:06:08'
-WHERE NOT EXISTS (SELECT 1 FROM admin_user WHERE user_name = $wm$김서연 (데모)$wm$);
+WHERE NOT EXISTS (SELECT 1 FROM app_user WHERE user_name = $wm$김서연 (데모)$wm$);
 
 -- 채팅 이력 — 실제 Gemini 응답 원문
 WITH new_room AS (
     INSERT INTO chat_room (user_seq, title, use_yn, created_at)
-    SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$RAG에 대해서 설명해줘$wm$, true, TIMESTAMP '2026-08-05 01:41:55'
-    WHERE NOT EXISTS (SELECT 1 FROM chat_room WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$RAG에 대해서 설명해줘$wm$)
+    SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$RAG에 대해서 설명해줘$wm$, true, TIMESTAMP '2026-08-05 01:41:55'
+    WHERE NOT EXISTS (SELECT 1 FROM chat_room WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$RAG에 대해서 설명해줘$wm$)
     RETURNING room_seq
 )
 INSERT INTO chat_message (room_seq, role, content, model_name, created_at)
@@ -82,8 +82,8 @@ FROM new_room, (VALUES
 
 WITH new_room AS (
     INSERT INTO chat_room (user_seq, title, use_yn, created_at)
-    SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Spring Boot Redis 캐싱 가이드$wm$, true, TIMESTAMP '2026-07-30 22:09:49'
-    WHERE NOT EXISTS (SELECT 1 FROM chat_room WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Spring Boot Redis 캐싱 가이드$wm$)
+    SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Spring Boot Redis 캐싱 가이드$wm$, true, TIMESTAMP '2026-07-30 22:09:49'
+    WHERE NOT EXISTS (SELECT 1 FROM chat_room WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Spring Boot Redis 캐싱 가이드$wm$)
     RETURNING room_seq
 )
 INSERT INTO chat_message (room_seq, role, content, model_name, created_at)
@@ -108,18 +108,18 @@ public GuideVo getGuide(Long guideSeq) {
 -- 업로드 원본 이미지는 저장소에 포함하지 않으므로(uploads/ 는 git 미추적) 파일 자체는 없지만,
 -- 이력 목록 화면은 이미지를 표시하지 않아 캡처 재현에는 문제가 없다.
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/6c8e6ab5-8043-4ba4-a518-ab5d2747f116.png$wm$, 48100, $wm$2208162517$wm$, $wm$20260715$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"2208162517","payDate":"20260715","cardName":"롯데법인카드","payAmount":48100}]$wm$::jsonb, TIMESTAMP '2026-07-22 09:05:27'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$2208162517$wm$ AND pay_date = $wm$20260715$wm$ AND pay_amount = 48100);
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/6c8e6ab5-8043-4ba4-a518-ab5d2747f116.png$wm$, 48100, $wm$2208162517$wm$, $wm$20260715$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"2208162517","payDate":"20260715","cardName":"롯데법인카드","payAmount":48100}]$wm$::jsonb, TIMESTAMP '2026-07-22 09:05:27'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$2208162517$wm$ AND pay_date = $wm$20260715$wm$ AND pay_amount = 48100);
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/71d06fd4-731f-41de-9143-a6686588c373.jpg$wm$, 22000, $wm$6727600528$wm$, $wm$20260713$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"6727600528","payDate":"20260713","cardName":"롯데법인카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-29 06:08:54'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6727600528$wm$ AND pay_date = $wm$20260713$wm$ AND pay_amount = 22000);
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/71d06fd4-731f-41de-9143-a6686588c373.jpg$wm$, 22000, $wm$6727600528$wm$, $wm$20260713$wm$, $wm$롯데법인카드$wm$, true, $wm$AUTO$wm$, $wm$[{"bizNo":"6727600528","payDate":"20260713","cardName":"롯데법인카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-29 06:08:54'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6727600528$wm$ AND pay_date = $wm$20260713$wm$ AND pay_amount = 22000);
 INSERT INTO receipt (user_seq, image_path, pay_amount, biz_no, pay_date, card_name, biz_no_valid, select_type, raw_json, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/ebf1d7eb-8002-482a-a5c9-24ff4d35269d.png$wm$, 22000, $wm$6831602314$wm$, $wm$20260401$wm$, $wm$롯데 아멕스 블루 비즈니스 카드$wm$, true, $wm$MANUAL$wm$, $wm$[{"bizNo":"6831602314","payDate":"20260401","cardName":"롯데 아멕스 블루 비즈니스 카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-30 02:00:10'
-WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6831602314$wm$ AND pay_date = $wm$20260401$wm$ AND pay_amount = 22000);
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$uploads/receipt/ebf1d7eb-8002-482a-a5c9-24ff4d35269d.png$wm$, 22000, $wm$6831602314$wm$, $wm$20260401$wm$, $wm$롯데 아멕스 블루 비즈니스 카드$wm$, true, $wm$MANUAL$wm$, $wm$[{"bizNo":"6831602314","payDate":"20260401","cardName":"롯데 아멕스 블루 비즈니스 카드","payAmount":22000}]$wm$::jsonb, TIMESTAMP '2026-07-30 02:00:10'
+WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND biz_no = $wm$6831602314$wm$ AND pay_date = $wm$20260401$wm$ AND pay_amount = 22000);
 
 -- 회의록 이력 — 실제 STT 전사문과 AI 3단 요약
 INSERT INTO voice_record (user_seq, title, stt_text, summary_md, audio_file_name, origin_file_name, file_size, content_type, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$, $wm$오늘 회의에서는 Workmate v3의 Vue3 SPA 전환과 얇은 BFF 계층 설계에 대해 논의하겠습니다. 백엔드는 Spring Boot 3와 Spring AI를 기반으로 구축되며, 프론트엔드는 shadcn-vue와 Tailwind CSS v4를 사용하여 단독 SPA로 동적 렌더링됩니다. 브라우저는 8080포트의 WEB BFF만 바라보며, DB 직접 접근은 금지되고 백엔드 WAS(:8081)로 프록시 호출합니다.$wm$, $wm$### 1. 주요 안건
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$, $wm$오늘 회의에서는 Workmate v3의 Vue3 SPA 전환과 얇은 BFF 계층 설계에 대해 논의하겠습니다. 백엔드는 Spring Boot 3와 Spring AI를 기반으로 구축되며, 프론트엔드는 shadcn-vue와 Tailwind CSS v4를 사용하여 단독 SPA로 동적 렌더링됩니다. 브라우저는 8080포트의 WEB BFF만 바라보며, DB 직접 접근은 금지되고 백엔드 WAS(:8081)로 프록시 호출합니다.$wm$, $wm$### 1. 주요 안건
 - Vue3 SPA 전환 및 얇은 BFF 계층 설계 정립
 - Spring AI 및 pgvector 기반 RAG 구조 도입
 
@@ -129,23 +129,23 @@ SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)
 
 ### 3. 향후 일정
 - 프론트엔드 모듈화 구조 적용 및 통합 테스트 진행$wm$, $wm$meeting-test.wav$wm$, $wm$meeting-test.wav$wm$, 1923330, $wm$audio/wav$wm$, TIMESTAMP '2026-07-31 07:09:50'
-WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$);
+WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$);
 INSERT INTO voice_record (user_seq, title, stt_text, summary_md, audio_file_name, origin_file_name, file_size, content_type, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Sprint 15 주간 기술 스크럼 및 RAG 성능 평가$wm$, $wm$Sprint 15 주간 회의입니다. 금주 진행된 RAG 파이프라인 성능 평가 결과 코사인 유사도 검색 정확도가 92%로 향상되었습니다. 영수증 OCR 자동 인식 모듈과 음성 회의록 STT 파이프라인 통합 작업도 성공적으로 마무리되었습니다.$wm$, $wm$### 1. 성과 공유
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Sprint 15 주간 기술 스크럼 및 RAG 성능 평가$wm$, $wm$Sprint 15 주간 회의입니다. 금주 진행된 RAG 파이프라인 성능 평가 결과 코사인 유사도 검색 정확도가 92%로 향상되었습니다. 영수증 OCR 자동 인식 모듈과 음성 회의록 STT 파이프라인 통합 작업도 성공적으로 마무리되었습니다.$wm$, $wm$### 1. 성과 공유
 - RAG 검색 정확도 92% 달성
 - 영수증 OCR 및 음성 STT 파이프라인 구축 완료
 
 ### 2. 논리적 이슈
 - 대용량 임베딩 쿼터 모니터링 체계 도입 필요$wm$, $wm$weekly_scrum_20260729.mp3$wm$, $wm$weekly_scrum_20260729.mp3$wm$, 1420000, $wm$audio/mp3$wm$, TIMESTAMP '2026-07-31 07:09:50'
-WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Sprint 15 주간 기술 스크럼 및 RAG 성능 평가$wm$);
+WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Sprint 15 주간 기술 스크럼 및 RAG 성능 평가$wm$);
 
 -- 관리자 감사 로그 (append-only)
 INSERT INTO admin_audit_log (admin_user_seq, target_user_seq, action, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM admin_user WHERE user_name = $wm$홍길동 (데모)$wm$), 'UNLOCK', CURRENT_TIMESTAMP - interval '2 day'
-WHERE NOT EXISTS (SELECT 1 FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$));
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM app_user WHERE user_name = $wm$홍길동 (데모)$wm$), 'UNLOCK', CURRENT_TIMESTAMP - interval '2 day'
+WHERE NOT EXISTS (SELECT 1 FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$));
 INSERT INTO admin_audit_log (admin_user_seq, target_user_seq, action, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM admin_user WHERE user_name = $wm$김서연 (데모)$wm$), 'RESET_PASSWORD', CURRENT_TIMESTAMP - interval '1 day'
-WHERE (SELECT count(*) FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$)) < 2;
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM app_user WHERE user_name = $wm$김서연 (데모)$wm$), 'RESET_PASSWORD', CURRENT_TIMESTAMP - interval '1 day'
+WHERE (SELECT count(*) FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$)) < 2;
 INSERT INTO admin_audit_log (admin_user_seq, target_user_seq, action, created_at)
-SELECT (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM admin_user WHERE user_name = $wm$홍길동 (데모)$wm$), 'RESET_PASSWORD', CURRENT_TIMESTAMP - interval '3 hour'
-WHERE (SELECT count(*) FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM admin_user WHERE user_name = $wm$관리자 (데모)$wm$)) < 3;
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), (SELECT user_seq FROM app_user WHERE user_name = $wm$홍길동 (데모)$wm$), 'RESET_PASSWORD', CURRENT_TIMESTAMP - interval '3 hour'
+WHERE (SELECT count(*) FROM admin_audit_log WHERE admin_user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$)) < 3;

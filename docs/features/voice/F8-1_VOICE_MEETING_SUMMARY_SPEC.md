@@ -64,7 +64,7 @@ sequenceDiagram
 -- 회의 녹음 및 AI 요약 이력 관리 테이블
 CREATE TABLE IF NOT EXISTS voice_record (
     record_seq      BIGSERIAL PRIMARY KEY,
-    user_seq        BIGINT NOT NULL REFERENCES admin_user(user_seq),
+    user_seq        BIGINT NOT NULL REFERENCES app_user(user_seq),
     title           VARCHAR(200) NOT NULL,            -- 회의 제목
     audio_path      VARCHAR(500),                     -- 임시 저장된 오디오 파일 경로
     duration_seconds INT DEFAULT 0,                   -- 녹음 길이 (초)

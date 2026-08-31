@@ -240,7 +240,7 @@ async function run() {
     // 앱이 이미 이메일·전화번호를 마스킹해 내려주고, 감사 로그 화면에는 필터가 없어
     // 한쪽만 걸러내면 "사용자 목록에 없는 사람이 감사 로그에 등장하는" 앞뒤 안 맞는 화면이 된다.
     await go(page, '/admin/users', 1500);
-    await saveImage(page, '10_admin_users.png');
+    await saveImage(page, '10_app_users.png');
 
     await go(page, '/admin/audit-logs', 1500);
     await saveImage(page, '11_admin_audit.png');

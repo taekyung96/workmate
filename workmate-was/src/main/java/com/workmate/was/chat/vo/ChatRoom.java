@@ -28,7 +28,7 @@ public class ChatRoom {
     @Column(name = "room_seq")
     private Long roomSeq;
 
-    /** 방 소유자 (admin_user.user_seq) */
+    /** 방 소유자 (app_user.user_seq) */
     @Column(name = "user_seq", nullable = false)
     private Long userSeq;
 
