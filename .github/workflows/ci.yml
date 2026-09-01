@@ -31,8 +31,8 @@ jobs:
         name: Spring (WAS · WEB)
         runs-on: ubuntu-latest
 
-        # WAS 통합 테스트는 실제 PostgreSQL(pgvector) 에 붙는다. 스키마는 db/init/*.sql 로만 관리하므로
-        # 서비스 컨테이너를 띄운 뒤 아래 단계에서 스크립트를 순서대로 적용한다.
+        # WAS 통합 테스트는 실제 PostgreSQL(pgvector) 에 붙는다. 스키마는 Flyway(db/migration)로
+        # 관리하므로 별도 적용 단계가 필요 없다 — WAS 가 뜨면서(테스트 컨텍스트 로딩) 알아서 적용한다.
         services:
             postgres:
                 image: pgvector/pgvector:pg17
@@ -78,14 +78,6 @@ jobs:
             - name: SPA 의존성 설치
               run: npm ci
               working-directory: workmate-vue
-
-            - name: 스키마 적용 (db/init/*.sql)
-              run: |
-                  for f in $(ls db/init/*.sql | sort); do
-                      echo "apply $f"
-                      PGPASSWORD=ci-password psql -v ON_ERROR_STOP=1 -q \
-                          -h localhost -U workmate -d workmate_db -f "$f"
-                  done
 
             - name: 테스트
               run: |

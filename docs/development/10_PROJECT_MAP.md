@@ -12,7 +12,8 @@ workmate/
 ├── workmate-vue/     프론트엔드 (Vue3 SPA) — 화면·라우팅·상태·API호출
 ├── workmate-web/     얇은 BFF (:8080) — 세션인증·CSRF·/api 프록시·SSE중계·SPA서빙
 ├── workmate-was/     비즈니스/AI (:8081) — Spring AI·JPA·DB (주인공, 대체로 유지·필요 시 수정)
-├── db/init/*.sql     DB 스키마 (초기화 스크립트)
+├── db/init/*.sh      DB 롤 생성 등 initdb 보조 스크립트 (스키마는 Flyway, 아래)
+├── workmate-was/src/main/resources/db/migration/  DB 스키마·시드 (Flyway 마이그레이션)
 ├── docker-compose.yml  DB·WAS·WEB 컨테이너 정의
 ├── .env              비밀값(DB비번·Gemini키·AES키) — git 미추적
 ├── settings.gradle / gradlew / gradle/   Gradle 루트(멀티모듈: web·was)

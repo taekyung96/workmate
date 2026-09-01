@@ -9,10 +9,12 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 개발 기간: 2026.07 ~ (1인 개발 · 실작업 약 2주)
 
 <!-- demo-url:start -->
+
 > 🔗 **라이브 데모** — 준비 중이다. 고정 도메인을 붙이는 대로 여기에 주소를 적는다.
 >
 > 그전까지는 [아래 실행 방법](#실행)으로 직접 띄워 볼 수 있다. `docker compose up -d` 한 번이면
 > 스키마·가이드 24건·pgvector 임베딩까지 시드된 상태로 뜨고, 아래 화면들이 그대로 나온다.
+
 <!-- demo-url:end -->
 
 **스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
@@ -20,7 +22,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 ![스트리밍 채팅](docs/images/02_chat.png)
 
 |                       로그인                        |                  사내 가이드 RAG                   |
-| :---------------------------------------------------: | :--------------------------------------------------: |
+| :-------------------------------------------------: | :------------------------------------------------: |
 |         ![로그인](docs/images/01_login.png)         |        ![가이드](docs/images/05_guide.png)         |
 |                     영수증 분석                     |                  영수증 인식 이력                  |
 | ![영수증 분석](docs/images/03_receipt_analysis.png) | ![영수증 이력](docs/images/04_receipt_history.png) |
@@ -70,9 +72,9 @@ docker compose up -d db                 # pgvector PostgreSQL 17
 
 프론트만 따로 핫리로드로 개발할 때는 `cd workmate-vue && npm run dev` (5173, `/api`는 8080으로 프록시). DB 환경 구축은 [WSL2·Docker 셋업 가이드](docs/development/08_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
 
-DB를 처음 올리면 `db/init/`의 스키마와 데이터가 자동으로 들어간다. 가이드 문서 24건은 pgvector 임베딩까지 함께 시드되고, `demo.admin@example.com` / `Workmate!2026` 으로 로그인하면 위 화면들을 그대로 볼 수 있다. 이 계정은 시드에서 `ROLE_USER` 로 들어가고, `docker-compose.yml` 이 `DEMO_ADMIN_ENABLED=true` 를 주는 로컬·데모 환경에서만 `db/init/20-demo-admin-role.sh` 가 `ROLE_ADMIN` 으로 승격한다 — 비밀번호가 여기 공개돼 있어 공개 배포 인스턴스에서는 관리자 화면이 열리지 않는다. 위 이미지는 목 데이터가 아니라 이 상태의 앱을 찍은 것이다(`node scripts/capture-all-perfect.js`). 맨 위 채팅 화면만은 캡처할 때 실제로 질문을 던져 받은 답이라 실행할 때마다 내용이 달라진다.
+WAS 를 처음 띄우면 Flyway 가 스키마와 참조 데이터를 자동으로 적용한다. 가이드 문서 24건은 pgvector 임베딩까지 함께 들어가지만, 데모 로그인 계정은 Flyway 시드에 없다 — `demo.admin@example.com` / `Workmate!2026` 으로 로그인해 위 화면들을 보려면 `db/init/legacy/13-seed-demo-data.sql` 을 한 번 적용해야 한다(자세한 절차는 [배포 가이드 §2](docs/development/11_DEPLOYMENT_GUIDE.md)). 이 계정은 `ROLE_USER` 로 들어가고, `scripts/bootstrap-demo-login.sh --grant-admin` 을 **사람이 직접 실행할 때만** `ROLE_ADMIN` 으로 승격한다 — 비밀번호가 여기 공개돼 있어 공개 배포 인스턴스에서는 관리자 화면이 열리지 않는다. 위 이미지는 목 데이터가 아니라 이 상태의 앱을 찍은 것이다(`node scripts/capture-all-perfect.js`). 맨 위 채팅 화면만은 캡처할 때 실제로 질문을 던져 받은 답이라 실행할 때마다 내용이 달라진다.
 
-> **기존 볼륨을 재사용할 때** — `db/init/*.sql` 은 볼륨을 처음 만들 때만 실행된다. 이미 만들어 둔 `workmate-db` 볼륨에는 이후 추가된 스크립트가 적용되지 않아 `ddl-auto: validate` 가 실패한다. 이때는 누락분만 수동 적용한다 — 각 스크립트 머리말에 적용 명령이 적혀 있다. 예: `docker exec -i workmate-db psql -U workmate -d workmate_db < db/init/15-chat-message-sources.sql`.
+> **스키마 변경은 신경 쓸 필요 없다** — Flyway 가 WAS 기동 시 `flyway_schema_history` 를 보고 아직 적용 안 된 마이그레이션만 순서대로 적용한다. 기존 볼륨(Flyway 이전 DB)도 `baseline-on-migrate` 로 자동 인식한다. 자세한 내용은 [배포 가이드 §4](docs/development/11_DEPLOYMENT_GUIDE.md).
 
 ## 검증
 
@@ -80,34 +82,34 @@ DB를 처음 올리면 `db/init/`의 스키마와 데이터가 자동으로 들�
 
 ### 자동화 테스트
 
-| 대상             | 테스트 |   결과 | 실행 명령                              |
-| ---------------- | -----: | -----: | -------------------------------------- |
+| 대상             | 테스트 |     결과 | 실행 명령                              |
+| ---------------- | -----: | -------: | -------------------------------------- |
 | **workmate-was** |    105 | 105 통과 | `./gradlew :workmate-was:test`         |
-| **workmate-web** |      9 |  9 통과 | `./gradlew :workmate-web:test`         |
-| **workmate-vue** |      3 |  3 통과 | `cd workmate-vue && npm run test:unit` |
+| **workmate-web** |      9 |   9 통과 | `./gradlew :workmate-web:test`         |
+| **workmate-vue** |      3 |   3 통과 | `cd workmate-vue && npm run test:unit` |
 
-WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 위 수치는 개발 DB 에서 측정했고, `db/init/*.sql` 만으로 만든 빈 DB 에서도 같은 결과가 나오는지는 아래 CI 가 매 push 마다 검증한다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
+WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 스키마는 Flyway 가 스프링 컨텍스트 로딩 시 자동으로 적용하므로 별도 준비가 필요 없다. 위 수치는 개발 DB 에서 측정했고, Flyway 마이그레이션만으로 만든 빈 DB 에서도 같은 결과가 나오는지는 아래 CI 가 매 push 마다 검증한다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
 
 **측정 조건** — 2026-08-31 · Windows 10 · Oracle OpenJDK 17 (17+35) · Gradle 8.13 · Vitest 4.1.10 · pgvector/pgvector:pg17 · `--rerun-tasks` 로 캐시 없이 1회 전체 실행. (CI 는 Temurin 17)
 
-같은 절차를 [GitHub Actions](.github/workflows/ci.yml)에서도 돌린다. push·PR 마다 PostgreSQL 컨테이너를 띄우고 `db/init/*.sql` 을 적용한 뒤 통합 테스트까지 실행하므로, 위 수치는 로컬 환경에만 의존하지 않는다.
+같은 절차를 [GitHub Actions](.github/workflows/ci.yml)에서도 돌린다. push·PR 마다 빈 PostgreSQL 컨테이너를 띄우고 통합 테스트를 실행하면 Flyway 가 스키마를 알아서 적용하므로, 위 수치는 로컬 환경에만 의존하지 않는다.
 
 ### RAG 검색 품질 평가
 
 검색이 "그럴듯해 보인다"에 그치지 않도록, 골든셋(질의–정답 문서 쌍) 33문항을 만들고 `topK`·`threshold` 를 격자로 훑어 **Hit@K·MRR·Miss rate** 를 재는 평가 하네스를 붙였다. 운영 기본값(`topK=4`·`threshold=0.4`)은 이 측정 결과를 근거로 정했다.
 
 ```bash
-docker compose up -d db              # db/init 시드 → 가이드 24건
-./gradlew :workmate-was:seedGuides   # 평가용 면접 가이드 보충(멱등) → 34건
+docker compose up -d db              # DB 컨테이너만 (스키마는 아직 없음)
+./gradlew :workmate-was:seedGuides   # 컨텍스트 로딩 시 Flyway 가 시드(가이드 24건) 적용 + 평가용 보충(멱등) → 34건
 ./gradlew :workmate-was:ragEval      # 평가 실행 → docs/features/rag-eval/REPORT-<날짜>.md 생성
 ```
 
 **측정 조건** — 2026-08-28 · 가이드 34건 · 골든셋 33문항 · dev DB(pgvector/pgvector:pg17) · 실제 Gemini 임베딩 · Temurin JDK 17.0.19 · 동일 조건 2회 실행에서 같은 값 재현.
 
-| 골든셋 | 코퍼스 | MRR (th 0.3~0.5) | Hit@K (th 0.6) | threshold 간 편차 |
-| --- | ---: | ---: | ---: | --- |
-| 23문항 (2026-07-29) | 17건 | 1.000 | 100.0% | 없음 — **포화** |
-| **33문항 (2026-08-28)** | **34건** | **0.970** | **97.0%** | **있음** |
+| 골든셋                  |   코퍼스 | MRR (th 0.3~0.5) | Hit@K (th 0.6) | threshold 간 편차 |
+| ----------------------- | -------: | ---------------: | -------------: | ----------------- |
+| 23문항 (2026-07-29)     |     17건 |            1.000 |         100.0% | 없음 — **포화**   |
+| **33문항 (2026-08-28)** | **34건** |        **0.970** |      **97.0%** | **있음**          |
 
 첫 골든셋은 주제가 뚜렷이 갈려 전 구간 Hit@K 100% 로 **포화**됐다. `topK`·`threshold` 를 바꿔도 결과가 변하지 않아 튜닝 여지가 드러나지 않았고, 이는 하네스 결함이 아니라 질의가 쉽다는 신호로 읽었다. 주제가 겹치는 문서를 늘리고(17건 → 34건) 교차·모호 주제 10문항을 더하자 비로소 트레이드오프가 관찰된다 — threshold 를 0.6 까지 올리면 재현율이 깎이고(Hit@K 97.0%), `topK` 는 2~8 전 구간에서 결과가 같아 늘릴수록 프롬프트 토큰만 는다. **기본값 `topK=4`·`threshold=0.4` 는 양쪽 손해를 피하는 지점이다.**
 
@@ -121,11 +123,11 @@ docker compose up -d db              # db/init 시드 → 가이드 24건
 
 **결과** — 수정 1회당 임베딩 API 호출 수(청크 단위):
 
-| 수정 유형 | 개선 전 | 개선 후 |
-| --- | ---: | ---: |
-| 제목만 변경 | 1.12회 | **0회** |
-| 공개여부만 변경 | 1.12회 | **0회** |
-| 본문 변경 | 1.12회 | 1.12회 (변화 없음) |
+| 수정 유형       | 개선 전 |            개선 후 |
+| --------------- | ------: | -----------------: |
+| 제목만 변경     |  1.12회 |            **0회** |
+| 공개여부만 변경 |  1.12회 |            **0회** |
+| 본문 변경       |  1.12회 | 1.12회 (변화 없음) |
 
 **측정 조건** — 2026-08-28 · 코퍼스 가이드 34건 / 청크 38개(문서당 평균 **1.12** 청크, 최대 2) · 호출 수는 `EmbeddingModel` 을 세는 스텁으로 계수 · 재현: `./gradlew :workmate-was:test --tests "*GuideUpdateEmbeddingCostTest"`.
 
@@ -135,13 +137,13 @@ docker compose up -d db              # db/init 시드 → 가이드 24건
 
 선택만 적지 않고 **버린 선택지와 그 이유**를 남긴다. 전문은 [ADR](docs/project/adr/)에 있고, 핵심만 옮기면 다음과 같다.
 
-| 결정 | 채택 | 기각한 대안 → 이유 |
-| --- | --- | --- |
-| 서버 구성 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md)) | 얇은 WEB(BFF) + 내부망 WAS | **단일 Spring Boot 통합** → 주인공인 WAS 에 세션·SPA 서빙을 얹어야 함 · **SPA 가 WAS 직접 호출** → WAS 노출 + 인증 재설계 |
-| 인증 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md)) | 세션(httpOnly 쿠키) | **JWT** → stateless 라 계정잠금·중복로그인 차단에 필요한 **즉시 무효화**가 어려움. 대가로 CSRF 방어가 필요해져 Spring Security CSRF 활성화 |
-| 프론트 구조 ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md)) | 기능별 모듈 | **타입별 구조** → 현 규모엔 무난하나 모듈 경계·콜로케이션 이점을 못 살림 |
-| UI ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md)) | shadcn-vue + Tailwind v4 | **순수 CSS 유지** → 완성도 대비 시간 소모가 커 AI 작업 시간을 잠식 |
-| 권한 ([ADR-0003](docs/project/adr/0003-was-modifiable-and-guide-admin-authz.md)) | WAS 에서 소유자+관리자 판정 | **프론트에서 버튼만 숨김** → 화면과 동작 불일치 · **WEB 에서 권한 판단** → 로직이 중계 계층으로 새어 3-tier 위반 |
+| 결정                                                                             | 채택                        | 기각한 대안 → 이유                                                                                                                         |
+| -------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 서버 구성 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md))          | 얇은 WEB(BFF) + 내부망 WAS  | **단일 Spring Boot 통합** → 주인공인 WAS 에 세션·SPA 서빙을 얹어야 함 · **SPA 가 WAS 직접 호출** → WAS 노출 + 인증 재설계                  |
+| 인증 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md))               | 세션(httpOnly 쿠키)         | **JWT** → stateless 라 계정잠금·중복로그인 차단에 필요한 **즉시 무효화**가 어려움. 대가로 CSRF 방어가 필요해져 Spring Security CSRF 활성화 |
+| 프론트 구조 ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md))     | 기능별 모듈                 | **타입별 구조** → 현 규모엔 무난하나 모듈 경계·콜로케이션 이점을 못 살림                                                                   |
+| UI ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md))              | shadcn-vue + Tailwind v4    | **순수 CSS 유지** → 완성도 대비 시간 소모가 커 AI 작업 시간을 잠식                                                                         |
+| 권한 ([ADR-0003](docs/project/adr/0003-was-modifiable-and-guide-admin-authz.md)) | WAS 에서 소유자+관리자 판정 | **프론트에서 버튼만 숨김** → 화면과 동작 불일치 · **WEB 에서 권한 판단** → 로직이 중계 계층으로 새어 3-tier 위반                           |
 
 ## 문서
 
@@ -152,4 +154,3 @@ docker compose up -d db              # db/init 시드 → 가이드 24건
 ## 라이선스
 
 [MIT](LICENSE)
-

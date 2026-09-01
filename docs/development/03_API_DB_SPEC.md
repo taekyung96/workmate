@@ -187,7 +187,7 @@ event: error    data: {"message": "응답이 중단되었습니다"}            
 
 ## 4. DB 테이블 정의서
 
-네이밍: 소문자 snake_case·단수형·제약 `테이블명_컬럼명_제약`. 스키마는 `db/init/*.sql`로만 관리 (`ddl-auto: validate`).
+네이밍: 소문자 snake_case·단수형·제약 `테이블명_컬럼명_제약`. 스키마는 Flyway(`workmate-was/src/main/resources/db/migration`)로만 관리 (`ddl-auto: validate`).
 
 ### 4.1 app_user (마일스톤 1 — 신규)
 
@@ -258,7 +258,7 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 | 컬럼             | 타입            | 제약                 | 설명                                      |
 | ---------------- | --------------- | -------------------- | ----------------------------------------- |
 | record_seq       | bigint identity | PK                   |                                           |
-| user_seq         | bigint          | NOT NULL FK          | 작성자 (app_user)                       |
+| user_seq         | bigint          | NOT NULL FK          | 작성자 (app_user)                         |
 | title            | varchar(255)    | NOT NULL             | 회의 제목                                 |
 | stt_text         | text            | NOT NULL             | STT 전사 원문                             |
 | summary_md       | text            | NOT NULL             | AI 3단 구조화 요약 (마크다운)             |
@@ -274,13 +274,13 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 
 ### 4.8 user_social_account (F1-1 — 소셜 로그인)
 
-| 컬럼             | 타입            | 제약                 | 설명                                       |
-| ---------------- | --------------- | -------------------- | ------------------------------------------ |
-| social_seq       | bigint identity | PK                   |                                            |
-| user_seq         | bigint          | NOT NULL FK          | 연결된 계정 (app_user)                     |
-| provider         | varchar(20)     | NOT NULL             | `naver` \| `kakao` \| `google`             |
-| provider_user_id | varchar(255)    | NOT NULL             | 제공자가 발급한 고유 사용자 ID             |
-| created_at       | timestamp       | NOT NULL DEFAULT now |                                            |
+| 컬럼             | 타입            | 제약                 | 설명                           |
+| ---------------- | --------------- | -------------------- | ------------------------------ |
+| social_seq       | bigint identity | PK                   |                                |
+| user_seq         | bigint          | NOT NULL FK          | 연결된 계정 (app_user)         |
+| provider         | varchar(20)     | NOT NULL             | `naver` \| `kakao` \| `google` |
+| provider_user_id | varchar(255)    | NOT NULL             | 제공자가 발급한 고유 사용자 ID |
+| created_at       | timestamp       | NOT NULL DEFAULT now |                                |
 
 - 계정 하나에 제공자를 여러 개 매달기 위해 `app_user` 와 분리했다.
 - `provider` + `provider_user_id` 조합으로 계정을 찾는다. 없으면 신규 가입으로 이어진다.
@@ -312,12 +312,12 @@ common_code       : group_code + code varchar(50) 복합 PK (common_code_pk)
 
 ## 5. 테이블 ↔ 마일스톤 요약
 
-| 마일스톤 | DB 작업                                                                         |
-| -------- | ------------------------------------------------------------------------------- |
-| 1        | `app_user`·`chat_room`·`chat_message`·`admin_audit_log` 신규 (03-schema 추가) |
-| 2        | `receipt` 컬럼 변경 (§4.3)                                                      |
-| 3        | 없음 (guide·vector_store 기존)                                                  |
-| 4        | `common_code_group`·`common_code` 신규 + AI_MODEL 초기 데이터                   |
-| 5        | `voice_record` 신규(09) + 오디오 컬럼 4개 추가(12) (§4.7)                       |
-| F1-1     | `user_social_account` 신규(14) (§4.8)                                           |
+| 마일스톤 | DB 작업                                                                          |
+| -------- | -------------------------------------------------------------------------------- |
+| 1        | `app_user`·`chat_room`·`chat_message`·`admin_audit_log` 신규 (03-schema 추가)    |
+| 2        | `receipt` 컬럼 변경 (§4.3)                                                       |
+| 3        | 없음 (guide·vector_store 기존)                                                   |
+| 4        | `common_code_group`·`common_code` 신규 + AI_MODEL 초기 데이터                    |
+| 5        | `voice_record` 신규(09) + 오디오 컬럼 4개 추가(12) (§4.7)                        |
+| F1-1     | `user_social_account` 신규(14) (§4.8)                                            |
 | F-OBS    | `llm_usage` 신규(16) (§4.9) · 전 테이블 코멘트(17) · `admin_user`→`app_user`(18) |

@@ -81,7 +81,10 @@ GEMINI_API_KEY=your_gemini_api_key_here
 docker compose up -d db
 ```
 
-> **Note**: `docker-compose.yml` 내 `volumes` 설정(`- ./db/init:/docker-entrypoint-initdb.d`)에 의해 최초 컨테이너 생성 시 `db/init/` 하위의 `01~04-schema.sql` 파일들이 자동 실행됩니다.
+> **Note**: 스키마·시드는 더 이상 `db/init/*.sql` 로 만들지 않습니다. `docker-compose.yml` 의
+> `- ./db/init:/docker-entrypoint-initdb.d` 마운트는 이제 `.sh` 스크립트 두 개(Grafana 읽기 전용 롤 생성 등)만
+> 최초 컨테이너 생성 시 실행합니다. 실제 테이블·데이터는 WAS 를 띄우면(`./gradlew :workmate-was:bootRun`)
+> Flyway 가 자동으로 만듭니다 — [11. 배포 가이드 §4](11_DEPLOYMENT_GUIDE.md) 참고.
 
 ### 2.3 DB 헬스체크 및 로그 확인
 
@@ -121,20 +124,22 @@ SELECT * FROM pg_extension WHERE extname = 'vector';
 ## 4. 🔧 자주 발생하는 트러블슈팅 (Troubleshooting)
 
 ### 4.1 WSL2 5432 포트 충돌 문제 (`bind: address already in use`)
+
 - **원인**: Windows 호스트 또는 WSL2 내부에 이미 로컬 PostgreSQL 서비스가 실행 중인 경우
 - **해결**:
-  - WSL2 내부: `sudo service postgresql stop`
-  - Windows 호스트: `netstat -ano | findstr 5432` 확인 후 PID 프로세스 종료
+    - WSL2 내부: `sudo service postgresql stop`
+    - Windows 호스트: `netstat -ano | findstr 5432` 확인 후 PID 프로세스 종료
 
 ### 4.2 WSL2 재부팅 시 Docker 데몬 미실행
+
 - **원인**: WSL2는 기본적으로 부팅 시 `service` 데몬을 자동 구동하지 않음
 - **해결**: WSL2 `~/.bashrc` 또는 `~/.zshrc` 하단에 아래 구문 추가
-  ```bash
-  if ! wsl.exe -l -v | grep -q "Running"; then :; fi
-  if ! pgrep -x "dockerd" > /dev/null; then
-      sudo service docker start > /dev/null 2>&1
-  fi
-  ```
+    ```bash
+    if ! wsl.exe -l -v | grep -q "Running"; then :; fi
+    if ! pgrep -x "dockerd" > /dev/null; then
+        sudo service docker start > /dev/null 2>&1
+    fi
+    ```
 
 ---
 
