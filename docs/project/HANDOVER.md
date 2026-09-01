@@ -29,24 +29,22 @@
 | 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull)                                                |
 | **배포** | **WSL2 에서 가동 중.** Cloudflare Quick Tunnel 로 공개(임시 주소) — [12. 운영 가이드](../development/12_OPERATIONS.md) |
 | 관측     | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana                                                |
-| 사용량   | LLM 호출 5지점의 토큰을 `llm_usage` 에 기록 (사용자별 집계 가능)                                                       |
+| 사용량   | 토큰을 `llm_usage` 에 기록 + **관리자 대시보드**(`/admin/usage`) — 기간별 요약·기능별·일별·사용자별                   |
 | RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회                                                                                 |
 
 ### 다음에 할 일
 
-**Flyway 도입은 완료됐다** — 스키마·시드는 `db/migration`(V1 베이스라인 + V2 참조데이터)으로
-관리하고, WAS 기동 시 자동 적용한다. 기존 DB 는 baseline 으로 물려받는다(→ [11. 배포 가이드 §4](../development/11_DEPLOYMENT_GUIDE.md)).
+**끝난 것**: Flyway 도입(→ [ADR-0005](adr/0005-flyway-migration.md)) · 관리자 사용량 대시보드.
 남은 과제:
 
-1. **사용량 대시보드** — `llm_usage` 가 쌓이기만 하고 볼 화면이 없다. 관리자 화면 + Grafana 대시보드
-2. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고)
-3. **페이지 인식 도우미 챗봇** — 기능 확장
+1. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고)
+2. **페이지 인식 도우미 챗봇** — 기능 확장
 
 그 밖에 계속 남아 있는 것:
 
 - **도메인 연결** — 확보하면 [12. 운영 가이드 §8](../development/12_OPERATIONS.md) 대로 고정 터널로 전환.
   소셜 로그인 콜백도 이때 등록할 수 있다
-- **프론트 테스트 보강** — 현재 3건. 공통 composable·store 위주로
+- **프론트 테스트 보강** — 현재 8건(사용량 대시보드에서 3→8). 공통 composable·store 위주로 더 늘린다
 - **부하 테스트** — k6 로 SSE 동시접속 한계 측정. **부하 생성기와 대상 서버를 분리**해야 숫자가 유효하다
 - **RAG 권한 필터** — 아래 한계의 2번. 평가 하네스가 있어 개선을 수치로 증명할 수 있다
 
@@ -54,7 +52,11 @@
 
 - **RAG 접근 필터가 topK 뒤에 있다.** 비공개 타인 문서가 상위를 차지하면 결과 건수가 줄어든다.
   `filterExpression` 으로 DB 단계에서 거는 것이 개선 방향
-- **임베딩 사용량은 토큰이 NULL** 이다. `VectorStore.add()` 가 usage 를 감춘다
+- **임베딩 사용량은 토큰이 NULL** 이다. `VectorStore.add()` 가 usage 를 감춘다.
+  사용량 대시보드는 이 건수를 합계에 넣지 않고 "토큰 미집계 N건" 으로 분리 표시한다
+- **비용은 추정치다.** `app.usage.pricing` 의 단가로 계산하며 실제 청구액이 아니다.
+  `model_name` 에는 별칭(`gemini-flash-latest`)이 아니라 **제공자가 해석한 실제 이름**(`gemini-3.7-flash`)이
+  저장되므로, 별칭이 새 버전을 가리키면 단가를 추가해야 한다 — 그전까지는 "단가 미등록 N건" 으로 드러난다
 - **세션·SessionRegistry·레이트리미터가 인메모리**다. 인스턴스를 늘리면 조용히 깨진다 → Redis 필요
 - **데모 계정은 Flyway 마이그레이션에 없다.** 이메일이 배포마다 다른 AES 키로 암호화돼야 해서
   스키마 마이그레이션에 고정 암호문을 넣을 수 없기 때문이다(의도적 — D4). 대신
