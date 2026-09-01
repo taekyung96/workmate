@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    LLM 사용량 집계 조회 매퍼 (관리자 사용량 대시보드).
+    created_at 은 timestamp, from/to 는 date 로 받아 [from, toExclusive) 반개구간으로 비교한다
+    — to 날짜 하루 전체를 포함시키려고 서비스 계층에서 to+1일을 toExclusive 로 넘긴다.
+    NULL 토큰은 SUM 이 자연히 제외하므로(0으로 뭉개지 않음), untrackedCallCount 로 별도 카운트만 더한다.
+-->
+<mapper namespace="com.workmate.was.usage.dao.LlmUsageQueryMapper">
+
+    <select id="selectTotal" resultType="com.workmate.was.usage.dao.row.TotalAggregateRow">
+        SELECT
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens,
+            COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+    </select>
+
+    <select id="selectByFeature" resultType="com.workmate.was.usage.dao.row.FeatureAggregateRow">
+        SELECT
+            feature AS feature,
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens,
+            COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        GROUP BY feature
+    </select>
+
+    <select id="selectDaily" resultType="com.workmate.was.usage.dao.row.DailyAggregateRow">
+        SELECT
+            DATE(created_at) AS usageDate,
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens,
+            COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        GROUP BY DATE(created_at)
+    </select>
+
+    <select id="selectModelUsageTotal" resultType="com.workmate.was.usage.dao.row.ModelAggregateRow">
+        SELECT
+            model_name AS modelName,
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        GROUP BY model_name
+    </select>
+
+    <select id="selectUserPage" resultType="com.workmate.was.usage.dao.row.UserAggregateRow">
+        SELECT
+            user_seq AS userSeq,
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens,
+            COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        GROUP BY user_seq
+        ORDER BY (COALESCE(SUM(input_tokens), 0) + COALESCE(SUM(output_tokens), 0)) DESC, user_seq
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countDistinctUsers" resultType="long">
+        SELECT COUNT(DISTINCT user_seq)
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+    </select>
+
+    <select id="selectModelUsageByUsers" resultType="com.workmate.was.usage.dao.row.UserModelAggregateRow">
+        SELECT
+            user_seq AS userSeq,
+            model_name AS modelName,
+            COUNT(*) AS callCount,
+            SUM(input_tokens) AS inputTokens,
+            SUM(output_tokens) AS outputTokens
+        FROM llm_usage
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        AND user_seq IN
+        <foreach item="seq" collection="userSeqs" open="(" separator="," close=")">
+            #{seq}
+        </foreach>
+        GROUP BY user_seq, model_name
+    </select>
+
+</mapper>

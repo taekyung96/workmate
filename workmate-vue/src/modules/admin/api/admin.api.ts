@@ -7,7 +7,9 @@ import type {
     CommonCodeItem,
     CommonCodeSave,
     ResetPasswordResult,
+    UsageSummary,
     UserPage,
+    UserUsagePage,
 } from '../types'
 
 /**
@@ -110,5 +112,28 @@ export const adminApi = {
     /** 코드 삭제 */
     async deleteCode(groupCode: string, code: string): Promise<void> {
         await client.delete(`/v1/admin/common-codes/groups/${groupCode}/codes/${code}`)
+    },
+
+    // ----- 사용량 대시보드 -----
+
+    /** 기간 요약 — 합계·기능별·일별 (from·to 미지정 시 서버가 최근 30일로 채운다) */
+    async usageSummary(from?: string, to?: string): Promise<UsageSummary> {
+        const { data } = await client.get<ApiResponse<UsageSummary>>('/v1/admin/usage/summary', {
+            params: { from, to },
+        })
+        return data.result
+    },
+
+    /** 사용자별 사용량 — 토큰 합계 내림차순 페이징 (from·to 미지정 시 최근 30일) */
+    async usageByUser(
+        from: string | undefined,
+        to: string | undefined,
+        page: number,
+        size = 10,
+    ): Promise<UserUsagePage> {
+        const { data } = await client.get<ApiResponse<UserUsagePage>>('/v1/admin/usage/by-user', {
+            params: { from, to, page, size },
+        })
+        return data.result
     },
 }
