@@ -24,7 +24,7 @@ Spring AI 기반 "업무 비서" 웹앱의 **v3 (Vue3 단독 SPA)**. v2의 Thyme
 - 브라우저는 **8080만** 바라봄. WEB은 DB 직접 접근 금지 — `/api` 프록시로만 WAS 호출
 - 인증: **세션(Spring Security, httpOnly 쿠키, CSRF on)** — JWT 아님
 - 3-tier 유지: 표현(Vue SPA) / 로직(WAS) / 데이터(PostgreSQL 17 + pgvector)
-- 스키마는 `db/init/*.sql` 로만 관리(`ddl-auto: validate`), 비밀값은 `.env`(git 미추적)
+- 스키마는 Flyway 마이그레이션(`workmate-was/src/main/resources/db/migration`)으로만 관리(`ddl-auto: validate`), 비밀값은 `.env`(git 미추적)
 
 ## 프론트엔드 규칙 (핵심)
 
@@ -41,10 +41,10 @@ Spring AI 기반 "업무 비서" 웹앱의 **v3 (Vue3 단독 SPA)**. v2의 Thyme
 - **Java 패키지**: 전체 소문자 / **클래스**: PascalCase(`~ApiController`·`~Service`·`~ServiceImpl`·`~Vo`·`~Entity`·`~Repository`) / **메서드·변수**: camelCase / **상수**: SNAKE_CASE
 - **DB 테이블·컬럼**: 소문자 snake_case, 테이블명 단수형. 제약조건 `테이블_컬럼_제약`(PK `~_pk`·FK `~_fk`·UK `~_uk`·Index `idx_~`)
 - **[필수] DB 코멘트**: **모든 테이블과 모든 컬럼에 `COMMENT ON` 을 단다.** 새 테이블을 만들 땐
-  `CREATE TABLE` 과 같은 SQL 파일 안에 `COMMENT ON TABLE`·`COMMENT ON COLUMN` 을 **함께** 적는다(나중에 따로 X).
+  `CREATE TABLE` 과 같은 Flyway 마이그레이션 파일(`V<n>__설명.sql`) 안에 `COMMENT ON TABLE`·`COMMENT ON COLUMN` 을 **함께** 적는다(나중에 따로 X, 적용된 마이그레이션 파일은 수정 금지 — 체크섬 불일치로 기동이 깨진다).
   코멘트는 한국어로, 컬럼은 "무엇인지 + 값의 의미"까지 쓴다 — 예: `'입력 방식 — AUTO(AI 추출) | MANUAL(수기 입력)'`.
-  기존 테이블 코멘트는 `db/init/17-table-comments.sql` 에 모여 있다. 누락 점검:
-  `SELECT ... WHERE col_description(c.oid, a.attnum) IS NULL` (17번 파일 머리말 참고)
+  기존 테이블 코멘트는 `V1__baseline_schema.sql` 에 모여 있다(과거 `db/init/17-table-comments.sql` 을 스냅샷으로 흡수). 누락 점검:
+  `SELECT ... WHERE col_description(c.oid, a.attnum) IS NULL`
 - **로깅**: `System.out.println` 금지. `@Slf4j`+`log`, `{}` 치환자, 예외 시 `log.error(msg, e)`
 - **비밀번호**: `BCryptPasswordEncoder` 단방향
 - **WAS API 응답**: `global/response/ApiResponse` 공통, 예외는 `global/exception/GlobalExceptionHandler` (컨트롤러 개별 try-catch 금지)

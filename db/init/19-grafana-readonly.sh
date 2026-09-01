@@ -9,9 +9,15 @@
 # 왜 읽기 전용인가: 대시보드 쿼리가 데이터를 건드릴 수 없어야 한다(글로벌 규칙).
 # 왜 app_user 는 제외인가: 이메일·전화번호가 들어 있다. 대시보드는 user_seq 숫자만 쓴다.
 #
+# [Flyway 도입 이후 주의] 이 스크립트는 initdb 단계(postgres 엔트리포인트) 에서 돈다 —
+# 즉 WAS 가 뜨기 전, Flyway 가 스키마를 만들기 전이다. llm_usage 테이블이 아직 없으므로
+# 여기서 `GRANT SELECT ON llm_usage` 를 하면 반드시 실패한다. 그래서 롤 생성까지만 하고,
+# llm_usage 에 대한 실제 GRANT 는 WAS 기동(=Flyway 적용) 뒤에 scripts/grant-grafana-readonly.sh 가 준다.
+#
 # 기존 볼륨에 수동 적용:
 #   GRAFANA_DB_PASSWORD=... docker exec -i -e GRAFANA_DB_PASSWORD workmate-db \
 #     bash /docker-entrypoint-initdb.d/19-grafana-readonly.sh
+#   ./scripts/grant-grafana-readonly.sh   # WAS 가 떠서 llm_usage 가 생긴 뒤에
 # =============================================================
 set -e
 
@@ -33,15 +39,16 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     END
     \$\$;
 
-    -- 최소 권한: 접속 + 스키마 조회 + llm_usage 읽기까지만
+    -- 최소 권한: 접속 + 스키마 조회까지만. llm_usage 자체 SELECT 는 아직 테이블이 없어
+    -- 여기서 줄 수 없다 → scripts/grant-grafana-readonly.sh 가 Flyway 적용 후에 준다.
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO grafana_ro;
     GRANT USAGE ON SCHEMA public TO grafana_ro;
-    GRANT SELECT ON llm_usage TO grafana_ro;
 
-    -- 앞으로 만들 테이블에 자동으로 권한이 붙지 않게 한다(명시적으로만 부여)
+    -- 앞으로 만들 테이블에 자동으로 권한이 붙지 않게 한다(명시적으로만 부여).
+    -- 테이블 존재 여부와 무관하게 걸 수 있는 정책이라 initdb 시점에도 안전하다.
     ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM grafana_ro;
 EOSQL
 
-echo "[19-grafana-readonly] grafana_ro 롤 준비 완료 (llm_usage 읽기 전용)"
+echo "[19-grafana-readonly] grafana_ro 롤 준비 완료 (llm_usage 읽기 권한은 ./scripts/grant-grafana-readonly.sh 로 별도 부여)"
 
 fi

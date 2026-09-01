@@ -27,16 +27,16 @@ workmate-db   :5432     ← 호스트에 포트 없음
 
 ### 어디에 무엇이 있나
 
-| 항목 | 값 |
-| --- | --- |
-| 실행 위치 | **WSL2 Ubuntu** (Windows 가 아니다 — `wsl -d Ubuntu` 안에서 도커가 돈다) |
-| 저장소 경로 | `~/workmate` (WSL 홈. GitHub 에서 클론한 것) |
-| compose 프로젝트명 | `workmate` |
-| 컨테이너 | `workmate-db` · `workmate-was` · `workmate-web` · `wm-quicktunnel` |
-| 네트워크 | `workmate_default` |
-| 볼륨 | `workmate_workmate-db-data` (DB) · `workmate_workmate-uploads` (업로드 파일) |
-| 이미지 | GHCR 에서 pull (`ghcr.io/taekyung96/workmate-{was,web}:latest`) — 서버에서 빌드하지 않는다 |
-| 비밀값 | `~/workmate/.env` — **git 에 없다.** 잃어버리면 DB 의 이메일·전화번호를 복호화할 수 없다 |
+| 항목               | 값                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| 실행 위치          | **WSL2 Ubuntu** (Windows 가 아니다 — `wsl -d Ubuntu` 안에서 도커가 돈다)                   |
+| 저장소 경로        | `~/workmate` (WSL 홈. GitHub 에서 클론한 것)                                               |
+| compose 프로젝트명 | `workmate`                                                                                 |
+| 컨테이너           | `workmate-db` · `workmate-was` · `workmate-web` · `wm-quicktunnel`                         |
+| 네트워크           | `workmate_default`                                                                         |
+| 볼륨               | `workmate_workmate-db-data` (DB) · `workmate_workmate-uploads` (업로드 파일)               |
+| 이미지             | GHCR 에서 pull (`ghcr.io/taekyung96/workmate-{was,web}:latest`) — 서버에서 빌드하지 않는다 |
+| 비밀값             | `~/workmate/.env` — **git 에 없다.** 잃어버리면 DB 의 이메일·전화번호를 복호화할 수 없다   |
 
 > **개발용 DB 와 헷갈리지 말 것.** 개발 스택은 `workmate-dev` 프로젝트로 뜨고
 > 볼륨도 `workmate-dev_workmate-db-data` 로 갈린다. 이 배포와 데이터를 공유하지 않는다.
@@ -58,13 +58,13 @@ wsl -d Ubuntu          # WSL 진입 후 아래를 실행
 cd ~/workmate
 ```
 
-| 하고 싶은 것 | 명령 |
-| --- | --- |
-| 상태 보기 | `docker compose -f docker-compose.deploy.yml -p workmate ps` |
-| 기동 | `docker compose -f docker-compose.deploy.yml -p workmate up -d` |
-| 정지 (데이터 유지) | `docker compose -f docker-compose.deploy.yml -p workmate stop` |
-| 로그 보기 | `docker compose -f docker-compose.deploy.yml -p workmate logs -f web` |
-| **완전 삭제 (데이터까지)** | `docker compose -f docker-compose.deploy.yml -p workmate down -v` ⚠️ |
+| 하고 싶은 것               | 명령                                                                  |
+| -------------------------- | --------------------------------------------------------------------- |
+| 상태 보기                  | `docker compose -f docker-compose.deploy.yml -p workmate ps`          |
+| 기동                       | `docker compose -f docker-compose.deploy.yml -p workmate up -d`       |
+| 정지 (데이터 유지)         | `docker compose -f docker-compose.deploy.yml -p workmate stop`        |
+| 로그 보기                  | `docker compose -f docker-compose.deploy.yml -p workmate logs -f web` |
+| **완전 삭제 (데이터까지)** | `docker compose -f docker-compose.deploy.yml -p workmate down -v` ⚠️  |
 
 `-v` 는 볼륨까지 지운다. **DB 가 초기화되므로 §4 의 부트스트랩을 다시 해야 한다.**
 
@@ -94,11 +94,13 @@ DB 볼륨은 남아 있으므로 **부트스트랩(§4)은 다시 하지 않아�
 
 ## 4. 데모 계정 부트스트랩 (DB 를 새로 만들었을 때만)
 
-`db/init/13-seed-demo-data.sql` 의 이메일·전화번호는 **개발 환경 AES 키**로 암호화된 값이라,
-이 배포의 키로는 조회되지 않아 로그인이 실패한다. 한 번만 맞춰주면 된다.
+Flyway 마이그레이션(V2)에는 데모 계정이 없다 — 이메일이 배포마다 다른 AES 키로 암호화돼야
+해서 고정 암호문을 마이그레이션에 넣을 수 없기 때문이다(의도적). 대신 `scripts/bootstrap-demo-data.sh`
+가 **이 배포의 실제 AES 키**로 계정을 직접 만든다. 데모 계정 3종·채팅·영수증·회의록 콘텐츠까지
+한 번에 채우고, 여러 번 실행해도 안전하다(멱등).
 
 ```bash
-cd ~/workmate && ./scripts/bootstrap-demo-login.sh
+cd ~/workmate && ./scripts/bootstrap-demo-data.sh
 ```
 
 ```
@@ -120,14 +122,14 @@ kim@example.com        / Workmate!2026
 
 `cloudflared` 프로세스가 **다시 뜰 때마다** 새로 발급된다. 실측으로 확인했다.
 
-| 상황 | 주소 |
-| --- | --- |
-| `docker restart` · `stop`→`start` | **바뀜** |
-| 도커 데몬 재시작 · WSL 종료 · PC 재부팅 | **바뀜** |
-| 그냥 오래 켜두기 | 유지 |
-| 공인 IP 변경 | 무관 (아웃바운드 연결이라) |
+| 상황                                    | 주소                       |
+| --------------------------------------- | -------------------------- |
+| `docker restart` · `stop`→`start`       | **바뀜**                   |
+| 도커 데몬 재시작 · WSL 종료 · PC 재부팅 | **바뀜**                   |
+| 그냥 오래 켜두기                        | 유지                       |
+| 공인 IP 변경                            | 무관 (아웃바운드 연결이라) |
 
-Windows 업데이트 재부팅이 월 1~2 회 강제되므로 **실질적으로 월 1~2 회는 바뀐다**고 보면 된다.
+Windows 업데이트 재부팅이 월 1~~2 회 강제되므로 **실질적으로 월 1~~2 회는 바뀐다**고 보면 된다.
 알림이 없어서 **조용히** 바뀐다.
 
 ### 그래서 이렇게 운영한다
@@ -178,23 +180,23 @@ docker logs wm-quicktunnel | grep trycloudflare.com
 
 ```bash
 cd ~/workmate
-git pull                                                    # db/init 변경분을 받기 위해
+git pull                                                    # db/init/*.sh(롤 생성 등) 변경분을 받기 위해
 docker compose -f docker-compose.deploy.yml -p workmate pull
 docker compose -f docker-compose.deploy.yml -p workmate up -d
 ```
 
-> **스키마가 바뀌었다면** `db/init/*.sql` 은 볼륨 최초 생성 시에만 실행되므로 수동 적용해야 한다 —
-> [11. 배포 가이드 §4](11_DEPLOYMENT_GUIDE.md). 안 하면 `ddl-auto: validate` 가 실패해 WAS 가 안 뜬다.
+> **스키마가 바뀌었다면** 별도 조치가 필요 없다. 새 이미지의 WAS 안에 Flyway 마이그레이션이
+> 함께 들어 있어서, 컨테이너가 뜨면서 자동으로 적용한다 — [11. 배포 가이드 §4](11_DEPLOYMENT_GUIDE.md).
 
 ---
 
 ## 7. 지금 안 되는 것
 
-| 항목 | 이유 | 언제 풀리나 |
-| --- | --- | --- |
-| **소셜 로그인** (네이버·카카오·구글) | 콜백 URL 은 고정 도메인에만 등록할 수 있다 | 도메인 붙이면 (§8) |
-| **주소 고정** | Quick Tunnel 의 특성 | 도메인 붙이면 (§8) |
-| 관리자 화면 | 의도된 제한 — 데모 계정은 `ROLE_USER` | 비공개 환경에서 `--grant-admin` |
+| 항목                                 | 이유                                       | 언제 풀리나                     |
+| ------------------------------------ | ------------------------------------------ | ------------------------------- |
+| **소셜 로그인** (네이버·카카오·구글) | 콜백 URL 은 고정 도메인에만 등록할 수 있다 | 도메인 붙이면 (§8)              |
+| **주소 고정**                        | Quick Tunnel 의 특성                       | 도메인 붙이면 (§8)              |
+| 관리자 화면                          | 의도된 제한 — 데모 계정은 `ROLE_USER`      | 비공개 환경에서 `--grant-admin` |
 
 이메일 로그인·채팅(SSE·RAG)·영수증·가이드·회의록은 **전부 동작한다.**
 
@@ -234,10 +236,13 @@ https://<도메인>/login/oauth2/code/google
 
 증상별 원인은 [11. 배포 가이드 §9 '자주 막히는 곳'](11_DEPLOYMENT_GUIDE.md)에 모아두었다. 자주 보는 것만 옮기면:
 
-| 증상 | 먼저 볼 것 |
-| --- | --- |
-| 공개 주소가 안 열림 | 터널이 떠 있나 → `docker ps --filter name=quicktunnel`. 떠 있으면 §5 의 재생성 |
-| 로컬은 되는데 밖에서 안 됨 | 터널 문제다. `curl -I http://127.0.0.1:8080/` 로 앱 자체를 먼저 확인 |
-| 데모 로그인 401 | 볼륨을 새로 만들었다 → §4 부트스트랩 |
-| WEB 이 재시작 반복 | `.env` 의 소셜 자격증명이 **빈 값**은 아닌지 (주석 처리해야 한다) |
-| DB unhealthy · init 중단 | `db/init/*.sh` 실행권한. `.gitattributes` 가 LF 를 강제하는지 |
+| 증상                                                                    | 먼저 볼 것                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 공개 주소가 안 열림                                                     | 터널이 떠 있나 → `docker ps --filter name=quicktunnel`. 떠 있으면 §5 의 재생성                                                                                                                                                                                                                                                                        |
+| 로컬은 되는데 밖에서 안 됨                                              | 터널 문제다. `curl -I http://127.0.0.1:8080/` 로 앱 자체를 먼저 확인                                                                                                                                                                                                                                                                                  |
+| 데모 로그인 401                                                         | 볼륨을 새로 만들었다 → §4 부트스트랩                                                                                                                                                                                                                                                                                                                  |
+| WEB 이 재시작 반복                                                      | `.env` 의 소셜 자격증명이 **빈 값**은 아닌지 (주석 처리해야 한다)                                                                                                                                                                                                                                                                                     |
+| DB unhealthy · init 중단                                                | `db/init/*.sh` 실행권한. `.gitattributes` 가 LF 를 강제하는지                                                                                                                                                                                                                                                                                         |
+| WAS 기동 실패 `FlywayValidateException` / `Migration checksum mismatch` | 적용된 마이그레이션 파일(`V1__...sql`·`V2__...sql`)을 배포 뒤에 손으로 고쳤다. Flyway 는 체크섬이 바뀌면 기동을 막는다. 되돌리거나(`git checkout` 으로 원본 복구), 정말 바꿔야 하면 새 버전 파일(`V3__...`)을 추가한다. `flyway repair` 로 히스토리를 강제로 맞추는 건 최후 수단이며, 실제 스키마와 마이그레이션 내용이 일치하는지 먼저 확인해야 한다 |
+| WAS 기동 실패 `Found non-empty schema without schema history table`     | 기존(Flyway 이전) DB 에 `baseline-on-migrate: true` 가 안 먹었다. `spring.flyway.baseline-version` 이 실제 적용된 최신 버전보다 낮은지, `application.yml` 에 `flyway.enabled: true` 가 켜져 있는지 확인                                                                                                                                               |
+| WAS 기동 실패 `relation "guide" already exists` 류                      | baseline 이 안 찍힌 채로 V1 이 다시 실행됐다. `flyway_schema_history` 를 확인 — 비어 있으면 baseline 설정이 반영 안 된 것이다. **`flyway_schema_history` 를 손으로 지우거나 조작하지 말 것** — 반드시 설정을 고치고 다시 기동한다                                                                                                                     |

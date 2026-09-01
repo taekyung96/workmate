@@ -25,6 +25,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [ADR-0002. 프론트 구조 & UI](project/adr/0002-frontend-structure-and-ui.md)                              | 기능별 모듈 + 공통 모듈, shadcn-vue + Tailwind 채택 |
 | [ADR-0003. WAS 수정 허용 & 가이드 관리자 권한](project/adr/0003-was-modifiable-and-guide-admin-authz.md) | WAS 무변경 원칙 완화, 가이드 수정·삭제 관리자 허용  |
 | [ADR-0004. 브랜치 전략 — GitHub Flow](project/adr/0004-github-flow-branching.md)                         | Git Flow·develop 기각, PR+CI 로 main 보호           |
+| [ADR-0005. Flyway 마이그레이션 전환](project/adr/0005-flyway-migration.md)                                | db/init 3갈래 적용 경로를 Flyway 하나로 통합        |
 
 ---
 

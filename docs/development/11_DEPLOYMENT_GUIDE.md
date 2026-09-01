@@ -31,7 +31,7 @@ PostgreSQL 17 + pgvector (:5432, 포트 미공개)
 | 항목                    | 비고                                                            |
 | ----------------------- | --------------------------------------------------------------- |
 | Docker + Docker Compose | 서버에 설치. WSL2 라면 [08 문서](08_DOCKER_WSL2_SETUP_GUIDE.md) |
-| Git                     | `db/init/*.sql` 이 필요해 클론한다                              |
+| Git                     | `db/init/*.sh`(롤 생성·데모 승격 스크립트)가 필요해 클론한다    |
 | 도메인                  | Cloudflare 에 등록(네임서버 이전)                               |
 | Cloudflare 계정         | 무료로 충분                                                     |
 | Gemini API 키           | Google AI Studio                                                |
@@ -60,34 +60,37 @@ openssl rand -base64 24   # GRAFANA_* (관측 스택 쓸 때만)
 
 ### 데모 계정은 어떻게 되나
 
-`db/init/13-seed-demo-data.sql` 은 데모 계정 3종을 **`ROLE_USER` 로** 넣는다.
-비밀번호(`Workmate!2026`)가 공개 README 에 적혀 있어, 관리자 권한이면 누구나
-사용자 관리·감사로그에 들어올 수 있기 때문이다.
+Flyway 시드(`V2__seed_reference_data.sql`)는 데모 계정을 **넣지 않는다** — 이메일은 고정 IV 의
+결정적 AES 로 암호화해 저장하고(`AesCipher`), 로그인은 입력 이메일을 같은 방식으로 암호화해
+**암호문끼리** 비교한다(`UserRepository.findByEmail`). 마이그레이션에 특정 키로 암호화한 고정
+암호문을 넣으면 다른 키를 쓰는 배포에서는 영원히 조회가 안 된다 — 그래서 계정 생성 자체를
+**실제 AES 키를 쥔** 배포 스크립트가 맡는다.
 
-관리자 승격은 `db/init/20-demo-admin-role.sh` 가 하는데 `DEMO_ADMIN_ENABLED=true` 일 때만 동작한다.
-개발용 `docker-compose.yml` 은 이 값을 주고, **배포용 `docker-compose.deploy.yml` 은 주지 않는다.**
-따라서 공개 인스턴스의 방문자는 채팅·영수증·가이드·회의록까지 체험하고 관리자 화면에는 들어오지 못한다.
-
-> ⚠️ **데모 로그인은 AES 키가 같아야만 된다.** 이메일은 고정 IV 의 결정적 AES 로 암호화돼
-> 저장되고(`AesCipher`), 로그인은 입력 이메일을 같은 방식으로 암호화해 **암호문끼리** 비교한다
-> (`UserRepository.findByEmail`). 시드에 박힌 암호문은 개발 `.env` 키로 만든 값이라,
-> 배포 서버에 새 AES 키를 쓰면 `demo.admin@example.com` 이 조회되지 않아 **로그인이 실패한다.**
-> 계정을 새로 만드는 방법은 **막혀 있다.** `POST /api/auth/signup` 은 `ROLE_ADMIN` 전용인데
+> **계정을 새로 만드는 다른 방법은 막혀 있다.** `POST /api/auth/signup` 은 `ROLE_ADMIN` 전용인데
 > (`SecurityConfig`) 신규 배포에는 관리자가 한 명도 없다. `scripts/seed-demo-accounts.js` 도
-> 같은 엔드포인트를 쓰므로 함께 막힌다. 즉 **그냥 두면 로그인 가능한 계정이 하나도 없다.**
+> 같은 엔드포인트를 쓰므로 함께 막힌다. 즉 아래 스크립트가 유일한 진입 경로다.
 
 **해결 — 배포 직후 한 번 실행한다.**
 
 ```bash
-./scripts/bootstrap-demo-login.sh
+./scripts/bootstrap-demo-data.sh
 ```
 
-시드된 데모 3계정의 `email`·`phone` 을 **이 배포의 AES 키로 다시 암호화해 UPDATE** 한다.
-비밀번호는 BCrypt(단방향, 키와 무관)라 그대로 쓴다. 계정과 콘텐츠는 이미 들어가 있으므로
-새로 만들 필요가 없다. 멱등이라 여러 번 실행해도 안전하다.
+이 배포의 AES 키로 데모 계정 3종을 **직접 암호화해 생성**하고(이미 있으면 email·phone 만
+현재 키로 재암호화), 캡처용 채팅·영수증·회의록·감사로그 콘텐츠까지 채운다. 비밀번호는
+BCrypt(단방향, 키와 무관)라 고정 해시를 그대로 쓴다. 전부 존재 검사 기반이라 여러 번
+실행해도 안전하다(멱등). 계정이 기대한 건수만큼 만들어지지 않으면 스크립트가 비정상
+종료한다 — 조용히 아무 일도 안 하고 성공하는 일은 없다.
 
-권한은 건드리지 않아 데모 계정은 `ROLE_USER` 로 남는다. 관리자 화면 시연이 필요한
-**비공개** 환경에서만 `--grant-admin` 을 붙인다(공개 인스턴스에는 쓰지 말 것).
+비밀번호(`Workmate!2026`)가 공개 README 에 적혀 있어, 계정은 기본적으로 `ROLE_USER` 로 둔다 —
+관리자 권한이면 누구나 사용자 관리·감사로그에 들어올 수 있기 때문이다. 관리자 화면 시연이
+필요한 **비공개** 환경에서만 `--grant-admin` 을 붙인다(공개 인스턴스에는 쓰지 말 것). 자동으로
+켜지는 경로는 없다 — 개발·배포 어느 쪽 compose 도 승격을 자동으로 하지 않는다. 공개
+인스턴스에서는 이 플래그를 쓰지 않으므로, 방문자는 채팅·영수증·가이드·회의록까지 체험하고
+관리자 화면에는 들어오지 못한다.
+
+> **로컬·데모 전용 — 공개 배포 인스턴스에서 이 스크립트를 실행하지 말 것.** 비밀번호가
+> README 에 공개돼 있어, 실행하는 순간 그 비밀번호로 로그인 가능한 계정이 생긴다.
 
 ```
 demo.admin@example.com / Workmate!2026
@@ -137,25 +140,38 @@ IMAGE_TAG=sha-2877133077c022f4f3791a29133395390c9d1c8a \
 
 ---
 
-## 4. ⚠️ 스키마 변경을 반영하는 법
+## 4. 스키마는 어떻게 적용되나 (Flyway)
 
-**`db/init/*.sql` 은 DB 볼륨을 처음 만들 때만 실행된다.** 이미 볼륨이 있는 서버에는
-나중에 추가된 스크립트가 자동 적용되지 않고, `ddl-auto: validate` 가 실패하며 WAS 가 기동하지 못한다.
+**스키마·시드는 `db/init/*.sql` 이 아니라 Flyway 가 관리한다.** 마이그레이션 파일은
+`workmate-was/src/main/resources/db/migration/` 에 있고 **WAS jar 안에 포함되어 배포된다** —
+서버에 저장소를 클론하지 않아도 스키마가 따라온다. WAS 가 기동할 때(Spring Boot 자동설정)
+`flyway_schema_history` 테이블을 보고 **아직 적용되지 않은 마이그레이션만 순서대로** 적용한다.
 
-누락분만 수동으로 적용한다. 각 스크립트 머리말에 적용 명령이 적혀 있다.
-
-```bash
-docker exec -i workmate-db psql -U <POSTGRES_USER> -d <POSTGRES_DB> < db/init/16-llm-usage.sql
+```
+V1__baseline_schema.sql       -- 테이블·인덱스·제약·코멘트 (Flyway 도입 시점 스냅샷)
+V2__seed_reference_data.sql   -- guide·vector_store·common_code(_group) 참조 데이터
 ```
 
-`.sh` 스크립트는 환경변수가 필요하다.
+세 가지 경로(새 컨테이너 / CI / 이미 떠 있는 서버)가 전부 이 한 경로로 합쳐진다 —
+더 이상 "이 서버에 몇 번까지 넣었나"를 사람이 기억하거나 DB 를 뒤져 확인할 필요가 없다.
 
-```bash
-docker exec -i -e GRAFANA_DB_PASSWORD="$GRAFANA_DB_PASSWORD" workmate-db \
-  bash /docker-entrypoint-initdb.d/19-grafana-readonly.sh
-```
+### 새 스키마 변경을 추가하려면
 
-> 지금은 마이그레이션 도구 없이 SQL 파일로 관리한다. Flyway 도입은 후속 과제다.
+`db/migration/` 에 `V3__설명.sql` 처럼 다음 버전 번호로 새 파일을 추가한다.
+**이미 적용된 V1·V2 파일은 절대 손으로 고치지 않는다** — Flyway 는 각 파일의 체크섬을
+`flyway_schema_history` 에 저장해 두고, 내용이 바뀌면 다음 기동 시 `FlywayValidateException`
+으로 기동 자체를 막는다. 새 테이블·컬럼도 프로젝트 규칙대로 `COMMENT ON` 을 **같은 파일 안에** 넣는다.
+
+### 이미 볼륨이 있는(Flyway 이전) 서버는
+
+`baseline-on-migrate: true` / `baseline-version: 1` 설정 덕분에, 기존 DB 는 처음 기동할 때
+"V1 은 이미 적용된 것"으로 자동 도장이 찍히고 V2 부터 적용된다. V2 의 모든 INSERT 는
+`ON CONFLICT DO NOTHING` 으로 돼 있어 이미 같은 데이터가 들어 있어도 실패하지 않는다.
+별도 수동 작업이 필요 없다 — WAS 를 한 번 새로 띄우기만 하면 된다.
+
+### 체크섬 불일치·baseline 문제가 생기면
+
+`docs/development/12_OPERATIONS.md` §9 참고.
 
 ---
 
@@ -186,7 +202,6 @@ docker logs wm-quicktunnel | grep trycloudflare.com   # 발급된 주소 확인
 
 Quick Tunnel 은 Cloudflare 가 **운영용이 아니라고 명시**한다(가용성 보장 없음). 고정 도메인에만
 등록할 수 있는 소셜 로그인 콜백도 쓸 수 없다. 상시 공개용으로는 아래 정식 터널로 간다.
-
 
 가정용 회선은 인바운드가 막혀 있는 경우가 많고, 공유기에 포트를 여는 것도 바람직하지 않다.
 터널은 **아웃바운드 연결만** 쓰므로 이 문제를 통째로 우회한다.
@@ -241,7 +256,8 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 
 - Prometheus 는 호스트에 포트를 열지 않는다. Grafana 만 접근한다
 - Grafana 는 `127.0.0.1:3000` 루프백만 바인딩한다. 밖에서 보려면 **터널에 별도 호스트명 + Access 인증**을 붙인다. 앱과 같은 호스트명으로 열지 않는다
-- `grafana_ro` 롤이 없으면 DB 데이터소스가 인증 실패한다 → §4 의 `.sh` 적용
+- `grafana_ro` 롤이 없으면 DB 데이터소스가 인증 실패한다 → `db/init/19-grafana-readonly.sh` 는 롤만 만든다.
+  llm_usage 조회 권한은 WAS 가 한 번 뜬 뒤(Flyway 적용 후) `./scripts/grant-grafana-readonly.sh` 를 실행해야 붙는다
 
 ---
 
@@ -249,26 +265,26 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 
 ### 기동이 안 될 때
 
-| 증상 | 원인 |
-| --- | --- |
-| WAS 가 기동 직후 죽음 | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻 |
-| WEB 이 기동 직후 죽음<br>`Client id of registration 'kakao' must not be empty` | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. `${VAR:not-configured}` 기본값은 변수가 *없을 때만* 적용된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
-| DB 가 unhealthy · init 이 중간에 끊김 | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어, 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다 |
-| `ddl-auto: validate` 실패 | 기존 볼륨에 신규 스키마 미적용 → §4 |
+| 증상                                                                           | 원인                                                                                                                                                           |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WAS 가 기동 직후 죽음                                                          | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻                                                                    |
+| WEB 이 기동 직후 죽음<br>`Client id of registration 'kakao' must not be empty` | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. `${VAR:not-configured}` 기본값은 변수가 _없을 때만_ 적용된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
+| DB 가 unhealthy · init 이 중간에 끊김                                          | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어, 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다                 |
+| `ddl-auto: validate` 실패                                                      | Flyway 마이그레이션이 실패했거나 아직 적용 전이다 → §4, `docs/development/12_OPERATIONS.md` §9                                                                 |
 
 ### 로그인·계정
 
-| 증상 | 원인 |
-| --- | --- |
-| 데모 계정으로 로그인이 안 됨 | 배포 AES 키가 시드 생성 때와 다르다. 배포 후 `./scripts/bootstrap-demo-login.sh` 를 1회 실행해야 한다 → §2 |
-| 데모 계정에 관리자 메뉴가 없음 | 정상이다. 공개 배포에서는 `ROLE_USER` 로 둔다 → §2 |
-| 회원가입이 403 | 의도된 동작. `/api/auth/signup` 은 `ROLE_ADMIN` 전용이다 |
-| 소셜 로그인 버튼이 안 됨 | 콜백 URL 미등록(§6) 또는 자격증명 미주입 |
-| OAuth 리다이렉트가 `http://` | `SERVER_FORWARD_HEADERS_STRATEGY` 누락 |
+| 증상                           | 원인                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| 데모 계정으로 로그인이 안 됨   | 배포 후 `./scripts/bootstrap-demo-data.sh` 를 아직 안 돌렸다(Flyway 는 데모 계정을 만들지 않는다) → §2 |
+| 데모 계정에 관리자 메뉴가 없음 | 정상이다. 공개 배포에서는 `ROLE_USER` 로 둔다 → §2                                                     |
+| 회원가입이 403                 | 의도된 동작. `/api/auth/signup` 은 `ROLE_ADMIN` 전용이다                                               |
+| 소셜 로그인 버튼이 안 됨       | 콜백 URL 미등록(§6) 또는 자격증명 미주입                                                               |
+| OAuth 리다이렉트가 `http://`   | `SERVER_FORWARD_HEADERS_STRATEGY` 누락                                                                 |
 
 ### 그 밖에
 
-| 증상 | 원인 |
-| --- | --- |
-| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §4 의 `.sh` 재실행 |
-| 이미지가 옛 버전 | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다 |
+| 증상                            | 원인                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Grafana DB 데이터소스 인증 실패 | `grafana_ro` 비밀번호와 `.env` 불일치 → §8 참고, 필요시 `db/init/19-grafana-readonly.sh` 재실행 |
+| 이미지가 옛 버전                | `pull` 을 안 했다. `latest` 는 자동 갱신되지 않는다                                             |

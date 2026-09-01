@@ -23,14 +23,14 @@ services:
             # 관측 스택(--profile obs)의 Grafana 읽기 전용 롤 비밀번호 — db/init/19-grafana-readonly.sh 가 읽는다.
             # 값이 없으면 그 스크립트가 롤 생성을 건너뛴다(관측 스택을 안 쓰면 정상)
             GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
-            # 데모 계정 '관리자 (데모)' 를 ROLE_ADMIN 으로 승격한다 — db/init/20-demo-admin-role.sh
-            # 로컬·데모 전용이다. 공개 배포(docker-compose.deploy.yml)는 이 값을 주지 않아
-            # 데모 계정이 ROLE_USER 로 남고, README 에 공개된 비밀번호로 관리자 화면에 들어올 수 없다
-            DEMO_ADMIN_ENABLED: "true"
         volumes:
             - workmate-db-data:/var/lib/postgresql/data
+            # 스키마·시드는 더 이상 여기서 만들지 않는다 — WAS 기동 시 Flyway(db/migration)가 적용한다.
+            # 이 디렉토리에는 initdb 단계에서만 돌아야 하는 19-grafana-readonly.sh(롤 생성) 하나만 남아 있다.
+            # 데모 계정·콘텐츠는 scripts/bootstrap-demo-data.sh 가 WAS 기동 후에 만든다(Flyway 로 테이블이 생긴 뒤라야 한다).
+            # 과거 스키마 SQL 은 db/init/legacy/ 에 대조용으로 보관 중이며 마운트되지 않는다.
             - ./db/init:/docker-entrypoint-initdb.d
-        # initdb 스크립트(스키마 생성)가 끝나야 healthy → was 가 준비된 DB 에만 붙는다
+        # initdb 스크립트(롤 생성 등)가 끝나야 healthy → was 가 준비된 DB 에만 붙는다
         healthcheck:
             test:
                 [

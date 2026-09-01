@@ -20,28 +20,27 @@
 
 ### 갖춰진 것
 
-| 영역 | 상태 |
-| --- | --- |
-| 기능 | 채팅(SSE·RAG)·영수증·가이드·회의록·관리자·소셜 로그인 |
-| 테스트 | WAS 105 · WEB 9 · Vue 3 (`./gradlew :workmate-was:test` 등) |
-| CI | push·PR 마다 테스트, `main` 머지 시 GHCR 이미지 push |
-| 브랜치 | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수). [ADR-0004](adr/0004-github-flow-branching.md) |
-| 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull) |
+| 영역     | 상태                                                                                                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 기능     | 채팅(SSE·RAG)·영수증·가이드·회의록·관리자·소셜 로그인                                                                  |
+| 테스트   | WAS 105 · WEB 9 · Vue 3 (`./gradlew :workmate-was:test` 등)                                                            |
+| CI       | push·PR 마다 테스트, `main` 머지 시 GHCR 이미지 push                                                                   |
+| 브랜치   | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수). [ADR-0004](adr/0004-github-flow-branching.md)                   |
+| 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull)                                                |
 | **배포** | **WSL2 에서 가동 중.** Cloudflare Quick Tunnel 로 공개(임시 주소) — [12. 운영 가이드](../development/12_OPERATIONS.md) |
-| 관측 | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana |
-| 사용량 | LLM 호출 5지점의 토큰을 `llm_usage` 에 기록 (사용자별 집계 가능) |
-| RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회 |
+| 관측     | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana                                                |
+| 사용량   | LLM 호출 5지점의 토큰을 `llm_usage` 에 기록 (사용자별 집계 가능)                                                       |
+| RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회                                                                                 |
 
 ### 다음에 할 일
 
-개발 과제를 이 순서로 잡았다. **Flyway 가 맨 앞인 이유**는 나머지가 전부 스키마를 건드려서,
-나중에 도입하면 `db/init` 으로 쓴 것을 마이그레이션으로 다시 쓰게 되기 때문이다.
+**Flyway 도입은 완료됐다** — 스키마·시드는 `db/migration`(V1 베이스라인 + V2 참조데이터)으로
+관리하고, WAS 기동 시 자동 적용한다. 기존 DB 는 baseline 으로 물려받는다(→ [11. 배포 가이드 §4](../development/11_DEPLOYMENT_GUIDE.md)).
+남은 과제:
 
-1. **Flyway 도입** — 지금은 스키마 변경을 수동 SQL 로 적용한다(→ [11. 배포 가이드 §4](../development/11_DEPLOYMENT_GUIDE.md)).
-   기존 DB 는 baseline 으로 물려받고, 이후 변경은 전부 마이그레이션으로 쌓는다
-2. **사용량 대시보드** — `llm_usage` 가 쌓이기만 하고 볼 화면이 없다. 관리자 화면 + Grafana 대시보드
-3. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고)
-4. **페이지 인식 도우미 챗봇** — 기능 확장
+1. **사용량 대시보드** — `llm_usage` 가 쌓이기만 하고 볼 화면이 없다. 관리자 화면 + Grafana 대시보드
+2. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고)
+3. **페이지 인식 도우미 챗봇** — 기능 확장
 
 그 밖에 계속 남아 있는 것:
 
@@ -53,14 +52,14 @@
 
 ### 알려진 한계 (숨기지 말고 설명할 것)
 
-- **DB 마이그레이션 도구가 없다.** `db/init/*.sql` 은 볼륨 최초 생성 시에만 실행되므로
-  기존 서버에는 수동 적용해야 한다. Flyway 도입이 후속 과제
 - **RAG 접근 필터가 topK 뒤에 있다.** 비공개 타인 문서가 상위를 차지하면 결과 건수가 줄어든다.
   `filterExpression` 으로 DB 단계에서 거는 것이 개선 방향
 - **임베딩 사용량은 토큰이 NULL** 이다. `VectorStore.add()` 가 usage 를 감춘다
 - **세션·SessionRegistry·레이트리미터가 인메모리**다. 인스턴스를 늘리면 조용히 깨진다 → Redis 필요
-- **데모 계정이 AES 키에 묶여 있다.** 시드의 이메일 암호문은 개발 키로 만든 값이라,
-  DB 볼륨을 새로 만들 때마다 `scripts/bootstrap-demo-login.sh` 를 한 번 돌려야 로그인된다
+- **데모 계정은 Flyway 마이그레이션에 없다.** 이메일이 배포마다 다른 AES 키로 암호화돼야 해서
+  스키마 마이그레이션에 고정 암호문을 넣을 수 없기 때문이다(의도적 — D4). 대신
+  `scripts/bootstrap-demo-data.sh` 가 실제 AES 키를 쥔 채로 계정·콘텐츠를 직접 만든다(멱등,
+  로컬·데모 전용). 배포 후 이 스크립트를 1회 실행해야 데모 로그인이 된다
 - **`/api/auth/signup` 이 `ROLE_ADMIN` 전용**이다. 신규 배포에는 관리자가 없으므로
   계정을 새로 만들 수 없다. 위 부트스트랩이 유일한 진입 경로다
 
@@ -69,13 +68,13 @@
 로컬 배포 리허설을 돌리면서 **실제 배포를 막는 버그들**을 찾아 고쳤다. 전부 CI·개발 compose 에서는
 드러나지 않고 **리눅스에 클론한 실배포 환경에서만** 재현되는 것들이었다.
 
-| PR | 내용 |
-| --- | --- |
+| PR                                                  | 내용                                                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | [#4](https://github.com/taekyung96/workmate/pull/4) | README 이미지 경로 정정 · `.gitattributes` 로 `*.sh`·`gradlew` LF 고정 (CRLF 면 컨테이너에서 실행 불가) |
-| [#5](https://github.com/taekyung96/workmate/pull/5) | 데모 계정을 `ROLE_USER` 로 시드. 관리자 승격은 `DEMO_ADMIN_ENABLED` 로 로컬 전용 분리 |
-| [#6](https://github.com/taekyung96/workmate/pull/6) | init `.sh` 의 조기 `exit` 가 DB 초기화를 끊던 문제 · 소셜 자격증명 빈 값이면 WEB 이 기동 실패하던 문제 |
-| [#7](https://github.com/taekyung96/workmate/pull/7) | `scripts/bootstrap-demo-login.sh` — 배포 환경 AES 키로 데모 계정 로그인을 살린다 |
-| [#8](https://github.com/taekyung96/workmate/pull/8) | `scripts/update-demo-url.sh` — 임시 터널 주소를 README 에 반영 |
+| [#5](https://github.com/taekyung96/workmate/pull/5) | 데모 계정을 `ROLE_USER` 로 시드. 관리자 승격은 `DEMO_ADMIN_ENABLED` 로 로컬 전용 분리                   |
+| [#6](https://github.com/taekyung96/workmate/pull/6) | init `.sh` 의 조기 `exit` 가 DB 초기화를 끊던 문제 · 소셜 자격증명 빈 값이면 WEB 이 기동 실패하던 문제  |
+| [#7](https://github.com/taekyung96/workmate/pull/7) | `scripts/bootstrap-demo-login.sh` — 배포 환경 AES 키로 데모 계정 로그인을 살린다                        |
+| [#8](https://github.com/taekyung96/workmate/pull/8) | `scripts/update-demo-url.sh` — 임시 터널 주소를 README 에 반영                                          |
 
 각 PR 본문에 증상·원인·재현·검증 로그가 들어 있다.
 
@@ -135,20 +134,20 @@ v3는 빈 저장소에서 시작해, v2에서 쓸 만한 것만 골라 옮겨온
    `docker-compose.yml`, Gradle 루트 파일(`settings.gradle`·`build.gradle`·`gradlew*`·`gradle/`·`gradle.properties`),
    `.env.example`을 복사했다. 실제 `.env`는 비밀값이라 새로 작성했고 git에 올리지 않는다.
 
-   v2의 `.git`은 저장소 루트에 있어서, 하위 폴더만 골라 복사하면 이력이 딸려오지 않는다.
-   v3는 `git init`으로 이력을 새로 시작해 v2와 완전히 분리했다.
+    v2의 `.git`은 저장소 루트에 있어서, 하위 폴더만 골라 복사하면 이력이 딸려오지 않는다.
+    v3는 `git init`으로 이력을 새로 시작해 v2와 완전히 분리했다.
 
 2. **얇은 WEB 재구성** — v2 `workmate-web`에서 Thymeleaf 페이지 로직을 걷어내고,
    SPA 정적 서빙 + `/api` 프록시 + SSE 중계 + Spring Security 세션만 남겼다.
 
 3. **Vue3 SPA 스캐폴딩** — `workmate-vue`를 단독 SPA로 세웠다. 당시 쓴 명령은 아래와 같다.
 
-   ```bash
-   npm create vue@latest .                       # Router·Pinia·TS 선택
-   npm install
-   npx shadcn-vue@latest init                    # components.json 생성 (경로를 common/ 모듈로 설정)
-   npx shadcn-vue@latest add button dialog ...   # 필요한 컴포넌트만
-   ```
+    ```bash
+    npm create vue@latest .                       # Router·Pinia·TS 선택
+    npm install
+    npx shadcn-vue@latest init                    # components.json 생성 (경로를 common/ 모듈로 설정)
+    npx shadcn-vue@latest add button dialog ...   # 필요한 컴포넌트만
+    ```
 
 4. **빌드 연결** — 개발은 Vite dev proxy(5173→8080)로, 운영은 Vue 빌드 산출물을 WEB이 서빙하도록 붙였다.
    ([아키텍처 §빌드](../development/01_ARCHITECTURE.md))

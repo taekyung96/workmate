@@ -25,7 +25,7 @@
 ## 2. 영속성(DB) 관리 규격 — JPA만
 
 - 모든 CRUD 는 **Spring Data JPA**(`@Entity` + `~Repository`)로 처리한다.
-- 스키마는 `db/init/*.sql` 스크립트로만 관리하며 `ddl-auto: validate` 를 유지한다 (Hibernate 임의 변경 금지).
+- 스키마는 Flyway 마이그레이션(`workmate-was/src/main/resources/db/migration`)으로만 관리하며 `ddl-auto: validate` 를 유지한다 (Hibernate 임의 변경 금지).
 - JPA 로 표현이 어려운 특수 연산(예: `vector_store` 의 jsonb 조건 삭제)만 `JdbcTemplate` 으로 보조한다 — 이때도 SQL 은 서비스 구현체 내부에 두고 로그를 남긴다.
 
 ## 3. 네이밍 규칙 (Naming Conventions)
