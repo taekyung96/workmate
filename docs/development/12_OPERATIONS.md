@@ -38,8 +38,14 @@ workmate-db   :5432     ← 호스트에 포트 없음
 | 이미지 | GHCR 에서 pull (`ghcr.io/taekyung96/workmate-{was,web}:latest`) — 서버에서 빌드하지 않는다 |
 | 비밀값 | `~/workmate/.env` — **git 에 없다.** 잃어버리면 DB 의 이메일·전화번호를 복호화할 수 없다 |
 
-> **개발용 DB 와 헷갈리지 말 것.** `workmate-v3_workmate-db-data` 볼륨은 예전 개발 환경
-> (`/mnt/d/ClaudeCode/workmate-v3-ws/workmate-v3`)의 것으로 **별개**다. 이 배포와 데이터를 공유하지 않는다.
+> **개발용 DB 와 헷갈리지 말 것.** 개발 스택은 `workmate-dev` 프로젝트로 뜨고
+> 볼륨도 `workmate-dev_workmate-db-data` 로 갈린다. 이 배포와 데이터를 공유하지 않는다.
+
+> **⚠️ `-f` 를 빠뜨리지 말 것.** 이 디렉토리에서 `docker compose up -d` 를 그냥 치면
+> 기본 파일인 `docker-compose.yml`(개발용, 소스 빌드)이 잡힌다. 배포 명령은 항상
+> `-f docker-compose.deploy.yml` 을 붙인다. 예전에는 이 실수가 운영 볼륨을 그대로
+> 건드렸지만, 지금은 개발 compose 에 `name: workmate-dev` 를 못 박아 두어
+> **별도 프로젝트로 떠서 운영 데이터는 안전하다.** 그래도 컨테이너 이름이 겹쳐 기동은 실패한다.
 
 ---
 
