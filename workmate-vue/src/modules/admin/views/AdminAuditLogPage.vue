@@ -14,12 +14,7 @@ import { ShieldCheck } from 'lucide-vue-next'
 import PageTabs from '@/common/components/PageTabs.vue'
 import PageHeader from '@/common/components/PageHeader.vue'
 
-// 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
-const adminTabs = [
-    { name: 'admin-users', label: '사용자 관리' },
-    { name: 'admin-audit-logs', label: '감사 로그' },
-    { name: 'admin-common-codes', label: '공통코드' },
-]
+import { adminTabs } from '../constants'
 import { useAdminAuditLogs } from '../composables/useAdminAuditLogs'
 
 const { logs, page, totalPages, totalElements, loading, error, load, goToPage } =

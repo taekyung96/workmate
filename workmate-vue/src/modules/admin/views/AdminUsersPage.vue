@@ -28,12 +28,7 @@ import Pagination from '@/common/components/Pagination.vue'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import { useDebouncedWatch } from '@/common/composables/useDebouncedWatch'
 
-// 관리자 하위 화면 탭 — 사이드바는 관리자 진입점 하나만 유지한다
-const adminTabs = [
-    { name: 'admin-users', label: '사용자 관리' },
-    { name: 'admin-audit-logs', label: '감사 로그' },
-    { name: 'admin-common-codes', label: '공통코드' },
-]
+import { adminTabs } from '../constants'
 import { useAdminUsers } from '../composables/useAdminUsers'
 import type { AdminUser } from '../types'
 

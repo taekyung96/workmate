@@ -18,6 +18,12 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { requiresAdmin: true },
     },
     {
+        path: '/admin/usage',
+        name: 'admin-usage',
+        component: () => import('./views/AdminUsagePage.vue'),
+        meta: { requiresAdmin: true },
+    },
+    {
         path: '/admin/common-codes',
         name: 'admin-common-codes',
         component: () => import('./views/AdminCommonCodesPage.vue'),
