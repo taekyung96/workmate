@@ -1,8 +1,9 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { adminApi } from '../api/admin.api'
 import { extractErrorMessage } from '@/common/utils/error'
 import { usePagination } from '@/common/composables/usePagination'
 import type { UsageSummary, UserUsage } from '../types'
+import { toUsageBuckets, type UsageBucket } from '@/common/utils/usageBuckets'
 
 /** 기간 선택 프리셋 — '7'·'30'은 클라이언트가 오늘 기준으로 계산, 'custom'은 사용자가 직접 지정 */
 export type UsagePreset = '7' | '30' | 'custom'
@@ -83,8 +84,25 @@ export function useUsageStats() {
         void load()
     }
 
+    /**
+     * 차트 막대 — 기간이 길면 주 단위로 묶어 막대 수를 7개 이하로 유지한다.
+     * 막대가 많아질수록 폭이 좁아져 라벨이 겹치고 읽을 수 없게 되기 때문이다.
+     */
+    const chartBuckets = computed<UsageBucket[]>(() => {
+        const daily = summary.value?.daily ?? []
+        // 8일 이상이면 주 단위로 묶는다(30일 → 5개, 14일 → 2개)
+        return toUsageBuckets(daily, daily.length > 8 ? 7 : 1)
+    })
+
+    /** 차트 막대의 단위 — 화면에 "일별/주별"을 표시해 오해를 막는다 */
+    const chartUnit = computed<'일별' | '주별'>(() =>
+        (summary.value?.daily.length ?? 0) > 8 ? '주별' : '일별',
+    )
+
     return {
         preset,
+        chartBuckets,
+        chartUnit,
         customFrom,
         customTo,
         summary,

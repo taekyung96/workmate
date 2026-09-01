@@ -54,12 +54,32 @@ public class LlmUsageQueryServiceImpl implements LlmUsageQueryService {
     @Override
     @Transactional(readOnly = true)
     public UsageSummaryVo getSummary(LocalDate from, LocalDate to) {
+        return summarize(null, from, to);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public UsageSummaryVo getMySummary(Long userSeq, LocalDate from, LocalDate to) {
+        // null 이면 전체 집계로 흘러가 남의 사용량이 노출된다 — 방어적으로 막는다
+        if (userSeq == null) {
+            throw new IllegalArgumentException("본인 사용량 조회에는 userSeq 가 필요하다");
+        }
+        return summarize(userSeq, from, to);
+    }
+
+    /**
+     * 기간 요약 집계 공통 로직.
+     *
+     * @param userSeq null 이면 전체(관리자), 값이 있으면 그 사용자만
+     */
+    private UsageSummaryVo summarize(Long userSeq, LocalDate from, LocalDate to) {
         LocalDate resolvedTo = resolveTo(to);
         LocalDate resolvedFrom = resolveFrom(from, resolvedTo);
         LocalDate toExclusive = resolvedTo.plusDays(1);
 
-        TotalAggregateRow totalRow = llmUsageQueryMapper.selectTotal(resolvedFrom, toExclusive);
-        List<ModelAggregateRow> modelRows = llmUsageQueryMapper.selectModelUsageTotal(resolvedFrom, toExclusive);
+        TotalAggregateRow totalRow = llmUsageQueryMapper.selectTotal(resolvedFrom, toExclusive, userSeq);
+        List<ModelAggregateRow> modelRows = llmUsageQueryMapper.selectModelUsageTotal(resolvedFrom, toExclusive, userSeq);
         CostEstimate cost = usagePricingCalculator.estimate(modelRows);
 
         UsageTotalVo total = UsageTotalVo.builder()
@@ -72,10 +92,11 @@ public class LlmUsageQueryServiceImpl implements LlmUsageQueryService {
                 .estimatedCostKrw(cost.costKrw())
                 .build();
 
-        List<FeatureAggregateRow> featureRows = llmUsageQueryMapper.selectByFeature(resolvedFrom, toExclusive);
-        List<DailyAggregateRow> dailyRows = llmUsageQueryMapper.selectDaily(resolvedFrom, toExclusive);
+        List<FeatureAggregateRow> featureRows = llmUsageQueryMapper.selectByFeature(resolvedFrom, toExclusive, userSeq);
+        List<DailyAggregateRow> dailyRows = llmUsageQueryMapper.selectDaily(resolvedFrom, toExclusive, userSeq);
 
-        log.info("관리자 사용량 요약 집계 - from: {}, to: {}, callCount: {}", resolvedFrom, resolvedTo, totalRow.getCallCount());
+        log.info("사용량 요약 집계 - userSeq: {}, from: {}, to: {}, callCount: {}",
+                userSeq == null ? "전체" : userSeq, resolvedFrom, resolvedTo, totalRow.getCallCount());
 
         return UsageSummaryVo.builder()
                 .period(new UsagePeriodVo(resolvedFrom, resolvedTo))

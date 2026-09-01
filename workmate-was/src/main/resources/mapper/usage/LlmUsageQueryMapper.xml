@@ -16,6 +16,8 @@
             COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
         FROM llm_usage
         WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        <!-- userSeq 가 있으면 그 사용자만 집계한다(본인 사용량 조회). null 이면 전체(관리자) -->
+        <if test="userSeq != null">AND user_seq = #{userSeq}</if>
     </select>
 
     <select id="selectByFeature" resultType="com.workmate.was.usage.dao.row.FeatureAggregateRow">
@@ -27,6 +29,8 @@
             COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
         FROM llm_usage
         WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        <!-- userSeq 가 있으면 그 사용자만 집계한다(본인 사용량 조회). null 이면 전체(관리자) -->
+        <if test="userSeq != null">AND user_seq = #{userSeq}</if>
         GROUP BY feature
     </select>
 
@@ -39,6 +43,8 @@
             COUNT(*) FILTER (WHERE input_tokens IS NULL OR output_tokens IS NULL) AS untrackedCallCount
         FROM llm_usage
         WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        <!-- userSeq 가 있으면 그 사용자만 집계한다(본인 사용량 조회). null 이면 전체(관리자) -->
+        <if test="userSeq != null">AND user_seq = #{userSeq}</if>
         GROUP BY DATE(created_at)
     </select>
 
@@ -50,6 +56,8 @@
             SUM(output_tokens) AS outputTokens
         FROM llm_usage
         WHERE created_at &gt;= #{from} AND created_at &lt; #{toExclusive}
+        <!-- userSeq 가 있으면 그 사용자만 집계한다(본인 사용량 조회). null 이면 전체(관리자) -->
+        <if test="userSeq != null">AND user_seq = #{userSeq}</if>
         GROUP BY model_name
     </select>
 
