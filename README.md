@@ -9,11 +9,10 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 개발 기간: 2026.07 ~ (1인 개발 · 실작업 약 2주)
 
 <!-- demo-url:start -->
-> 🔗 **라이브 데모** — <https://ranks-bunny-modified-bob.trycloudflare.com>
+> 🔗 **라이브 데모** — 준비 중이다. 고정 도메인을 붙이는 대로 여기에 주소를 적는다.
 >
-> `demo.admin@example.com` / `Workmate!2026` 으로 로그인하면 아래 화면을 그대로 볼 수 있다.
-> 무료 임시 터널(Cloudflare Quick Tunnel)이라 **주소가 바뀌거나 꺼져 있을 수 있다.**
-> 소셜 로그인은 고정 도메인에 콜백을 등록해야 해서 데모에서는 이메일 로그인만 동작한다.
+> 그전까지는 [아래 실행 방법](#실행)으로 직접 띄워 볼 수 있다. `docker compose up -d` 한 번이면
+> 스키마·가이드 24건·pgvector 임베딩까지 시드된 상태로 뜨고, 아래 화면들이 그대로 나온다.
 <!-- demo-url:end -->
 
 **스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
