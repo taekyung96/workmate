@@ -72,7 +72,7 @@ docker compose up -d db                 # pgvector PostgreSQL 17
 
 프론트만 따로 핫리로드로 개발할 때는 `cd workmate-vue && npm run dev` (5173, `/api`는 8080으로 프록시). DB 환경 구축은 [WSL2·Docker 셋업 가이드](docs/development/08_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
 
-WAS 를 처음 띄우면 Flyway 가 스키마와 참조 데이터를 자동으로 적용한다. 가이드 문서 24건은 pgvector 임베딩까지 함께 들어가지만, 데모 로그인 계정은 Flyway 시드에 없다 — `demo.admin@example.com` / `Workmate!2026` 으로 로그인해 위 화면들을 보려면 `db/init/legacy/13-seed-demo-data.sql` 을 한 번 적용해야 한다(자세한 절차는 [배포 가이드 §2](docs/development/11_DEPLOYMENT_GUIDE.md)). 이 계정은 `ROLE_USER` 로 들어가고, `scripts/bootstrap-demo-login.sh --grant-admin` 을 **사람이 직접 실행할 때만** `ROLE_ADMIN` 으로 승격한다 — 비밀번호가 여기 공개돼 있어 공개 배포 인스턴스에서는 관리자 화면이 열리지 않는다. 위 이미지는 목 데이터가 아니라 이 상태의 앱을 찍은 것이다(`node scripts/capture-all-perfect.js`). 맨 위 채팅 화면만은 캡처할 때 실제로 질문을 던져 받은 답이라 실행할 때마다 내용이 달라진다.
+WAS 를 처음 띄우면 Flyway 가 스키마와 참조 데이터를 자동으로 적용한다. 가이드 문서 24건은 pgvector 임베딩까지 함께 들어가지만, 데모 로그인 계정은 Flyway 시드에 없다 — 이메일이 배포마다 다른 AES 키로 암호화돼야 해서 마이그레이션에 넣을 수 없기 때문이다. `demo.admin@example.com` / `Workmate!2026` 으로 로그인해 위 화면들을 보려면 `./scripts/bootstrap-demo-data.sh` 를 한 번 실행한다(계정·채팅·영수증·회의록 데모 콘텐츠까지 함께 생성, 자세한 절차는 [배포 가이드 §2](docs/development/11_DEPLOYMENT_GUIDE.md)). 이 계정은 `ROLE_USER` 로 들어가고, `--grant-admin` 옵션을 **사람이 직접 붙여 실행할 때만** `ROLE_ADMIN` 으로 승격한다 — 비밀번호가 여기 공개돼 있어 공개 배포 인스턴스에서는 관리자 화면이 열리지 않는다. 위 이미지는 목 데이터가 아니라 이 상태의 앱을 찍은 것이다(`node scripts/capture-all-perfect.js`). 맨 위 채팅 화면만은 캡처할 때 실제로 질문을 던져 받은 답이라 실행할 때마다 내용이 달라진다.
 
 > **스키마 변경은 신경 쓸 필요 없다** — Flyway 가 WAS 기동 시 `flyway_schema_history` 를 보고 아직 적용 안 된 마이그레이션만 순서대로 적용한다. 기존 볼륨(Flyway 이전 DB)도 `baseline-on-migrate` 로 자동 인식한다. 자세한 내용은 [배포 가이드 §4](docs/development/11_DEPLOYMENT_GUIDE.md).
 

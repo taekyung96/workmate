@@ -94,17 +94,13 @@ DB 볼륨은 남아 있으므로 **부트스트랩(§4)은 다시 하지 않아�
 
 ## 4. 데모 계정 부트스트랩 (DB 를 새로 만들었을 때만)
 
-`db/init/legacy/13-seed-demo-data.sql` 의 이메일·전화번호는 **개발 환경 AES 키**로 암호화된
-값이라, 이 배포의 키로는 조회되지 않아 로그인이 실패한다. 한 번만 맞춰주면 된다.
-
-> ⚠️ Flyway 로 새로 만든 DB 에는 데모 계정 자체가 없다(V2 는 의도적으로 데모 데이터를 빼고
-> guide·common_code 등 참조 데이터만 넣는다). `bootstrap-demo-login.sh` 는 계정을 만들지 않고
-> 재암호화만 하므로, 먼저 계정·콘텐츠를 넣어야 한다:
-> `docker exec -i workmate-db psql -U <user> -d <db> < db/init/legacy/13-seed-demo-data.sql`
-> 자세한 내용은 [11. 배포 가이드 §2 '데모 계정은 어떻게 되나'](11_DEPLOYMENT_GUIDE.md) 참고.
+Flyway 마이그레이션(V2)에는 데모 계정이 없다 — 이메일이 배포마다 다른 AES 키로 암호화돼야
+해서 고정 암호문을 마이그레이션에 넣을 수 없기 때문이다(의도적). 대신 `scripts/bootstrap-demo-data.sh`
+가 **이 배포의 실제 AES 키**로 계정을 직접 만든다. 데모 계정 3종·채팅·영수증·회의록 콘텐츠까지
+한 번에 채우고, 여러 번 실행해도 안전하다(멱등).
 
 ```bash
-cd ~/workmate && ./scripts/bootstrap-demo-login.sh
+cd ~/workmate && ./scripts/bootstrap-demo-data.sh
 ```
 
 ```

@@ -28,7 +28,7 @@ services:
             # 관측 스택(--profile obs)의 Grafana 읽기 전용 롤 비밀번호 — db/init/19-grafana-readonly.sh 가 읽는다.
             # 값이 없으면 그 스크립트가 롤 생성을 건너뛴다(관측 스택을 안 쓰면 정상)
             GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
-            # 데모 관리자 승격(scripts/bootstrap-demo-login.sh --grant-admin)은 배포 직후
+            # 데모 관리자 승격(scripts/bootstrap-demo-data.sh --grant-admin)은 배포 직후
             # 사람이 직접 실행할 때만 켜진다 — 이 compose 는 아무것도 자동으로 승격하지 않는다.
             # README 에 데모 비밀번호가 공개돼 있어, 공개 인스턴스에서 데모 계정은 ROLE_USER 여야 한다
             # (방문자는 채팅·영수증·가이드·회의록까지 체험하고, 관리자 화면에는 못 들어온다)
