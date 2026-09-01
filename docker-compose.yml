@@ -1,3 +1,15 @@
+# =============================================================
+# 개발용 compose — 소스에서 직접 빌드한다. 배포용은 docker-compose.deploy.yml
+#
+#   docker compose up -d
+#
+# 프로젝트명을 고정한다. 없으면 도커가 "디렉토리 이름"을 프로젝트명으로 쓰는데,
+# 저장소를 workmate 로 클론한 서버에서는 그 값이 배포 compose 의 name: workmate 와
+# 같아진다. 그러면 -f 를 빠뜨린 `docker compose up -d` 한 번에 개발 스택이
+# 운영 DB 볼륨에 그대로 붙는다(AES 키도 이미지도 다른 채로). 그걸 막는다.
+# =============================================================
+name: workmate-dev
+
 services:
     db:
         image: pgvector/pgvector:pg17

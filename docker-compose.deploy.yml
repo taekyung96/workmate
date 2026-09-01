@@ -9,7 +9,8 @@
 # 갱신:  docker compose -f docker-compose.deploy.yml pull && ... up -d
 # 롤백:  IMAGE_TAG=sha-<커밋해시> docker compose -f docker-compose.deploy.yml up -d
 #
-# 개발용은 docker-compose.yml (소스에서 빌드). 이 파일과 프로젝트명이 달라 볼륨도 분리된다.
+# 개발용은 docker-compose.yml (소스에서 빌드). 양쪽 다 name: 을 못 박아 두었으므로
+# (workmate / workmate-dev) 프로젝트가 갈리고 볼륨도 섞이지 않는다.
 # =============================================================
 
 # 프로젝트명을 고정한다 — 디렉토리 이름에 따라 컨테이너·볼륨 접두사가 바뀌지 않게
