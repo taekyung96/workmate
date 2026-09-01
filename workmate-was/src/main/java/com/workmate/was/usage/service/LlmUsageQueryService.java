@@ -24,6 +24,20 @@ public interface LlmUsageQueryService {
     UsageSummaryVo getSummary(LocalDate from, LocalDate to);
 
     /**
+     * 특정 사용자 본인의 기간 요약.
+     *
+     * <p><b>userSeq 는 반드시 세션에서 유래한 값이어야 한다.</b> WEB 이 RestClient 인터셉터로
+     * {@code X-User-Seq} 를 세션 값으로 덮어써서 넘긴다. 요청 파라미터로 받은 값을 그대로
+     * 넘기면 남의 사용량을 조회할 수 있게 되므로, 컨트롤러에서 헤더 외의 경로로 받지 않는다.</p>
+     *
+     * @param userSeq 조회 대상 사용자 (null 불가 — null 이면 전체 집계가 되어 정보가 샌다)
+     * @param from    조회 시작일 (null 이면 최근 30일)
+     * @param to      조회 종료일 (null 이면 오늘)
+     * @return 그 사용자만의 집계 결과
+     */
+    UsageSummaryVo getMySummary(Long userSeq, LocalDate from, LocalDate to);
+
+    /**
      * 사용자별 집계 — 토큰 합계 내림차순 페이징.
      *
      * @param from 조회 시작일 (null 이면 최근 30일)

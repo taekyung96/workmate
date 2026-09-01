@@ -185,14 +185,19 @@ async function confirmDeleteRoom(): Promise<void> {
             @confirm="confirmDeleteRoom"
         />
 
-        <!-- 하단 사용자 -->
+        <!-- 하단 사용자 — 이름을 누르면 본인 사용량 화면으로 간다(메뉴를 늘리지 않는 진입점) -->
         <div class="flex items-center justify-between border-t p-3">
-            <div class="min-w-0">
+            <RouterLink
+                :to="{ name: 'my-usage' }"
+                class="min-w-0 flex-1 rounded-md px-2 py-1 hover:bg-accent"
+                :class="{ 'bg-accent': route.path.startsWith('/usage') }"
+                title="내 사용량 보기"
+            >
                 <p class="truncate text-sm font-medium">{{ auth.user?.userName }}</p>
                 <p class="text-xs text-muted-foreground">
-                    {{ auth.isAdmin ? '관리자' : '사용자' }}
+                    {{ auth.isAdmin ? '관리자' : '사용자' }} · 사용량 보기
                 </p>
-            </div>
+            </RouterLink>
             <Button variant="ghost" size="icon" title="로그아웃" @click="logout">
                 <LogOut class="size-4" />
             </Button>

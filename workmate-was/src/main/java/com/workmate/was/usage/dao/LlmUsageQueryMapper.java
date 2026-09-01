@@ -23,17 +23,33 @@ import java.util.List;
 @Mapper
 public interface LlmUsageQueryMapper {
 
-    /** 기간 전체 합계 1건 (호출 0건이어도 COUNT(*)=0 인 행이 반환된다) */
-    TotalAggregateRow selectTotal(@Param("from") LocalDate from, @Param("toExclusive") LocalDate toExclusive);
+    /**
+     * 기간 전체 합계 1건 (호출 0건이어도 COUNT(*)=0 인 행이 반환된다).
+     *
+     * @param userSeq 특정 사용자로 한정할 때의 사용자 번호. null 이면 전체 집계(관리자용)
+     */
+    TotalAggregateRow selectTotal(
+            @Param("from") LocalDate from,
+            @Param("toExclusive") LocalDate toExclusive,
+            @Param("userSeq") Long userSeq);
 
-    /** 기능(feature)별 집계 — 호출이 있는 기능만 반환(0건 기능은 서비스 계층에서 채운다) */
-    List<FeatureAggregateRow> selectByFeature(@Param("from") LocalDate from, @Param("toExclusive") LocalDate toExclusive);
+    /** 기능(feature)별 집계 — 호출이 있는 기능만 반환(0건 기능은 서비스 계층에서 채운다). userSeq null 이면 전체 */
+    List<FeatureAggregateRow> selectByFeature(
+            @Param("from") LocalDate from,
+            @Param("toExclusive") LocalDate toExclusive,
+            @Param("userSeq") Long userSeq);
 
-    /** 날짜별 집계 — 데이터 있는 날짜만 반환(빈 날짜는 서비스 계층에서 0으로 채운다) */
-    List<DailyAggregateRow> selectDaily(@Param("from") LocalDate from, @Param("toExclusive") LocalDate toExclusive);
+    /** 날짜별 집계 — 데이터 있는 날짜만 반환(빈 날짜는 서비스 계층에서 0으로 채운다). userSeq null 이면 전체 */
+    List<DailyAggregateRow> selectDaily(
+            @Param("from") LocalDate from,
+            @Param("toExclusive") LocalDate toExclusive,
+            @Param("userSeq") Long userSeq);
 
-    /** 모델명별 집계(기간 전체) — 총 추정 비용·단가 미등록 건수 계산용 */
-    List<ModelAggregateRow> selectModelUsageTotal(@Param("from") LocalDate from, @Param("toExclusive") LocalDate toExclusive);
+    /** 모델명별 집계(기간 전체) — 총 추정 비용·단가 미등록 건수 계산용. userSeq null 이면 전체 */
+    List<ModelAggregateRow> selectModelUsageTotal(
+            @Param("from") LocalDate from,
+            @Param("toExclusive") LocalDate toExclusive,
+            @Param("userSeq") Long userSeq);
 
     /** 사용자별 집계 한 페이지 — 토큰 합계(입력+출력) 내림차순, offset/limit 페이징 */
     List<UserAggregateRow> selectUserPage(

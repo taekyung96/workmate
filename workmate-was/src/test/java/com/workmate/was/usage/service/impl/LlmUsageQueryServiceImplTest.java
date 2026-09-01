@@ -26,8 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,7 +65,7 @@ class LlmUsageQueryServiceImplTest {
 
         ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
         ArgumentCaptor<LocalDate> toExclusiveCaptor = ArgumentCaptor.forClass(LocalDate.class);
-        verify(llmUsageQueryMapper).selectTotal(fromCaptor.capture(), toExclusiveCaptor.capture());
+        verify(llmUsageQueryMapper).selectTotal(fromCaptor.capture(), toExclusiveCaptor.capture(), any());
 
         LocalDate today = LocalDate.now();
         assertThat(fromCaptor.getValue()).isEqualTo(today.minusDays(29));
@@ -79,16 +81,16 @@ class LlmUsageQueryServiceImplTest {
 
         service.getSummary(from, to);
 
-        verify(llmUsageQueryMapper).selectTotal(from, to.plusDays(1));
+        verify(llmUsageQueryMapper).selectTotal(from, to.plusDays(1), null);
     }
 
     @Test
     @DisplayName("토큰이 전부 NULL 인 구간도 합계는 0, 미집계 건수는 따로 보존한다")
     void getSummary_does_not_collapse_null_tokens_to_zero_silently() {
-        when(llmUsageQueryMapper.selectTotal(any(), any())).thenReturn(totalRow(30, null, null, 30));
-        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectByFeature(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectDaily(any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectTotal(any(), any(), any())).thenReturn(totalRow(30, null, null, 30));
+        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectByFeature(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectDaily(any(), any(), any())).thenReturn(List.of());
 
         UsageSummaryVo result = service.getSummary(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 1));
 
@@ -101,12 +103,12 @@ class LlmUsageQueryServiceImplTest {
     @Test
     @DisplayName("일별 집계는 데이터 없는 날도 0건으로 채워 기간 전체 날짜 수만큼 반환한다")
     void getSummary_fills_empty_days_with_zero() {
-        when(llmUsageQueryMapper.selectTotal(any(), any())).thenReturn(totalRow(1, 10L, 5L, 0));
-        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectByFeature(any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectTotal(any(), any(), any())).thenReturn(totalRow(1, 10L, 5L, 0));
+        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectByFeature(any(), any(), any())).thenReturn(List.of());
         LocalDate from = LocalDate.of(2026, 8, 1);
         LocalDate to = LocalDate.of(2026, 8, 3);
-        when(llmUsageQueryMapper.selectDaily(any(), any())).thenReturn(List.of(dailyRow(from, 1, 10L, 5L, 0)));
+        when(llmUsageQueryMapper.selectDaily(any(), any(), any())).thenReturn(List.of(dailyRow(from, 1, 10L, 5L, 0)));
 
         UsageSummaryVo result = service.getSummary(from, to);
 
@@ -119,10 +121,10 @@ class LlmUsageQueryServiceImplTest {
     @Test
     @DisplayName("기능별 집계는 호출이 없는 기능도 0건으로 채워 5종 전부 반환한다")
     void getSummary_fills_all_features() {
-        when(llmUsageQueryMapper.selectTotal(any(), any())).thenReturn(totalRow(2, 100L, 50L, 0));
-        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectDaily(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectByFeature(any(), any()))
+        when(llmUsageQueryMapper.selectTotal(any(), any(), any())).thenReturn(totalRow(2, 100L, 50L, 0));
+        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectDaily(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectByFeature(any(), any(), any()))
                 .thenReturn(List.of(featureRow("CHAT", 2, 100L, 50L, 0)));
 
         UsageSummaryVo result = service.getSummary(LocalDate.now(), LocalDate.now());
@@ -163,10 +165,10 @@ class LlmUsageQueryServiceImplTest {
     }
 
     private void stubEmptyMapper() {
-        when(llmUsageQueryMapper.selectTotal(any(), any())).thenReturn(totalRow(0, null, null, 0));
-        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectByFeature(any(), any())).thenReturn(List.of());
-        when(llmUsageQueryMapper.selectDaily(any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectTotal(any(), any(), any())).thenReturn(totalRow(0, null, null, 0));
+        when(llmUsageQueryMapper.selectModelUsageTotal(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectByFeature(any(), any(), any())).thenReturn(List.of());
+        when(llmUsageQueryMapper.selectDaily(any(), any(), any())).thenReturn(List.of());
     }
 
     private TotalAggregateRow totalRow(long callCount, Long inputTokens, Long outputTokens, long untracked) {
@@ -206,5 +208,44 @@ class LlmUsageQueryServiceImplTest {
         ReflectionTestUtils.setField(row, "outputTokens", outputTokens);
         ReflectionTestUtils.setField(row, "untrackedCallCount", untracked);
         return row;
+    }
+
+    // ── 본인 사용량 조회 (보안 경계) ──
+    // userSeq 가 매퍼까지 전달되지 않으면 전체 집계가 반환되어 남의 사용량이 그대로 노출된다.
+    // "필터가 실제로 걸리는가"를 고정하는 것이 이 테스트의 목적이다.
+
+    @Test
+    @DisplayName("본인 조회는 userSeq 를 모든 집계 쿼리에 전달한다 (하나라도 빠지면 남의 사용량이 섞인다)")
+    void getMySummary_scopes_every_query_to_the_user() {
+        stubEmptyMapper();
+        Long userSeq = 42L;
+
+        service.getMySummary(userSeq, null, null);
+
+        verify(llmUsageQueryMapper).selectTotal(any(), any(), eq(userSeq));
+        verify(llmUsageQueryMapper).selectModelUsageTotal(any(), any(), eq(userSeq));
+        verify(llmUsageQueryMapper).selectByFeature(any(), any(), eq(userSeq));
+        verify(llmUsageQueryMapper).selectDaily(any(), any(), eq(userSeq));
+    }
+
+    @Test
+    @DisplayName("관리자 전체 조회는 userSeq 를 null 로 넘겨 필터를 걸지 않는다")
+    void getSummary_passes_null_user_for_all() {
+        stubEmptyMapper();
+
+        service.getSummary(null, null);
+
+        verify(llmUsageQueryMapper).selectTotal(any(), any(), eq(null));
+        verify(llmUsageQueryMapper).selectDaily(any(), any(), eq(null));
+    }
+
+    @Test
+    @DisplayName("본인 조회에 userSeq 가 없으면 전체 집계로 새지 않고 예외로 막는다")
+    void getMySummary_rejects_null_user() {
+        assertThatThrownBy(() -> service.getMySummary(null, null, null))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        // 쿼리 자체가 나가지 않아야 한다
+        verify(llmUsageQueryMapper, never()).selectTotal(any(), any(), any());
     }
 }
