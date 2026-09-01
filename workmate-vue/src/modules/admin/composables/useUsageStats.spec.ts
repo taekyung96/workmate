@@ -123,4 +123,72 @@ describe('useUsageStats', () => {
 
         expect(adminApi.usageSummary).toHaveBeenCalledWith(undefined, undefined)
     })
+
+    // ── 차트 버킷 묶기 ──
+    // 서버는 항상 일별로 주지만, 30일치를 그대로 그리면 막대가 30개라 읽을 수 없다.
+    // 그래서 표현 단계에서 주 단위로 묶는다. 그 경계와 합계가 맞는지 고정한다.
+
+    /** 날짜 오름차순으로 n일치 일별 데이터를 만든다 (i번째 날의 호출 수 = i+1) */
+    function makeDaily(n: number) {
+        return Array.from({ length: n }, (_, i) => {
+            const d = new Date(Date.UTC(2026, 7, 3 + i))
+            return {
+                date: d.toISOString().slice(0, 10),
+                callCount: i + 1,
+                inputTokens: (i + 1) * 10,
+                outputTokens: i + 1,
+                untrackedCallCount: 0,
+            }
+        })
+    }
+
+    it('7일 이하면 일별 그대로 그린다 (막대 수 = 일수)', async () => {
+        vi.mocked(adminApi.usageSummary).mockResolvedValue({
+            ...emptySummary,
+            daily: makeDaily(7),
+        })
+        vi.mocked(adminApi.usageByUser).mockResolvedValue(emptyUserPage)
+
+        const stats = useUsageStats()
+        await stats.load()
+
+        expect(stats.chartUnit.value).toBe('일별')
+        expect(stats.chartBuckets.value).toHaveLength(7)
+        expect(stats.chartBuckets.value[0]!.label).toBe('08-03')
+        expect(stats.chartBuckets.value[0]!.callCount).toBe(1)
+    })
+
+    it('8일을 넘으면 주 단위로 묶고 합계를 낸다 (30일 → 막대 5개)', async () => {
+        vi.mocked(adminApi.usageSummary).mockResolvedValue({
+            ...emptySummary,
+            daily: makeDaily(30),
+        })
+        vi.mocked(adminApi.usageByUser).mockResolvedValue(emptyUserPage)
+
+        const stats = useUsageStats()
+        await stats.load()
+
+        expect(stats.chartUnit.value).toBe('주별')
+        // 30일 ÷ 7 = 막대 5개 (마지막은 2일짜리 부분 주)
+        expect(stats.chartBuckets.value).toHaveLength(5)
+        // 첫 주 = 1..7 일차 → 합 28
+        expect(stats.chartBuckets.value[0]!.callCount).toBe(28)
+        expect(stats.chartBuckets.value[0]!.inputTokens).toBe(280)
+        // 마지막 주는 29·30 일차만 남는다 → 합 59
+        expect(stats.chartBuckets.value[4]!.callCount).toBe(59)
+        // 묶어도 전체 합은 보존돼야 한다
+        const sum = stats.chartBuckets.value.reduce((a, b) => a + b.callCount, 0)
+        expect(sum).toBe((30 * 31) / 2)
+    })
+
+    it('일별이 비어 있으면 막대도 비운다 (빈 기간에서 화면이 깨지지 않아야 한다)', async () => {
+        vi.mocked(adminApi.usageSummary).mockResolvedValue(emptySummary)
+        vi.mocked(adminApi.usageByUser).mockResolvedValue(emptyUserPage)
+
+        const stats = useUsageStats()
+        await stats.load()
+
+        expect(stats.chartBuckets.value).toEqual([])
+        expect(stats.chartUnit.value).toBe('일별')
+    })
 })
