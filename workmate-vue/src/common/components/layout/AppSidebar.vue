@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 공통 앱 사이드바 쉘 (모든 앱 화면 공유) — Gemini 스타일.
- * 상단: 로고·새 채팅 / 메뉴 / 최근 채팅 목록 / 하단: 사용자·로그아웃.
+ * 상단: 로고·새 채팅 / 메뉴 / 최근 채팅 목록 / 하단: 사용자 계정 메뉴(내 사용량·로그아웃).
  *
  * 참고(모듈 경계): "최근 채팅"은 chat 데이터라 chat.store를 읽는다.
  * 채팅이 주인공인 제품의 쉘이라 상시 노출하는 의도된 결합이다(데이터 소유는 chat 모듈).
@@ -10,7 +10,9 @@ import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
+    BarChart3,
     BookText,
+    ChevronsUpDown,
     LogOut,
     MessageSquare,
     Mic,
@@ -20,6 +22,14 @@ import {
     Trash2,
 } from 'lucide-vue-next'
 import { Button } from '@/common/components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/common/components/ui/dropdown-menu'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import BrandMark from '@/common/components/BrandMark.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -185,22 +195,50 @@ async function confirmDeleteRoom(): Promise<void> {
             @confirm="confirmDeleteRoom"
         />
 
-        <!-- 하단 사용자 — 이름을 누르면 본인 사용량 화면으로 간다(메뉴를 늘리지 않는 진입점) -->
-        <div class="flex items-center justify-between border-t p-3">
-            <RouterLink
-                :to="{ name: 'my-usage' }"
-                class="min-w-0 flex-1 rounded-md px-2 py-1 hover:bg-accent"
-                :class="{ 'bg-accent': route.path.startsWith('/usage') }"
-                title="내 사용량 보기"
-            >
-                <p class="truncate text-sm font-medium">{{ auth.user?.userName }}</p>
-                <p class="text-xs text-muted-foreground">
-                    {{ auth.isAdmin ? '관리자' : '사용자' }} · 사용량 보기
-                </p>
-            </RouterLink>
-            <Button variant="ghost" size="icon" title="로그아웃" @click="logout">
-                <LogOut class="size-4" />
-            </Button>
+        <!--
+            하단 사용자 — 이름을 누르면 계정 메뉴가 열린다(흔한 사용자 메뉴 패턴).
+            사이드바 메뉴를 늘리지 않으면서 계정 관련 항목을 한곳에 모은다.
+        -->
+        <div class="border-t p-3">
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <button
+                        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent"
+                        :class="{ 'bg-accent': route.path.startsWith('/usage') }"
+                    >
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-sm font-medium">
+                                {{ auth.user?.userName }}
+                            </span>
+                            <span class="block text-xs text-muted-foreground">
+                                {{ auth.isAdmin ? '관리자' : '사용자' }}
+                            </span>
+                        </span>
+                        <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                </DropdownMenuTrigger>
+                <!-- 사이드바가 화면 왼쪽 끝이라 위쪽으로 펼친다 -->
+                <DropdownMenuContent align="start" side="top" class="w-56">
+                    <DropdownMenuLabel class="font-normal">
+                        <span class="block truncate text-sm font-medium">
+                            {{ auth.user?.userName }}
+                        </span>
+                        <span class="block text-xs text-muted-foreground">
+                            {{ auth.isAdmin ? '관리자' : '사용자' }}
+                        </span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @select="router.push({ name: 'my-usage' })">
+                        <BarChart3 class="size-4" />
+                        내 사용량
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" @select="logout">
+                        <LogOut class="size-4" />
+                        로그아웃
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     </aside>
 </template>
