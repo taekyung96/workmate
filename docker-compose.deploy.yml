@@ -2,7 +2,7 @@
 # 배포용 compose — 서버는 GHCR 이미지를 "받기만" 한다.
 # 소스 빌드가 없으므로 서버에 JDK·Node·Gradle 이 필요 없다.
 #
-#   git clone https://github.com/taekyung96/workmate.git   # db/init/*.sh(롤 생성·데모 승격) 이 필요해서 클론한다
+#   git clone https://github.com/taekyung96/workmate.git   # db/init/19-grafana-readonly.sh 가 필요해서 클론한다
 #   cd workmate && cp .env.example .env && vi .env          # 비밀값 채우기
 #   docker compose -f docker-compose.deploy.yml up -d
 #
@@ -35,7 +35,8 @@ services:
         volumes:
             - workmate-db-data:/var/lib/postgresql/data
             # 스키마·시드는 더 이상 여기서 만들지 않는다 — WAS 기동 시 Flyway(db/migration)가 적용한다.
-            # 이 디렉토리에는 initdb 단계에서만 돌아야 하는 두 개(grafana 롤 생성·데모 관리자 승격)만 남아 있다.
+            # 이 디렉토리에는 initdb 단계에서만 돌아야 하는 19-grafana-readonly.sh(롤 생성) 하나만 남아 있다.
+            # 데모 계정·콘텐츠는 scripts/bootstrap-demo-data.sh 가 WAS 기동 후에 만든다(Flyway 로 테이블이 생긴 뒤라야 한다).
             # 과거 스키마 SQL 은 db/init/legacy/ 에 대조용으로 보관 중이며 마운트되지 않는다.
             - ./db/init:/docker-entrypoint-initdb.d
         # 호스트에 5432 를 열지 않는다 — 같은 도커 네트워크의 was 만 접근한다
