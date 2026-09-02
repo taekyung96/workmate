@@ -26,6 +26,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [ADR-0003. WAS 수정 허용 & 가이드 관리자 권한](project/adr/0003-was-modifiable-and-guide-admin-authz.md) | WAS 무변경 원칙 완화, 가이드 수정·삭제 관리자 허용  |
 | [ADR-0004. 브랜치 전략 — GitHub Flow](project/adr/0004-github-flow-branching.md)                         | Git Flow·develop 기각, PR+CI 로 main 보호           |
 | [ADR-0005. Flyway 마이그레이션 전환](project/adr/0005-flyway-migration.md)                                | db/init 3갈래 적용 경로를 Flyway 하나로 통합        |
+| [ADR-0006. Redis 분산 상태 저장소](project/adr/0006-redis-distributed-state.md)                           | 세션·중복로그인 차단·레이트리밋을 인스턴스 간 공유  |
 
 ---
 
@@ -97,6 +98,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [RAG 검색 품질 평가 하네스 — 구현 계획](features/rag-eval/RAG_EVAL_HARNESS_PLAN.md)   | 위 설계의 작업 계획서     |
 | [RAG 검색 품질 평가 리포트 (2026-07-29)](features/rag-eval/REPORT-2026-07-29.md)      | 첫 평가 — 골든셋 23문항·코퍼스 17건 (전 구간 포화) |
 | [RAG 검색 품질 평가 리포트 (2026-08-28)](features/rag-eval/REPORT-2026-08-28.md)      | 재평가 — 골든셋 33문항·코퍼스 34건, 운영 기본값 근거 |
+| [Redis 도입 전후 검증 리포트 (2026-09-02)](features/redis/REPORT-2026-09-02.md)       | 인스턴스 2개에서 세션·F1-08·레이트리밋 전후 측정 |
 
 ---
 

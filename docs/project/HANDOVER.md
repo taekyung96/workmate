@@ -30,6 +30,7 @@
 | **배포** | **WSL2 에서 가동 중.** Cloudflare Quick Tunnel 로 공개(임시 주소) — [12. 운영 가이드](../development/12_OPERATIONS.md) |
 | 관측     | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana                                                |
 | 사용량   | 토큰을 `llm_usage` 에 기록 + 관리자 대시보드(`/admin/usage`) + **본인 사용량**(`/usage`, 사이드바 계정 메뉴)          |
+| 분산     | **Redis 로 세션·SessionRegistry·레이트리밋 공유** — 인스턴스 2개로 전후 측정 완료. [ADR-0006](adr/0006-redis-distributed-state.md) · [리포트](../features/redis/REPORT-2026-09-02.md) |
 | RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회                                                                                 |
 
 ### 다음에 할 일
@@ -37,9 +38,10 @@
 **끝난 것**: Flyway 도입(→ [ADR-0005](adr/0005-flyway-migration.md)) · 관리자 사용량 대시보드 · 본인 사용량 화면.
 남은 과제:
 
-1. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고).
-   **부하 테스트보다 먼저 한다** — 그래야 도입 전/후를 숫자로 비교할 수 있다
-2. **페이지 인식 도우미 챗봇** — 기능 확장
+**끝난 것 추가**: Redis 분산 상태(→ [ADR-0006](adr/0006-redis-distributed-state.md)).
+
+1. **페이지 인식 도우미 챗봇** — 기능 확장
+2. **부하 테스트** — Redis 가 들어갔으니 이제 인스턴스를 늘려도 기능이 안 깨진다. 수평 확장 자체를 측정할 수 있다
 
 그 밖에 계속 남아 있는 것:
 
@@ -70,14 +72,14 @@
 - **비용은 추정치다.** `app.usage.pricing` 의 단가로 계산하며 실제 청구액이 아니다.
   `model_name` 에는 별칭(`gemini-flash-latest`)이 아니라 **제공자가 해석한 실제 이름**(`gemini-3.7-flash`)이
   저장되므로, 별칭이 새 버전을 가리키면 단가를 추가해야 한다 — 그전까지는 "단가 미등록 N건" 으로 드러난다
-- **세션·SessionRegistry·레이트리미터가 인메모리**다. 인스턴스를 늘리면 조용히 깨진다 → Redis 필요
 - **WEB→WAS 신원 전달이 서명 없는 평문 헤더(`X-User-Seq`)다.** WEB 의 `RestClientConfig` 가
   세션의 로그인 사용자로 `set()` 해 덮어쓰므로 **브라우저는 위조할 수 없다**. 다만 **WAS 는 이 헤더를
   검증 없이 믿으므로**, 8081 에 직접 닿을 수 있으면 아무나 관리자가 된다. 지금 이를 막는 것은
   **네트워크 격리뿐**이다 — `docker-compose.deploy.yml` 은 8081 을 호스트에 열지 않는다
   (개발용 `docker-compose.yml` 은 편의상 연다). 서비스가 늘거나 WAS 가 여러 노드가 되면
   **짧은 수명의 서명 토큰**으로 바꿔야 한다. [ADR-0001](adr/0001-hybrid-ssr-to-vue3-spa.md) 은
-  *브라우저* 인증만 다루고 이 구간은 다루지 않는다
+  *브라우저* 인증만 다루고 이 구간은 다루지 않는다.
+  **Redis 도입으로 WAS 를 여러 개 띄울 수 있게 됐으므로 재검토 시점이 가까워졌다**
 - **데모 계정은 Flyway 마이그레이션에 없다.** 이메일이 배포마다 다른 AES 키로 암호화돼야 해서
   스키마 마이그레이션에 고정 암호문을 넣을 수 없기 때문이다(의도적 — D4). 대신
   `scripts/bootstrap-demo-data.sh` 가 실제 AES 키를 쥔 채로 계정·콘텐츠를 직접 만든다(멱등,
