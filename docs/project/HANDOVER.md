@@ -23,18 +23,18 @@
 | 영역     | 상태                                                                                                                   |
 | -------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 기능     | 채팅(SSE·RAG)·영수증·가이드·회의록·관리자·소셜 로그인                                                                  |
-| 테스트   | WAS 105 · WEB 9 · Vue 3 (`./gradlew :workmate-was:test` 등)                                                            |
+| 테스트   | WAS 122 · WEB 9 · Vue 11 (`./gradlew :workmate-was:test` · `npm run test:unit`)                                        |
 | CI       | push·PR 마다 테스트, `main` 머지 시 GHCR 이미지 push                                                                   |
-| 브랜치   | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수). [ADR-0004](adr/0004-github-flow-branching.md)                   |
+| 브랜치   | **GitHub Flow** — `main` 보호(PR 필수 + CI 통과 필수), 머지 시 브랜치 자동 삭제. [ADR-0004](adr/0004-github-flow-branching.md) |
 | 컨테이너 | 개발 `docker-compose.yml` / 배포 `docker-compose.deploy.yml`(GHCR pull)                                                |
 | **배포** | **WSL2 에서 가동 중.** Cloudflare Quick Tunnel 로 공개(임시 주소) — [12. 운영 가이드](../development/12_OPERATIONS.md) |
 | 관측     | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana                                                |
-| 사용량   | 토큰을 `llm_usage` 에 기록 + **관리자 대시보드**(`/admin/usage`) — 기간별 요약·기능별·일별·사용자별                   |
+| 사용량   | 토큰을 `llm_usage` 에 기록 + 관리자 대시보드(`/admin/usage`) + **본인 사용량**(`/usage`, 사이드바 계정 메뉴)          |
 | RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회                                                                                 |
 
 ### 다음에 할 일
 
-**끝난 것**: Flyway 도입(→ [ADR-0005](adr/0005-flyway-migration.md)) · 관리자 사용량 대시보드.
+**끝난 것**: Flyway 도입(→ [ADR-0005](adr/0005-flyway-migration.md)) · 관리자 사용량 대시보드 · 본인 사용량 화면.
 남은 과제:
 
 1. **Redis 도입** — 세션·SessionRegistry·레이트리미터가 인메모리라 인스턴스를 못 늘린다(아래 한계 참고)
@@ -44,9 +44,19 @@
 
 - **도메인 연결** — 확보하면 [12. 운영 가이드 §8](../development/12_OPERATIONS.md) 대로 고정 터널로 전환.
   소셜 로그인 콜백도 이때 등록할 수 있다
-- **프론트 테스트 보강** — 현재 8건(사용량 대시보드에서 3→8). 공통 composable·store 위주로 더 늘린다
+- **프론트 테스트 보강** — 현재 11건(사용량 작업에서 3→11). 공통 composable·store 위주로 더 늘린다
 - **부하 테스트** — k6 로 SSE 동시접속 한계 측정. **부하 생성기와 대상 서버를 분리**해야 숫자가 유효하다
 - **RAG 권한 필터** — 아래 한계의 2번. 평가 하네스가 있어 개선을 수치로 증명할 수 있다
+
+### 사용량 화면 설계 메모
+
+- **표시부는 공통**이다 — `common/components/usage/UsageOverview.vue` 를 관리자 화면과 본인 화면이
+  함께 쓴다. 모듈끼리 서로의 내부를 import 하지 않는 규칙이라 공유물은 `common/` 에 둔다
+- **본인 조회 대상은 `X-User-Seq` 헤더로만 정한다.** WEB 의 RestClient 인터셉터가 세션 값으로
+  덮어쓰므로 브라우저가 조작할 수 없다. **사용자 번호를 파라미터로 받지 않는 것 자체가 방어 장치**다
+- **차트는 기간이 8일을 넘으면 주 단위로 묶는다.** 30일을 일별 막대 30개로 그리면 좁아서 못 읽는다.
+  집계는 서버가 계속 일별로 주고, 묶는 것은 표현 사정이라 화면에서 한다
+- **차트 라이브러리를 쓰지 않는다.** 기능 5종 + 막대 7개 이하 규모라 CSS 로 충분하다
 
 ### 알려진 한계 (숨기지 말고 설명할 것)
 
