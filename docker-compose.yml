@@ -79,6 +79,9 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             DB_HOST: db
+            # 컨테이너 안에서 localhost 는 자기 자신이다 — 서비스명으로 붙어야 한다.
+            # 빠지면 레이트리미터가 fail-open 이라 조용히 무력화된다(에러가 안 난다)
+            REDIS_HOST: redis
             POSTGRES_DB: ${POSTGRES_DB}
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -104,6 +107,8 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             WAS_BASE_URL: http://was:8081
+            # 세션 저장소. 빠지면 localhost:6379 로 붙으려다 기동 자체가 실패한다
+            REDIS_HOST: redis
             # 소셜 로그인(F1-1) 자격증명 — 미주입 시 not-configured 로 떨어져 버튼이 동작하지 않는다.
             # 배포 도메인에서 쓰려면 각 제공자 콘솔에 콜백 URL 도 등록해야 한다.
             NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-not-configured}

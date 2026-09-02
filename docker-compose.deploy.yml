@@ -71,6 +71,9 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             DB_HOST: db
+            # 컨테이너 안에서 localhost 는 자기 자신이다 — 서비스명으로 붙어야 한다.
+            # 빠지면 레이트리미터가 fail-open 이라 조용히 무력화된다(에러가 안 난다)
+            REDIS_HOST: redis
             POSTGRES_DB: ${POSTGRES_DB}
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -107,6 +110,8 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             WAS_BASE_URL: http://was:8081
+            # 세션 저장소. 빠지면 localhost:6379 로 붙으려다 기동 자체가 실패한다
+            REDIS_HOST: redis
             # 리버스 프록시(터널) 뒤에서 X-Forwarded-* 를 신뢰한다.
             # 없으면 OAuth 리다이렉트 URI 가 http 로 만들어지고 세션 쿠키의 Secure 판정도 틀어진다
             SERVER_FORWARD_HEADERS_STRATEGY: framework
