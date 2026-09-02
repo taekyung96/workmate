@@ -50,6 +50,20 @@ services:
             timeout: 5s
             retries: 10
 
+    # Redis — 분산 상태 저장소. 호스트에 6379 를 열지 않는다(내부망 전용, ADR-0001 과 같은 원칙)
+    redis:
+        image: redis:7-alpine
+        container_name: workmate-redis
+        restart: unless-stopped
+        command: redis-server --appendonly yes
+        volumes:
+            - workmate-redis-data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+
     was:
         image: ghcr.io/taekyung96/workmate-was:${IMAGE_TAG:-latest}
         container_name: workmate-was
@@ -71,6 +85,8 @@ services:
         # 호스트에 8081 을 열지 않는다 — WAS 는 내부망에만 둔다 (ADR-0001)
         depends_on:
             db:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-fsS", "http://localhost:8081/api/v1/health"]
@@ -103,6 +119,8 @@ services:
             GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
         depends_on:
             was:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-fsS", "http://localhost:8080/"]
@@ -161,6 +179,7 @@ services:
 
 volumes:
     workmate-db-data:
+    workmate-redis-data:
     workmate-uploads:
     workmate-prometheus-data:
     workmate-grafana-data:

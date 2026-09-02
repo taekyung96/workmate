@@ -41,6 +41,30 @@ services:
             timeout: 5s
             retries: 10
 
+    # ---------------------------------------------------------------
+    # Redis — 분산 상태 저장소 (세션 · SessionRegistry · 레이트리밋)
+    #
+    # WEB 과 WAS 가 같은 인스턴스를 공유하되 키 네임스페이스로 나눈다:
+    #   workmate:session:*    (WEB, Spring Session 이 관리)
+    #   workmate:ratelimit:*  (WAS, ChatRateLimiter)
+    #
+    # appendonly 를 켜는 이유: 세션이 여기 있으므로 재시작에 전부 날아가면
+    # 로그인한 사용자가 전부 튕긴다. RDB 스냅샷만으로는 마지막 저장 이후가 사라진다.
+    # ---------------------------------------------------------------
+    redis:
+        image: redis:7-alpine
+        container_name: workmate-redis-dev
+        command: redis-server --appendonly yes
+        ports:
+            - "6379:6379"
+        volumes:
+            - workmate-redis-data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+
     # ↓ was/web 은 'full' 프로파일에서만 뜬다 (기본 up 은 db 만 → 로컬 IDE 개발 흐름 보존)
     #   개발 중 DB 만:  docker compose up -d db
     #   전체 원클릭:    docker compose --profile full up --build
@@ -66,6 +90,8 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+            redis:
+                condition: service_healthy
 
     web:
         profiles: ["full"]
@@ -87,7 +113,10 @@ services:
             GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
             GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
         depends_on:
-            - was
+            was:
+                condition: service_started
+            redis:
+                condition: service_healthy
 
     # ↓ 관측 스택(F-OBS 슬라이스 5) — 'obs' 프로파일에서만 뜬다. 평소 up -d 에는 안 나온다.
     #   개발 중 앱까지 관찰:  docker compose --profile full --profile obs up -d
@@ -123,5 +152,6 @@ services:
 
 volumes:
     workmate-db-data:
+    workmate-redis-data:
     workmate-prometheus-data:
     workmate-grafana-data:
