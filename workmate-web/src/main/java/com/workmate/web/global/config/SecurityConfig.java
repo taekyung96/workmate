@@ -16,7 +16,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -47,6 +46,7 @@ public class SecurityConfig {
     private final SocialLoginSuccessHandler socialLoginSuccessHandler;
     private final SocialLoginFailureHandler socialLoginFailureHandler;
     private final ObjectMapper objectMapper;
+    private final SessionRegistry sessionRegistry;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -95,7 +95,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .maximumSessions(1)                      // 중복 로그인 방지 (F1-08)
                 .maxSessionsPreventsLogin(false)          // 새 로그인 허용, 기존 세션 만료
-                .sessionRegistry(sessionRegistry()));
+                // Redis 를 보는 레지스트리다 (RedisSessionConfig) — 인스턴스가 늘어도 판단이 하나다
+                .sessionRegistry(sessionRegistry));
         return http.build();
     }
 
@@ -113,11 +114,6 @@ public class SecurityConfig {
             ? ApiResponse.success()
             : ApiResponse.error(message);
         response.getWriter().write(objectMapper.writeValueAsString(body));
-    }
-
-    @Bean
-    public SessionRegistry sessionRegistry() {
-        return new SessionRegistryImpl();
     }
 
     /** 세션 만료 이벤트를 세션 레지스트리에 전달 — 동시성 제어에 필수 */

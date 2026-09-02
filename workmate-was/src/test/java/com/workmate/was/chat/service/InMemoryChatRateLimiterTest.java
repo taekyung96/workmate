@@ -9,12 +9,12 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * ChatRateLimiter 단위 테스트 (F2-11).
+ * InMemoryChatRateLimiter 단위 테스트 (F2-11).
  */
-class ChatRateLimiterTest {
+class InMemoryChatRateLimiterTest {
 
     private ChatRateLimiter newLimiter(int limit) {
-        ChatRateLimiter limiter = new ChatRateLimiter();
+        InMemoryChatRateLimiter limiter = new InMemoryChatRateLimiter();
         ReflectionTestUtils.setField(limiter, "limitPerMinute", limit);
         return limiter;
     }

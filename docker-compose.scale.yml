@@ -1,0 +1,35 @@
+# =============================================================
+# 다중 인스턴스 검증용 오버라이드 (ADR-0006 · Redis 분산 상태)
+#
+# 개발 compose 는 WEB 에 고정 이름(container_name)과 고정 포트(8080:8080)를 주는데,
+# 둘 다 --scale 을 막는다. 이 파일은 그 둘만 걷어내 인스턴스를 여러 개 띄울 수 있게 한다.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.scale.yml up -d --scale web=2
+#   docker compose -f docker-compose.yml -f docker-compose.scale.yml port web 8080 --index=1
+#
+# 세션·중복로그인 차단·레이트리밋이 인스턴스를 건너 동작하는지 재현할 때 쓴다.
+# =============================================================
+services:
+    web:
+        # 이름을 고정하면 두 번째 인스턴스가 이름 충돌로 못 뜬다
+        container_name: !reset null
+        # 리포트의 "도입 전" 수치를 잴 때만 Redis 이전 이미지로 갈아끼운다.
+        # (--build 없이 up 하면 여기 적힌 태그의 기존 이미지를 그대로 쓴다)
+        image: ${SCALE_TEST_WEB_IMAGE:-workmate-dev-web:latest}
+        # 호스트 포트를 도커가 자동 배정하게 한다 (고정하면 포트 충돌)
+        ports: !override
+            - "8080"
+
+    was:
+        # 레이트리미터는 WAS 에 있다 — WEB 만 늘려서는 카운터 공유를 증명할 수 없다.
+        # WAS 도 여러 개로 띄우려면 고정 이름·고정 포트를 걷어내야 한다.
+        container_name: !reset null
+        ports: !override
+            - "8081"
+        environment:
+            # 레이트리밋 검증을 짧게 끝내려고 한도를 낮춘다(기본 20 → 5).
+            # 두 WAS 인스턴스에 번갈아 요청해서 6번째가 429 면 카운터가 공유된 것이다.
+            APP_CHAT_RATE_LIMIT_PER_MINUTE: ${SCALE_TEST_RATE_LIMIT:-5}
+            # 'memory' 로 두면 Redis 도입 전 동작(인스턴스별 카운터)을 재현할 수 있다 —
+            # 리포트의 '도입 전' 수치를 재는 데 쓴다
+            RATE_LIMIT_STORE: ${SCALE_TEST_RATE_LIMIT_STORE:-redis}

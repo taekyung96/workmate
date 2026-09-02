@@ -50,6 +50,20 @@ services:
             timeout: 5s
             retries: 10
 
+    # Redis — 분산 상태 저장소. 호스트에 6379 를 열지 않는다(내부망 전용, ADR-0001 과 같은 원칙)
+    redis:
+        image: redis:7-alpine
+        container_name: workmate-redis
+        restart: unless-stopped
+        command: redis-server --appendonly yes
+        volumes:
+            - workmate-redis-data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+
     was:
         image: ghcr.io/taekyung96/workmate-was:${IMAGE_TAG:-latest}
         container_name: workmate-was
@@ -57,6 +71,9 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             DB_HOST: db
+            # 컨테이너 안에서 localhost 는 자기 자신이다 — 서비스명으로 붙어야 한다.
+            # 빠지면 레이트리미터가 fail-open 이라 조용히 무력화된다(에러가 안 난다)
+            REDIS_HOST: redis
             POSTGRES_DB: ${POSTGRES_DB}
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -71,6 +88,8 @@ services:
         # 호스트에 8081 을 열지 않는다 — WAS 는 내부망에만 둔다 (ADR-0001)
         depends_on:
             db:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-fsS", "http://localhost:8081/api/v1/health"]
@@ -91,6 +110,8 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             WAS_BASE_URL: http://was:8081
+            # 세션 저장소. 빠지면 localhost:6379 로 붙으려다 기동 자체가 실패한다
+            REDIS_HOST: redis
             # 리버스 프록시(터널) 뒤에서 X-Forwarded-* 를 신뢰한다.
             # 없으면 OAuth 리다이렉트 URI 가 http 로 만들어지고 세션 쿠키의 Secure 판정도 틀어진다
             SERVER_FORWARD_HEADERS_STRATEGY: framework
@@ -103,6 +124,8 @@ services:
             GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
         depends_on:
             was:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-fsS", "http://localhost:8080/"]
@@ -161,6 +184,7 @@ services:
 
 volumes:
     workmate-db-data:
+    workmate-redis-data:
     workmate-uploads:
     workmate-prometheus-data:
     workmate-grafana-data:

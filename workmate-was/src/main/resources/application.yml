@@ -8,6 +8,13 @@ spring:
         multipart:
             max-file-size: 25MB # 업로드 허용 크기 — 영수증 이미지 + 회의 오디오(F8-1) 수용 (기본 1MB로는 부족)
             max-request-size: 30MB
+    data:
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            # 연결이 안 될 때 무한 대기하지 않는다 — 레이트리밋 때문에 채팅 전체가 멈추면 안 된다
+            timeout: 2s
+            connect-timeout: 2s
     jpa:
         hibernate:
             ddl-auto: validate # 스키마는 Flyway 마이그레이션(db/migration)으로만 관리 (AI 임의 변경 방지)
@@ -76,6 +83,9 @@ app:
     chat:
         context-size: 10
         rate-limit-per-minute: 20
+        # 레이트리밋 카운터 저장소 — redis(기본) | memory
+        # memory 는 단일 인스턴스 전용이다. 인스턴스가 2개 이상이면 한도가 곱해진다
+        rate-limit-store: ${RATE_LIMIT_STORE:redis}
         rag-top-k: 4
         rag-threshold: 0.4
     # 관리자 사용량 대시보드(PLAN-usage-dashboard.md §4) — 추정 비용 환산.

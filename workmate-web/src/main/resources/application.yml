@@ -12,6 +12,22 @@ spring:
             max-request-size: 30MB
     thymeleaf:
         cache: false # prod 프로파일에서 true 로 재정의
+    data:
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            timeout: 2s
+            connect-timeout: 2s
+    session:
+        # 세션을 Redis 에 저장한다. 인스턴스를 늘려도 로그인이 유지된다
+        store-type: redis
+        # 톰캣 기본값(30분)을 명시한다 — 저장소가 바뀌어도 만료 정책은 같아야 한다
+        timeout: 30m
+        redis:
+            # WAS 의 레이트리밋 키(workmate:ratelimit:*)와 섞이지 않게 네임스페이스를 나눈다
+            namespace: workmate:session
+            # 사용자별 세션 인덱스를 만든다 — SessionRegistry 가 이걸 써서 세션을 찾는다
+            repository-type: indexed
     security:
         oauth2:
             client:
