@@ -174,7 +174,7 @@ public class LlmUsageQueryServiceImpl implements LlmUsageQueryService {
         return from != null ? from : resolvedTo.minusDays(DEFAULT_RANGE_DAYS - 1L);
     }
 
-    /** LlmFeature 5종을 항상 채운다 — DB 에는 호출이 있는 기능만 나오므로 0건 기능은 빈 상태를 위해 서비스가 채운다 */
+    /** LlmFeature 전 기능을 항상 채운다 — DB 에는 호출이 있는 기능만 나오므로 0건 기능은 빈 상태를 위해 서비스가 채운다 */
     private List<FeatureUsageVo> fillFeatures(List<FeatureAggregateRow> rows) {
         Map<String, FeatureAggregateRow> byFeature = rows.stream()
                 .collect(Collectors.toMap(FeatureAggregateRow::getFeature, r -> r));
