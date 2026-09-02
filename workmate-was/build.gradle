@@ -51,6 +51,8 @@ dependencies {
     // Lettuce(기본 클라이언트)는 커넥션을 스레드 간 공유하므로 별도 풀 설정이 필요 없다
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // 도우미 SSE Flux 검증용 (StepVerifier)
+    testImplementation 'io.projectreactor:reactor-test'
 }
 
 tasks.named('test') {
