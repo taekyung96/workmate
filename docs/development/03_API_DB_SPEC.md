@@ -60,6 +60,7 @@ WAS REST API의 요청/응답 규격과 DB 테이블 정의를 확정한다.
 | C2  | `GET /api/v1/chat/rooms/{roomSeq}/messages`                                    | 방 대화 이력                                     | F2-08    | 1    |
 | C3  | `POST /api/v1/chat/stream`                                                     | 메시지 전송 + SSE 스트리밍 응답 (방 없으면 생성) | F2-02~06 | 1    |
 | C4  | `POST /api/v1/chat/rooms/{roomSeq}/delete`                                     | 방 논리 삭제                                     | F2-04    | 1    |
+| AS1 | `POST /api/v1/assistant/stream`                                                 | 페이지 도우미 SSE (**방·이력 없음**)             | F10-01   | 5    |
 | R1  | `POST /api/v1/receipts/analyze`                                                | 이미지 분석 + **이력 자동 저장**                 | F3-08    | 2    |
 | R2  | `POST /api/v1/receipts/{receiptSeq}/update`                                    | 추출값 수정 / 결제 건 선택 확정                  | F3-08a·b | 2    |
 | R3  | `POST /api/v1/receipts`                                                        | 수동 등록 (OCR 실패 폴백 경로 전용)              | F3.3     | 2    |
