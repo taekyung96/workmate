@@ -48,6 +48,16 @@ jobs:
                     --health-timeout 5s
                     --health-retries 10
 
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 10
+
         env:
             # application-local.yml 은 git 미추적이라 CI 에는 없다 → 환경변수로 주입한다
             SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/workmate_db
@@ -57,6 +67,10 @@ jobs:
             # (실제 API 를 부르는 유지보수 유틸리티는 @Tag("maintenance") 로 기본 test 에서 제외)
             # 이 키는 자동설정의 플레이스홀더 해석용 더미다.
             GEMINI_API_KEY: dummy-key-for-ci
+            # Redis 를 쓰는 테스트가 이 주소로 붙는다. 로컬에서는 compose 의 redis(6379)가 같은 주소라
+            # @SpringBootTest 로 앱 컨텍스트를 올리는 테스트는 이 주소를 쓴다
+            SPRING_DATA_REDIS_HOST: localhost
+            SPRING_DATA_REDIS_PORT: 6379
 
         steps:
             - uses: actions/checkout@v4
