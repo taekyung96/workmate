@@ -39,6 +39,10 @@ dependencies {
     // 개발용 자동 재시작·라이브리로드 — 템플릿/정적자원(css·js·html) 편집이 서버 재시작 없이 반영된다
     // (Thymeleaf 캐시 자동 off). 운영 빌드에는 포함되지 않는다.
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // 세션을 Redis 에 둔다 — 인스턴스가 2개면 톰캣 인메모리 세션은 요청마다 로그아웃된다.
+    // SessionRegistry(F1-08 중복 로그인 차단)도 같은 저장소를 보게 된다
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.session:spring-session-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
 }
