@@ -47,7 +47,13 @@ dependencies {
     implementation 'org.springframework.security:spring-security-crypto'
     // 무거운 조회(다중 조인·동적 검색·페이징)용 — 단순 CRUD는 계속 JPA 사용 (가이드 §2)
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    // 분산 레이트리밋 — 인스턴스가 여러 개일 때 카운터를 공유해야 한도가 지켜진다.
+    // Lettuce(기본 클라이언트)는 커넥션을 스레드 간 공유하므로 별도 풀 설정이 필요 없다
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Redis 를 실제로 띄워 검증한다 — 인메모리 가짜로는 INCR/EXPIRE 원자성을 증명할 수 없다
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.named('test') {
