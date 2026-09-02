@@ -3,6 +3,7 @@ package com.workmate.was.chat.service.impl;
 import com.workmate.was.chat.service.ChatStreamClient;
 import com.workmate.was.guide.tool.GuideTools;
 import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.usage.tool.UsageTools;
 import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.receipt.tool.ReceiptTools;
 import lombok.extern.slf4j.Slf4j;
@@ -34,20 +35,22 @@ public class ChatStreamClientImpl implements ChatStreamClient {
     private final ChatClient chatClient;
     private final ReceiptTools receiptTools;
     private final GuideTools guideTools;
+    private final UsageTools usageTools;
     private final LlmUsageService llmUsageService;
 
     public ChatStreamClientImpl(ChatClient.Builder chatClientBuilder,
                                 ReceiptTools receiptTools, GuideTools guideTools,
-                                LlmUsageService llmUsageService) {
+                                UsageTools usageTools, LlmUsageService llmUsageService) {
         this.chatClient = chatClientBuilder.build();
         this.receiptTools = receiptTools;
         this.guideTools = guideTools;
+        this.usageTools = usageTools;
         this.llmUsageService = llmUsageService;
     }
 
     @Override
-    public Flux<String> stream(Long userSeq, String model, String systemPrompt, List<Message> history,
-                               String userMessage, byte[] imageData, String imageMimeType) {
+    public Flux<String> stream(Long userSeq, String role, LlmFeature feature, String model, String systemPrompt,
+                               List<Message> history, String userMessage, byte[] imageData, String imageMimeType) {
         // 첫 토큰 전 실패(타임아웃·쿼터)만 1회 재시도한다 (F2.3).
         // 이미 토큰을 흘린 뒤 재시도하면 클라이언트에 중복 응답이 쌓이므로, 재시도 조건에서 제외한다.
         AtomicBoolean tokenEmitted = new AtomicBoolean(false);
@@ -73,8 +76,11 @@ public class ChatStreamClientImpl implements ChatStreamClient {
                             }
                         })
                         // @Tool 등록 + userSeq 컨텍스트 (F5-01·02·03). AI 가 필요 시에만 호출한다.
-                        .tools(receiptTools, guideTools)
-                        .toolContext(Map.of("userSeq", userSeq))
+                        // role 을 함께 싣는 이유: 도구가 스스로 권한을 검사해야 한다.
+                        // 프롬프트로 "관리자만 불러라"고 지시하는 것은 방어가 아니다.
+                        // null 이면 Map.of 가 NPE 를 던지므로 빈 문자열로 바꾼다 — 어떤 권한 검사도 통과하지 못하는 안전한 기본값이다
+                        .tools(receiptTools, guideTools, usageTools)
+                        .toolContext(Map.of("userSeq", userSeq, "role", role == null ? "" : role))
                         .stream()
                         // content() 대신 chatResponse() 를 쓰는 이유는 usage 메타데이터 때문이다.
                         // 바깥으로 내보내는 타입(Flux<String>)은 그대로라 호출부는 영향이 없다
@@ -88,7 +94,7 @@ public class ChatStreamClientImpl implements ChatStreamClient {
                 // 취소 시엔 usage 가 없어 토큰이 null 로 기록되지만 "누가 언제 썼는지"는 남는다
                 .doFinally(signal -> {
                     if (lastUsage.get() != null || tokenEmitted.get()) {
-                        llmUsageService.record(userSeq, LlmFeature.CHAT, responseModel.get(), lastUsage.get());
+                        llmUsageService.record(userSeq, feature, responseModel.get(), lastUsage.get());
                     }
                 });
     }

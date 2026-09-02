@@ -8,6 +8,7 @@ import com.workmate.was.chat.dao.ChatRoomRepository;
 import com.workmate.was.chat.service.ChatRateLimiter;
 import com.workmate.was.chat.service.ChatService;
 import com.workmate.was.chat.service.ChatStreamClient;
+import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.chat.service.RagPromptBuilder;
 import com.workmate.was.chat.vo.ChatImageVo;
 import com.workmate.was.chat.vo.ChatMessageVo;
@@ -127,7 +128,7 @@ public class ChatServiceImpl implements ChatService {
 
     /** {@inheritDoc} */
     @Override
-    public Flux<ServerSentEvent<String>> streamChat(Long userSeq, ChatStreamRequestVo request) {
+    public Flux<ServerSentEvent<String>> streamChat(Long userSeq, String role, ChatStreamRequestVo request) {
         // 첨부 이미지 디코딩 (있으면)
         byte[] imageData = decodeImage(request.getImage());
         boolean hasImage = imageData != null;
@@ -175,8 +176,8 @@ public class ChatServiceImpl implements ChatService {
         // 토큰 스트림 — 응답 전문을 누적해 done 시점에 저장
         StringBuilder accumulated = new StringBuilder();
         Flux<ServerSentEvent<String>> tokenEvents = chatStreamClient
-                .stream(userSeq, effectiveModel, effectiveSystemPrompt, prepared.history(),
-                        request.getMessage(), imageData, imageMimeType)
+                .stream(userSeq, role, LlmFeature.CHAT, effectiveModel, effectiveSystemPrompt,
+                        prepared.history(), request.getMessage(), imageData, imageMimeType)
                 .doOnNext(accumulated::append)
                 .doOnNext(token -> {
                     if (ttftRecorded.compareAndSet(false, true)) {

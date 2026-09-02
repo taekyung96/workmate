@@ -70,11 +70,11 @@ class ChatServiceImplStreamTest {
     void streams_meta_tokens_done_for_new_room() {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "지난달 영수증 총액?", true, List.of()));
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), eq("지난달 영수증 총액?"), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), eq("지난달 영수증 총액?"), any(), any()))
                 .thenReturn(Flux.just("6", "월"));
         when(persister.saveAssistant(eq(12L), eq("6월"), eq("gemini-2.5-flash"), anyList())).thenReturn(45L);
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(null, "지난달 영수증 총액?")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(null, "지난달 영수증 총액?")));
 
         assertThat(events).hasSize(4);
         assertThat(events.get(0).event()).isEqualTo("meta");
@@ -91,11 +91,11 @@ class ChatServiceImplStreamTest {
     void streams_without_meta_for_existing_room() {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "기존방", false, List.of()));
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.just("안녕"));
         when(persister.saveAssistant(eq(12L), eq("안녕"), anyString(), anyList())).thenReturn(46L);
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(12L, "hi")));
 
         assertThat(events).hasSize(2);
         assertThat(events.get(0).event()).isEqualTo("token");
@@ -107,10 +107,10 @@ class ChatServiceImplStreamTest {
     void emits_error_event_on_failure() {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "기존방", false, List.of()));
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.error(new RuntimeException("gemini down")));
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(12L, "hi")));
 
         assertThat(events).hasSize(1);
         assertThat(events.get(0).event()).isEqualTo("error");
@@ -124,11 +124,11 @@ class ChatServiceImplStreamTest {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "기존방", false, List.of()));
         // 실제 로그에서 관측된 형태 — 래핑된 RuntimeException 아래 503 이 원인으로 달려 온다
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Failed to generate content",
                         new IllegalStateException("503 . This model is currently experiencing high demand."))));
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(12L, "hi")));
 
         assertThat(events.get(0).event()).isEqualTo("error");
         assertThat(events.get(0).data()).contains("일시적으로 혼잡").contains("503");
@@ -143,10 +143,10 @@ class ChatServiceImplStreamTest {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "기존방", false, List.of()));
         // 503 재시도가 반쪽짜리 응답을 받으면 원인 체인에 503 이 남지 않고 파싱 예외만 올라온다
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.error(new IllegalStateException("Failed to parse the JSON string.")));
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(12L, "hi")));
 
         assertThat(events.get(0).data()).contains("일시적으로 혼잡");
     }
@@ -156,10 +156,10 @@ class ChatServiceImplStreamTest {
     void reports_quota_error_separately() {
         when(persister.prepare(eq(1L), any())).thenReturn(
                 new PreparedChat(12L, "기존방", false, List.of()));
-        when(chatStreamClient.stream(any(), any(), anyString(), anyList(), anyString(), any(), any()))
+        when(chatStreamClient.stream(any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
                 .thenReturn(Flux.error(new RuntimeException("429 RESOURCE_EXHAUSTED")));
 
-        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, request(12L, "hi")));
+        List<ServerSentEvent<String>> events = collect(service.streamChat(1L, "ROLE_USER", request(12L, "hi")));
 
         assertThat(events.get(0).data()).contains("무료 사용량").contains("429");
     }
@@ -167,7 +167,7 @@ class ChatServiceImplStreamTest {
     @Test
     @DisplayName("빈 메시지: 스트림 진입 전 IllegalArgumentException, 방 준비도 안 함")
     void rejects_blank_message() {
-        assertThatThrownBy(() -> service.streamChat(1L, request(null, "   ")))
+        assertThatThrownBy(() -> service.streamChat(1L, "ROLE_USER", request(null, "   ")))
                 .isInstanceOf(IllegalArgumentException.class);
         verify(persister, never()).prepare(any(), any());
     }

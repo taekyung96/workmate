@@ -1,5 +1,6 @@
 package com.workmate.was.chat.service;
 
+import com.workmate.was.usage.vo.LlmFeature;
 import org.springframework.ai.chat.messages.Message;
 import reactor.core.publisher.Flux;
 
@@ -17,6 +18,8 @@ public interface ChatStreamClient {
      * userSeq 는 Tool 실행 컨텍스트로 전달돼, 도구가 본인 데이터만 조회하도록 한다 (F5-03).
      *
      * @param userSeq       로그인 사용자 (Tool 컨텍스트)
+     * @param role          요청자 권한 (ROLE_USER·ROLE_ADMIN) — @Tool 이 ToolContext 로 읽어 권한을 검사한다
+     * @param feature       사용량 기록 분류 (CHAT · ASSISTANT)
      * @param model         사용할 모델명 (AI_MODEL 화이트리스트 통과값, F5-05)
      * @param systemPrompt  시스템 지시문
      * @param history       이전 대화 맥락 (시간순)
@@ -25,6 +28,6 @@ public interface ChatStreamClient {
      * @param imageMimeType 첨부 이미지 MIME 타입 (없으면 null)
      * @return 응답 토큰 Flux
      */
-    Flux<String> stream(Long userSeq, String model, String systemPrompt, List<Message> history,
-                        String userMessage, byte[] imageData, String imageMimeType);
+    Flux<String> stream(Long userSeq, String role, LlmFeature feature, String model, String systemPrompt,
+                        List<Message> history, String userMessage, byte[] imageData, String imageMimeType);
 }
