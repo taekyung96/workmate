@@ -6,6 +6,8 @@ import com.workmate.was.assistant.service.AssistantScreenContext;
 import com.workmate.was.assistant.service.AssistantService;
 import com.workmate.was.assistant.vo.AssistantStreamRequestVo;
 import com.workmate.was.chat.service.ChatRateLimiter;
+import com.workmate.was.chat.service.ChatModelResolver;
+import com.workmate.was.chat.service.ChatModelResolver.ModelChoice;
 import com.workmate.was.chat.service.ChatStreamClient;
 import com.workmate.was.guide.service.GuideRetriever;
 import com.workmate.was.chat.service.RagPromptBuilder;
@@ -16,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -56,13 +57,8 @@ public class AssistantServiceImpl implements AssistantService {
     private final RagPromptBuilder ragPromptBuilder;
     private final ChatStreamClient chatStreamClient;
     private final AssistantScreenContext screenContext;
+    private final ChatModelResolver chatModelResolver;
 
-    /**
-     * 도우미는 모델을 고르지 않는다 — 기본 모델로 고정한다.
-     * 제공자별 경로가 아니라 제공자 중립 환경변수를 읽는다 (채팅과 같은 이유).
-     */
-    @Value("${LLM_CHAT_MODEL:gemini-flash-latest}")
-    private String modelName;
 
     /** {@inheritDoc} */
     @Override
@@ -81,9 +77,13 @@ public class AssistantServiceImpl implements AssistantService {
                 + screenContext.describe(request.getRoute())
                 + ragPromptBuilder.build(chunks);
 
+        // 도우미는 사용자가 모델을 고르지 않으므로 기본 모델을 쓴다. 다만 제공자를 null 로 두면 안 된다 —
+        // 기본 모델이 Groq 계열이면 Groq 모델명을 Gemini 클라이언트로 보내게 되어 조용히 실패한다.
+        // 모델과 제공자를 항상 함께 정하도록 채팅과 같은 해석기를 쓴다
+        ModelChoice choice = chatModelResolver.resolve(null);
+
         Flux<ServerSentEvent<String>> tokens = chatStreamClient
-                // 도우미는 모델을 고르지 않으므로 제공자도 기본값(null)이다 — registry 가 기본 제공자로 떨어뜨린다
-                .stream(userSeq, role, LlmFeature.ASSISTANT, null, modelName, systemPrompt,
+                .stream(userSeq, role, LlmFeature.ASSISTANT, choice.provider(), choice.model(), systemPrompt,
                         toMessages(request.getHistory()), request.getMessage(), null, null)
                 .map(token -> sse("token", Map.of("delta", token)));
 

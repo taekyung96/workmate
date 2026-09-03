@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -43,15 +44,19 @@ class ChatServiceImplStreamTest {
     @Mock private com.workmate.was.guide.service.GuideRetriever guideRetriever;
     @Mock private com.workmate.was.common.service.CommonCodeService commonCodeService;
 
+    /** 해석기는 실물을 쓴다 — 모델·제공자를 함께 정하는 규칙까지 이 테스트가 지나가야 한다 */
+    private com.workmate.was.chat.service.ChatModelResolver modelResolver;
+
     private ChatServiceImpl service;
 
     @BeforeEach
     void setUp() {
+        modelResolver = new com.workmate.was.chat.service.ChatModelResolver(commonCodeService);
+        ReflectionTestUtils.setField(modelResolver, "defaultModel", "gemini-2.5-flash");
         service = new ChatServiceImpl(chatRoomRepository, chatMessageRepository,
                 chatStreamClient, persister, rateLimiter, new ObjectMapper(), guideRetriever,
-                new com.workmate.was.chat.service.RagPromptBuilder(), commonCodeService,
+                new com.workmate.was.chat.service.RagPromptBuilder(), modelResolver,
                 new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
-        ReflectionTestUtils.setField(service, "modelName", "gemini-2.5-flash");
     }
 
     private ChatStreamRequestVo request(Long roomSeq, String message) {
@@ -84,6 +89,26 @@ class ChatServiceImplStreamTest {
         assertThat(events.get(2).data()).isEqualTo("{\"delta\":\"월\"}");
         assertThat(events.get(3).event()).isEqualTo("done");
         assertThat(events.get(3).data()).contains("\"messageSeq\":45");
+    }
+
+    @Test
+    @DisplayName("토큰이 하나도 없으면 done 대신 error 를 내고 빈 답변을 저장하지 않는다")
+    void empty_stream_reports_error_instead_of_silence() {
+        when(persister.prepare(eq(1L), any())).thenReturn(
+                new PreparedChat(12L, "기존방", false, List.of()));
+        // 예외 없이 빈 스트림 — Groq gpt-oss-120b 가 도구 호출이 필요한 질문에서 보이는 실제 동작이다.
+        // 예외가 아니라 정상 종료라서 onErrorResume 에 걸리지 않는다
+        when(chatStreamClient.stream(any(), any(), any(), any(), any(), anyString(), anyList(), anyString(), any(), any()))
+                .thenReturn(Flux.empty());
+
+        List<ServerSentEvent<String>> events = collect(
+                service.streamChat(1L, "ROLE_USER", request(12L, "한도 얼마나 남았어?")));
+
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).event()).isEqualTo("error");
+        assertThat(events.get(0).data()).contains("답변을 만들지 못했");
+        // 빈 문자열이 대화에 남으면 다음 요청의 history 까지 오염된다
+        verify(persister, never()).saveAssistant(anyLong(), anyString(), anyString(), anyList());
     }
 
     @Test

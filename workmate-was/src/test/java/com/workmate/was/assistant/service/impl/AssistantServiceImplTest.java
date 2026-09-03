@@ -46,12 +46,25 @@ class AssistantServiceImplTest {
     @Mock private RagPromptBuilder ragPromptBuilder;
     @Mock private ChatStreamClient chatStreamClient;
     @Mock private AssistantScreenContext screenContext;
+    @Mock private com.workmate.was.common.service.CommonCodeService commonCodeService;
 
     private AssistantServiceImpl newService() {
-        AssistantServiceImpl service = new AssistantServiceImpl(
-                rateLimiter, guideRetriever, ragPromptBuilder, chatStreamClient, screenContext);
-        ReflectionTestUtils.setField(service, "modelName", "gemini-flash-latest");
-        return service;
+        return newService("gemini-flash-latest");
+    }
+
+    /**
+     * 기본 모델을 지정해 서비스를 만든다.
+     *
+     * @param defaultModel LLM_CHAT_MODEL 에 해당하는 기본 모델 코드
+     * @return 도우미 서비스
+     */
+    private AssistantServiceImpl newService(String defaultModel) {
+        com.workmate.was.chat.service.ChatModelResolver modelResolver =
+                new com.workmate.was.chat.service.ChatModelResolver(commonCodeService);
+        ReflectionTestUtils.setField(modelResolver, "defaultModel", defaultModel);
+        return new AssistantServiceImpl(
+                rateLimiter, guideRetriever, ragPromptBuilder, chatStreamClient, screenContext,
+                modelResolver);
     }
 
     private AssistantStreamRequestVo request(String message, String route) {
@@ -79,6 +92,22 @@ class AssistantServiceImplTest {
 
         verify(chatStreamClient).stream(eq(12L), eq("ROLE_USER"), eq(LlmFeature.ASSISTANT),
                 any(), anyString(), anyString(), any(), anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("도우미도 기본 모델의 제공자를 함께 보낸다 — 제공자를 비우면 Groq 모델이 Gemini 로 나간다")
+    void sends_provider_of_the_default_model() {
+        stubHappyPath("안녕");
+        // 기본 모델이 Groq 계열인 상황. 예전처럼 제공자를 null 로 고정하면 Groq 모델명이
+        // Gemini 클라이언트로 나가 예외 없이 빈 응답이 된다
+        when(commonCodeService.findAttr1("AI_MODEL", "qwen/qwen3.8-27b"))
+                .thenReturn(java.util.Optional.of("openai"));
+
+        newService("qwen/qwen3.8-27b")
+                .stream(12L, "ROLE_USER", request("이 화면 뭔가요", "my-usage")).blockLast();
+
+        verify(chatStreamClient).stream(anyLong(), any(), eq(LlmFeature.ASSISTANT), eq("openai"),
+                eq("qwen/qwen3.8-27b"), anyString(), any(), anyString(), any(), any());
     }
 
     @Test

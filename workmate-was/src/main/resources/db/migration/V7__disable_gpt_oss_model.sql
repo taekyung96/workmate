@@ -1,0 +1,20 @@
+-- Groq gpt-oss-120b 을 모델 드롭다운에서 내린다.
+--
+-- [왜]
+-- 도구 호출(@Tool)이 필요한 질문에서 이 모델만 빈 응답을 돌려준다. 예외도 아니고 오류도 아니라
+-- 도구가 아예 호출되지 않고 스트림이 그대로 끝난다 — 서버 로그에 [Tool] 기록조차 남지 않는다.
+-- 같은 질문·같은 서버·같은 경로에서 모델만 바꿔 재현했다:
+--     "내 사용량 한도 얼마나 남았어?"
+--       openai/gpt-oss-120b → 토큰 0개, 도구 호출 없음
+--       qwen/qwen3.8-27b    → 토큰 218개, [Tool] getMyUsage 호출됨
+-- 일반 대화는 정상이라 더 드러나지 않는다("1 더하기 1은?"은 잘 답한다). 그래서 사용자는
+-- 원인을 알 수 없는 침묵만 보게 된다.
+--
+-- [지우지 않고 use_yn 으로 내리는 이유]
+-- 이미 이 모델로 남은 chat_message.model_name·llm_usage.model_name 기록이 있다. 코드를 지우면
+-- 과거 기록이 무엇으로 답한 것인지 설명할 수 없게 된다. 목록에서만 빼고 코드는 남긴다
+-- (CommonCodeService 는 use_yn = true 인 것만 내려준다).
+--
+-- Spring AI 나 Groq 쪽에서 gpt-oss 의 스트리밍 도구 호출이 고쳐지면 관리자 > 공통 코드 화면에서
+-- 다시 켜면 된다 — 마이그레이션을 새로 만들 필요 없다.
+UPDATE common_code SET use_yn = false WHERE group_code = 'AI_MODEL' AND code = 'openai/gpt-oss-120b';
