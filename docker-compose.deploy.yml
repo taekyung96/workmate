@@ -78,10 +78,9 @@ services:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
             GEMINI_API_KEY: ${GEMINI_API_KEY}
-            # Groq(채팅) — 임베딩은 Gemini 를 그대로 쓰므로 두 키가 다 필요하다.
-            # LLM_CHAT_PROVIDER 로 채팅 제공자를 고른다 (openai=Groq | google-genai=Gemini)
+            # Groq(채팅) — 임베딩은 Gemini 를 쓰므로 두 키가 다 필요하다.
+            # 제공자는 재시작 없이 요청마다 정해진다 — AI_MODEL 공통코드의 attr1 이 단일 출처다.
             GROQ_API_KEY: ${GROQ_API_KEY:-not-configured}
-            LLM_CHAT_PROVIDER: ${LLM_CHAT_PROVIDER:-google-genai}
             LLM_CHAT_MODEL: ${LLM_CHAT_MODEL:-gemini-flash-latest}
             # 개인정보 AES 암복호화 키 — 없으면 AesCryptoConverter 생성 실패로 기동이 깨진다
             AES_SECRET_KEY: ${AES_SECRET_KEY}

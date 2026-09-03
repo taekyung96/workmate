@@ -82,7 +82,8 @@ public class AssistantServiceImpl implements AssistantService {
                 + ragPromptBuilder.build(chunks);
 
         Flux<ServerSentEvent<String>> tokens = chatStreamClient
-                .stream(userSeq, role, LlmFeature.ASSISTANT, modelName, systemPrompt,
+                // 도우미는 모델을 고르지 않으므로 제공자도 기본값(null)이다 — registry 가 기본 제공자로 떨어뜨린다
+                .stream(userSeq, role, LlmFeature.ASSISTANT, null, modelName, systemPrompt,
                         toMessages(request.getHistory()), request.getMessage(), null, null)
                 .map(token -> sse("token", Map.of("delta", token)));
 

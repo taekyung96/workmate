@@ -20,6 +20,7 @@ public interface ChatStreamClient {
      * @param userSeq       로그인 사용자 (Tool 컨텍스트)
      * @param role          요청자 권한 (ROLE_USER·ROLE_ADMIN) — @Tool 이 ToolContext 로 읽어 권한을 검사한다
      * @param feature       사용량 기록 분류 (CHAT · ASSISTANT)
+     * @param provider      LLM 제공자 (common_code.attr1). null 이면 기본 제공자
      * @param model         사용할 모델명 (AI_MODEL 화이트리스트 통과값, F5-05)
      * @param systemPrompt  시스템 지시문
      * @param history       이전 대화 맥락 (시간순)
@@ -28,6 +29,7 @@ public interface ChatStreamClient {
      * @param imageMimeType 첨부 이미지 MIME 타입 (없으면 null)
      * @return 응답 토큰 Flux
      */
-    Flux<String> stream(Long userSeq, String role, LlmFeature feature, String model, String systemPrompt,
-                        List<Message> history, String userMessage, byte[] imageData, String imageMimeType);
+    Flux<String> stream(Long userSeq, String role, LlmFeature feature, String provider, String model,
+                        String systemPrompt, List<Message> history, String userMessage,
+                        byte[] imageData, String imageMimeType);
 }

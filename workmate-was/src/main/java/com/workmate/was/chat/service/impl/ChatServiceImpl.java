@@ -158,7 +158,8 @@ public class ChatServiceImpl implements ChatService {
         String imageMimeType = hasImage ? request.getImage().getMimeType() : null;
 
         // 모델 선택 — 요청 모델은 AI_MODEL 화이트리스트만 허용, 없으면 기본 모델 (F5-05, F9-04)
-        String effectiveModel = resolveModel(request.getModelCode());
+        ModelChoice choice = resolveModel(request.getModelCode());
+        String effectiveModel = choice.model();
 
         // RAG 모드: 접근 가능한 가이드에서 유사 청크 검색 → 출처 이벤트 + 시스템 프롬프트 보강 (F4-05·07)
         List<GuideSourceChunk> ragChunks = request.isRagMode()
@@ -180,7 +181,7 @@ public class ChatServiceImpl implements ChatService {
         // 토큰 스트림 — 응답 전문을 누적해 done 시점에 저장
         StringBuilder accumulated = new StringBuilder();
         Flux<ServerSentEvent<String>> tokenEvents = chatStreamClient
-                .stream(userSeq, role, LlmFeature.CHAT, effectiveModel, effectiveSystemPrompt,
+                .stream(userSeq, role, LlmFeature.CHAT, choice.provider(), effectiveModel, effectiveSystemPrompt,
                         prepared.history(), request.getMessage(), imageData, imageMimeType)
                 .doOnNext(accumulated::append)
                 .doOnNext(token -> {
@@ -277,14 +278,26 @@ public class ChatServiceImpl implements ChatService {
      *
      * @throws IllegalArgumentException 허용 목록 밖의 모델 코드
      */
-    private String resolveModel(String requestedModel) {
-        if (requestedModel == null || requestedModel.isBlank()) {
-            return modelName;
-        }
-        if (!commonCodeService.isValidCode(MODEL_GROUP, requestedModel)) {
+    private ModelChoice resolveModel(String requestedModel) {
+        String model = requestedModel;
+        if (model == null || model.isBlank()) {
+            model = modelName;
+        } else if (!commonCodeService.isValidCode(MODEL_GROUP, model)) {
             throw new IllegalArgumentException("허용되지 않은 모델입니다.");
         }
-        return requestedModel;
+        // 제공자는 공통코드(attr1)가 단일 출처다. 값이 없으면 registry 가 기본 제공자로 떨어뜨린다 —
+        // attr1 을 안 채운 모델 하나 때문에 채팅 전체가 죽는 것보다 낫다
+        String provider = commonCodeService.findAttr1(MODEL_GROUP, model).orElse(null);
+        return new ModelChoice(model, provider);
+    }
+
+    /**
+     * 이 요청에 쓸 모델과 그 모델이 속한 제공자.
+     *
+     * @param model    모델명 (AI_MODEL 화이트리스트 통과값)
+     * @param provider LLM 제공자 (common_code.attr1). 모르면 null
+     */
+    private record ModelChoice(String model, String provider) {
     }
 
     /** 청크 목록에서 문서(guideSeq) 단위로 중복 제거한 출처 목록 */

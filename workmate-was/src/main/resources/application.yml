@@ -34,13 +34,15 @@ spring:
         baseline-on-migrate: true
         baseline-version: 1
     ai:
-        # 어느 제공자의 자동설정을 켤지 고른다. 스타터가 둘(google-genai·openai) 다 클래스패스에 있어
-        # 명시하지 않으면 ChatModel 빈이 둘이 되어 충돌한다.
-        #   chat      — LLM_CHAT_PROVIDER 로 전환 (openai=Groq | google-genai=Gemini)
-        #   embedding — 항상 Gemini. 임베딩 모델을 바꾸면 출력 차원이 달라져
-        #               vector_store(768) 를 통째로 재생성하고 전 문서를 재임베딩해야 한다
+        # 채팅은 제공자 자동설정을 둘 다 살려 둔다 — ChatClientRegistry 가 요청마다 고르므로
+        # 제공자를 바꾸는 데 재시작이 필요 없다. 어느 모델이 어느 제공자인지는
+        # AI_MODEL 공통코드의 attr1 이 단일 출처다.
+        # (ChatModel 빈이 둘이 되어 ChatClient.Builder 자동설정은 동작하지 않는다.
+        #  그래서 ChatClientRegistry 가 제공자별 구현 타입을 직접 주입받아 클라이언트를 만든다.)
+        #
+        # 임베딩만 명시한다 — 항상 Gemini. 임베딩 모델을 바꾸면 출력 차원이 달라져
+        # vector_store(768) 를 통째로 재생성하고 전 문서를 재임베딩해야 한다.
         model:
-            chat: ${LLM_CHAT_PROVIDER:google-genai}
             embedding: google-genai
         # LLM 호출 재시도 — 기본값(10회 · 2s→10s→50s 백오프)은 무료 티어에 맞지 않는다.
         # 429(분당 한도)는 Google 이 0.5초 만에 즉시 돌려주는데, 기본 설정으로 재시도하면
@@ -135,6 +137,9 @@ app:
         # 중첩 경로로 해석해 'gemini-3' 아래 '7-flash' 로 쪼갠다. [ ] 표기라야 키 원문 그대로 바인딩된다.
         pricing:
             "[gemini-3.7-flash]": { input: 0.30, output: 2.50 }
+            # 별칭이 새 버전을 가리키면 해석된 이름이 바뀐다 — 실제로 3.7 → 3.8 로 옮겨갔다.
+            # 누락되면 "단가 미등록 N건"으로 드러나므로 그때 이 줄을 추가한다.
+            "[gemini-3.8-flash]": { input: 0.30, output: 2.50 }
             "[gemini-flash-latest]": { input: 0.30, output: 2.50 }
             "[gemini-embedding-001]": { input: 0.15, output: 0.00 }
             # Groq 무료 티어는 토큰당 과금이 없다(크레딧 개념도 없고 요청 한도로만 제한).
