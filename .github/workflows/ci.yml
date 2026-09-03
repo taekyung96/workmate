@@ -27,6 +27,39 @@ jobs:
             - run: npm run test:unit
             - run: npm run build-only
 
+    e2e:
+        name: E2E (Playwright · 실제 브라우저)
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: workmate-vue
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: workmate-vue/package-lock.json
+
+            - run: npm ci
+
+            # 브라우저만 받는다(전체 브라우저는 불필요하게 느리다).
+            # --with-deps 는 우분투 러너에 필요한 시스템 라이브러리까지 설치한다
+            - run: npx playwright install --with-deps chromium
+
+            # 백엔드를 띄우지 않는다 — API 는 브라우저 레벨에서 가로챈다(e2e/fixtures.ts).
+            # 실제 WAS 를 띄우면 LLM API 키가 필요하고(키 없이는 기동하지 않는다)
+            # 무료 티어 한도까지 테스트가 소모한다. 서버 계약은 백엔드 잡이 지킨다
+            - run: npm run test:e2e
+
+            - uses: actions/upload-artifact@v4
+              if: failure()
+              with:
+                  name: playwright-report
+                  path: workmate-vue/playwright-report
+                  retention-days: 7
+
     backend:
         name: Spring (WAS · WEB)
         runs-on: ubuntu-latest
@@ -112,7 +145,7 @@ jobs:
         name: 이미지 빌드·푸시 (GHCR)
         # 테스트가 통과한 커밋만 이미지로 만든다. PR 에서는 돌리지 않는다
         # (포크 PR 은 패키지 쓰기 권한이 없고, 검증은 위 두 잡으로 충분하다)
-        needs: [frontend, backend]
+        needs: [frontend, backend, e2e]
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
 

@@ -70,3 +70,7 @@ scripts/*
 !scripts/gen-brand-assets.js
 !scripts/package.json
 !scripts/package-lock.json
+
+# Playwright E2E 산출물
+workmate-vue/test-results/
+workmate-vue/playwright-report/

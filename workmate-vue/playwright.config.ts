@@ -1,0 +1,48 @@
+import { defineConfig, devices } from '@playwright/test'
+
+/**
+ * E2E 설정 — 빌드된 SPA 를 실제 브라우저로 검증한다.
+ *
+ * <p><b>왜 백엔드를 띄우지 않나.</b> 여기서 잡으려는 것은 <b>레이아웃과 라우팅</b>이다.
+ * 도우미 패널이 본문을 덮던 결함, 로그인 직후 404 로 떨어지던 결함처럼 jsdom 이 폭을 계산하지
+ * 않아 단위 테스트로는 잡히지 않는 것들이다. 이를 위해 WAS·DB·Redis 를 띄우면
+ * CI 에 LLM API 키가 필요해지고(키 없이는 WAS 가 기동하지 않는다), 무료 티어 한도까지
+ * 테스트가 갉아먹는다. API 는 브라우저 레벨에서 가로채고(e2e/fixtures.ts), 서버 계약은
+ * 백엔드 테스트가 따로 지킨다.</p>
+ *
+ * <p>SSE 스트리밍도 가로채기로 흉내 낸다 — 실제 LLM 을 부르면 응답이 매번 달라 단언할 수 없다.</p>
+ */
+export default defineConfig({
+    testDir: './e2e',
+    // 레이아웃 단언이 많아 병렬로 돌려도 서로 간섭하지 않는다
+    fullyParallel: true,
+    forbidOnly: !!process.env.CI,
+    retries: process.env.CI ? 1 : 0,
+    reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
+
+    use: {
+        baseURL: 'http://localhost:4173',
+        trace: 'on-first-retry',
+    },
+
+    projects: [
+        {
+            name: 'desktop',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+        },
+        {
+            // 도우미 패널은 데스크탑에서 본문을 밀고 모바일에서는 덮는다 — 둘 다 확인해야 한다
+            name: 'mobile',
+            use: { ...devices['Pixel 5'] },
+        },
+    ],
+
+    // 빌드 산출물을 그대로 서빙한다. dev 서버가 아니라 preview 를 쓰는 이유는
+    // 실제 배포되는 번들(코드 분할·최소화 후)에서 확인해야 의미가 있기 때문이다
+    webServer: {
+        command: 'npm run build-only && npm run preview -- --port 4173',
+        url: 'http://localhost:4173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000,
+    },
+})
