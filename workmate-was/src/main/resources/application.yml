@@ -34,6 +34,38 @@ spring:
         baseline-on-migrate: true
         baseline-version: 1
     ai:
+        # 어느 제공자의 자동설정을 켤지 고른다. 스타터가 둘(google-genai·openai) 다 클래스패스에 있어
+        # 명시하지 않으면 ChatModel 빈이 둘이 되어 충돌한다.
+        #   chat      — LLM_CHAT_PROVIDER 로 전환 (openai=Groq | google-genai=Gemini)
+        #   embedding — 항상 Gemini. 임베딩 모델을 바꾸면 출력 차원이 달라져
+        #               vector_store(768) 를 통째로 재생성하고 전 문서를 재임베딩해야 한다
+        model:
+            chat: ${LLM_CHAT_PROVIDER:google-genai}
+            embedding: google-genai
+        # LLM 호출 재시도 — 기본값(10회 · 2s→10s→50s 백오프)은 무료 티어에 맞지 않는다.
+        # 429(분당 한도)는 Google 이 0.5초 만에 즉시 돌려주는데, 기본 설정으로 재시도하면
+        # 사용자는 70초를 기다린 끝에 응답을 받는다 — 그동안 화면은 먹통으로 보인다.
+        # 차라리 몇 초 안에 실패시켜 "요청이 많습니다" 안내를 띄우는 편이 낫다
+        # (429 안내 UI 는 ChatServiceImpl.isQuotaError 경로에 이미 있다).
+        # 일시적 네트워크 오류를 흡수할 만큼만 남긴다.
+        retry:
+            max-attempts: 2
+            backoff:
+                initial-interval: 1s
+                multiplier: 2
+                max-interval: 5s
+        # Groq — OpenAI 호환 엔드포인트라 openai 스타터를 그대로 쓰고 base-url 만 돌린다.
+        # spring.ai.model.chat=openai 일 때만 활성화된다(위 model 블록 참고).
+        # 무료 티어 기준 분당 요청 한도가 Gemini 보다 넉넉하고 LPU 로 추론이 빠르다.
+        openai:
+            api-key: ${GROQ_API_KEY:not-configured}
+            base-url: https://api.groq.com/openai
+            chat:
+                options:
+                    # 기본 모델. 허용 목록(화이트리스트)은 AI_MODEL 공통코드가 관리한다 —
+                    # 여기 값은 '사용자가 모델을 안 고를 때 무엇을 쓰나' 뿐이다.
+                    model: ${LLM_CHAT_MODEL:llama-3.3-70b-versatile}
+                    temperature: 0.7
         google:
             genai:
                 api-key: ${GEMINI_API_KEY} # .env → 환경변수 주입 (README 참고)
@@ -41,7 +73,7 @@ spring:
                     options:
                         # gemini-2.5-flash 는 신규 사용자에게 404(폐기) → 항상 최신 flash 를 가리키는 별칭 사용
                         # (chat·OCR·voice 가 공유하는 기본 모델. 특정 버전 고정이 필요하면 gemini-3.5-flash 등으로 교체)
-                        model: gemini-flash-latest
+                        model: ${LLM_CHAT_MODEL:gemini-flash-latest}
                 # 임베딩은 채팅과 자동설정이 분리되어 있어 api-key 를 별도로 요구한다
                 # (경로 주의: embedding.options.model 이 아니라 embedding.text.options.model)
                 # text-embedding-004 는 현재 genai v1beta embedContent 에서 404 → 사용 가능한
@@ -105,6 +137,12 @@ app:
             "[gemini-3.7-flash]": { input: 0.30, output: 2.50 }
             "[gemini-flash-latest]": { input: 0.30, output: 2.50 }
             "[gemini-embedding-001]": { input: 0.15, output: 0.00 }
+            # Groq 무료 티어는 토큰당 과금이 없다(크레딧 개념도 없고 요청 한도로만 제한).
+            # 0 으로 등록하는 이유: 비워 두면 "단가 미등록 N건"으로 집계에서 빠져
+            # 실제로는 공짜인 호출이 "비용을 모르는 호출"처럼 보인다.
+            # 유료 전환 시 https://groq.com/pricing 확인 후 실제 단가로 바꿀 것.
+            "[openai/gpt-oss-120b]": { input: 0.00, output: 0.00 }
+            "[qwen/qwen3.8-27b]": { input: 0.00, output: 0.00 }
         currency-rate: 1400 # USD→KRW 고정 환산율(추정치)
 
 # 요청 추적 ID(F-OBS) 를 모든 로그 줄에 찍는다. 값이 없으면 빈 문자열(-)

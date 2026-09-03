@@ -57,8 +57,11 @@ public class AssistantServiceImpl implements AssistantService {
     private final ChatStreamClient chatStreamClient;
     private final AssistantScreenContext screenContext;
 
-    /** 도우미는 모델을 고르지 않는다 — 설정된 기본 모델로 고정한다 */
-    @Value("${spring.ai.google.genai.chat.options.model:gemini-flash-latest}")
+    /**
+     * 도우미는 모델을 고르지 않는다 — 기본 모델로 고정한다.
+     * 제공자별 경로가 아니라 제공자 중립 환경변수를 읽는다 (채팅과 같은 이유).
+     */
+    @Value("${LLM_CHAT_MODEL:gemini-flash-latest}")
     private String modelName;
 
     /** {@inheritDoc} */

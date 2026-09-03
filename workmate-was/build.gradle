@@ -37,6 +37,10 @@ dependencies {
     implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.2'
     implementation platform("org.springframework.ai:spring-ai-bom:1.1.8")
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    // Groq 은 OpenAI 호환 엔드포인트라 전용 스타터가 없다 — OpenAI 클라이언트를 재사용하고
+    // base-url 만 Groq 으로 돌린다 (Spring AI 공식 문서의 Groq 연동 방식).
+    // 어느 자동설정을 켤지는 spring.ai.model.chat / spring.ai.model.embedding 으로 고른다.
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     // 임베딩 모델은 채팅 스타터에 포함되지 않는 별도 모듈 (없으면 EmbeddingModel 빈 미생성 → pgvector 기동 실패)
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
