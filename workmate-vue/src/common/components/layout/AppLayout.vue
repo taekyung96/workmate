@@ -23,7 +23,8 @@ const assistantOpen = ref(false)
     <div class="flex h-screen">
         <AppSidebar />
 
-        <!-- 본문 — 패널이 열리면 flex 가 남은 폭으로 줄여 준다(min-w-0 이 있어야 실제로 줄어든다) -->
+        <!-- 본문 — 패널이 열리면 flex 가 남은 폭으로 줄여 준다(min-w-0 이 있어야 실제로 줄어든다).
+             패널 폭이 애니메이션되는 동안 본문 폭도 매 프레임 다시 계산돼 함께 부드럽게 밀린다 -->
         <main class="min-w-0 flex-1 overflow-hidden">
             <slot />
         </main>
@@ -37,14 +38,69 @@ const assistantOpen = ref(false)
             v-if 로 마운트/언마운트하는 이유: 닫을 때 useAssistant 의 상태가 함께 사라져야
             "닫으면 대화가 비워진다"는 규칙이 컴포넌트 생명주기로 보장된다.
         -->
-        <div
-            v-if="assistantOpen"
-            class="fixed inset-0 z-50 md:static md:z-auto md:w-96 md:shrink-0"
-        >
-            <AssistantPanel @close="assistantOpen = false" />
-        </div>
+        <Transition name="assistant-dock">
+            <div
+                v-if="assistantOpen"
+                class="fixed inset-0 z-50 md:static md:z-auto md:w-96 md:shrink-0"
+            >
+                <!--
+                    안쪽 폭을 24rem 으로 고정한다. 바깥 폭이 0 → 24rem 으로 애니메이션되는 동안
+                    안쪽까지 같이 줄었다 늘어나면 글자가 매 프레임 재배치돼 덜컹거린다.
+                    안쪽을 고정해 두면 '가려져 있던 패널이 드러나는' 움직임이 된다.
+                -->
+                <div class="h-full w-full md:w-96">
+                    <AssistantPanel @close="assistantOpen = false" />
+                </div>
+            </div>
+        </Transition>
 
         <!-- 토글 버튼: 패널이 열려 있으면 숨긴다(패널 안에 닫기 버튼이 있다) -->
         <AssistantToggle v-if="!assistantOpen" @open="assistantOpen = true" />
     </div>
 </template>
+
+<style scoped>
+/*
+ * 데스크탑: 패널이 차지하는 '폭'을 애니메이션한다.
+ * 폭이 변하면 flex 가 본문 폭을 다시 계산하므로, 본문이 따라서 부드럽게 밀린다.
+ * (transform 으로 밀면 패널만 움직이고 본문은 그대로라 목적을 이루지 못한다.)
+ */
+@media (min-width: 768px) {
+    .assistant-dock-enter-active,
+    .assistant-dock-leave-active {
+        /* 폭이 줄어드는 동안만 잘라낸다. 평상시에도 걸어 두면 패널 안에서 바깥으로
+           떠야 하는 요소(드롭다운·툴팁)가 나중에 잘리게 된다 */
+        overflow: hidden;
+        transition: width 220ms ease-out;
+    }
+
+    .assistant-dock-enter-from,
+    .assistant-dock-leave-to {
+        width: 0;
+    }
+}
+
+/* 모바일: 전체 화면 오버레이라 폭이 아니라 오른쪽에서 밀려 들어오게 한다 */
+@media (max-width: 767px) {
+    .assistant-dock-enter-active,
+    .assistant-dock-leave-active {
+        transition:
+            transform 200ms ease-out,
+            opacity 200ms ease-out;
+    }
+
+    .assistant-dock-enter-from,
+    .assistant-dock-leave-to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* 움직임을 줄이도록 설정한 사용자에게는 애니메이션을 걸지 않는다 */
+@media (prefers-reduced-motion: reduce) {
+    .assistant-dock-enter-active,
+    .assistant-dock-leave-active {
+        transition: none;
+    }
+}
+</style>
