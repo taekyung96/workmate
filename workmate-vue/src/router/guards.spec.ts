@@ -6,7 +6,7 @@ import { useAuthStore } from '../modules/auth/stores/auth.store'
 
 // 가드가 부르는 세션 복원은 네트워크를 타므로 막는다 — 여기서 보고 싶은 건 이동 규칙이다
 vi.mock('../modules/auth/api/auth.api', () => ({
-    authApi: { me: vi.fn(async () => null) },
+    authApi: { me: vi.fn<() => Promise<null>>(async () => null) },
 }))
 
 const Blank = { template: '<div />' }
