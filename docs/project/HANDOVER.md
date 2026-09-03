@@ -31,6 +31,7 @@
 | 관측     | Actuator+Prometheus 지표, 요청 추적 ID(MDC), 구조화 로깅(JSON), Grafana                                                |
 | 사용량   | 토큰을 `llm_usage` 에 기록 + 관리자 대시보드(`/admin/usage`) + **본인 사용량**(`/usage`, 사이드바 계정 메뉴)          |
 | 분산     | **Redis 로 세션·SessionRegistry·레이트리밋 공유** — 인스턴스 2개로 전후 측정 완료. [ADR-0006](adr/0006-redis-distributed-state.md) · [리포트](../features/redis/REPORT-2026-09-02.md) |
+| 모델     | **멀티 프로바이더 라우팅** — 재시작 없이 Gemini·Groq 전환. 제공자는 `AI_MODEL` 공통코드 `attr1` 이 정한다 |
 | 도우미   | **페이지 인식 챗봇** — 화면 사용법(전 화면) + 사용량 데이터 질문(Tool Calling). 대화는 저장하지 않는다 |
 | RAG 품질 | 골든셋 33문항 평가 하네스 + 리포트 2회                                                                                 |
 
@@ -79,7 +80,8 @@ Redis 분산 상태([ADR-0006](adr/0006-redis-distributed-state.md)) · 페이�
   화면별로 `@Tool` 을 더하면 확장되는 구조다
 - **무료 티어 한도가 응답 속도를 지배한다.** Gemini 무료 티어는 분당 한도가 빡빡해
   429 가 잦고, 그때마다 재시도 대기가 붙는다. 실측: 채팅 25~70초.
-  `LLM_CHAT_PROVIDER=openai` 로 Groq 에 붙이면 6.8초까지 줄어든다(같은 코드·같은 프롬프트).
+  **채팅 화면에서 Groq 모델을 고르면 재시작 없이 그쪽으로 간다** — 실측 0.6초 vs Gemini 11초.
+  어느 모델이 어느 제공자인지는 `AI_MODEL` 공통코드의 `attr1` 이 정한다.
   **임베딩은 여전히 Gemini 라 RAG 를 켠 요청은 임베딩 한도에 걸릴 수 있다.**
   해소하려면 임베딩을 로컬(ONNX 내장 또는 Ollama)로 내려야 하는데,
   벡터 좌표계가 바뀌므로 `vector_store` 재생성 + **평가 하네스로 MRR 검증**이 선행돼야 한다

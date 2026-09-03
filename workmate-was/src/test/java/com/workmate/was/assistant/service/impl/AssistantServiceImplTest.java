@@ -66,7 +66,7 @@ class AssistantServiceImplTest {
         when(guideRetriever.retrieve(anyLong(), anyString())).thenReturn(List.of());
         when(ragPromptBuilder.build(any())).thenReturn("");
         when(screenContext.describe(any())).thenReturn("[화면] 내 사용량");
-        when(chatStreamClient.stream(anyLong(), any(), any(), anyString(), anyString(),
+        when(chatStreamClient.stream(anyLong(), any(), any(), any(), anyString(), anyString(),
                 any(), anyString(), any(), any())).thenReturn(Flux.just(tokens));
     }
 
@@ -78,7 +78,7 @@ class AssistantServiceImplTest {
         newService().stream(12L, "ROLE_USER", request("이 화면 뭔가요", "my-usage")).blockLast();
 
         verify(chatStreamClient).stream(eq(12L), eq("ROLE_USER"), eq(LlmFeature.ASSISTANT),
-                anyString(), anyString(), any(), anyString(), any(), any());
+                any(), anyString(), anyString(), any(), anyString(), any(), any());
     }
 
     @Test
@@ -89,7 +89,7 @@ class AssistantServiceImplTest {
         newService().stream(12L, "ROLE_USER", request("이 화면 뭔가요", "my-usage")).blockLast();
 
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(chatStreamClient).stream(anyLong(), any(), any(), anyString(), prompt.capture(),
+        verify(chatStreamClient).stream(anyLong(), any(), any(), any(), anyString(), prompt.capture(),
                 any(), anyString(), any(), any());
         assertThat(prompt.getValue()).contains("[화면] 내 사용량");
     }
@@ -139,7 +139,7 @@ class AssistantServiceImplTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<org.springframework.ai.chat.messages.Message>> history =
                 ArgumentCaptor.forClass(List.class);
-        verify(chatStreamClient).stream(anyLong(), any(), any(), anyString(), anyString(),
+        verify(chatStreamClient).stream(anyLong(), any(), any(), any(), anyString(), anyString(),
                 history.capture(), anyString(), any(), any());
         assertThat(history.getValue()).hasSize(6);
     }

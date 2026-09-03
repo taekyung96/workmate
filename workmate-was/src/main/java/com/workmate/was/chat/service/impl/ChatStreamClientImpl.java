@@ -3,6 +3,7 @@ package com.workmate.was.chat.service.impl;
 import com.workmate.was.chat.service.ChatStreamClient;
 import com.workmate.was.guide.tool.GuideTools;
 import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.global.config.ChatClientRegistry;
 import com.workmate.was.usage.tool.UsageTools;
 import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.receipt.tool.ReceiptTools;
@@ -32,16 +33,16 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class ChatStreamClientImpl implements ChatStreamClient {
 
-    private final ChatClient chatClient;
+    private final ChatClientRegistry chatClientRegistry;
     private final ReceiptTools receiptTools;
     private final GuideTools guideTools;
     private final UsageTools usageTools;
     private final LlmUsageService llmUsageService;
 
-    public ChatStreamClientImpl(ChatClient.Builder chatClientBuilder,
+    public ChatStreamClientImpl(ChatClientRegistry chatClientRegistry,
                                 ReceiptTools receiptTools, GuideTools guideTools,
                                 UsageTools usageTools, LlmUsageService llmUsageService) {
-        this.chatClient = chatClientBuilder.build();
+        this.chatClientRegistry = chatClientRegistry;
         this.receiptTools = receiptTools;
         this.guideTools = guideTools;
         this.usageTools = usageTools;
@@ -49,8 +50,9 @@ public class ChatStreamClientImpl implements ChatStreamClient {
     }
 
     @Override
-    public Flux<String> stream(Long userSeq, String role, LlmFeature feature, String model, String systemPrompt,
-                               List<Message> history, String userMessage, byte[] imageData, String imageMimeType) {
+    public Flux<String> stream(Long userSeq, String role, LlmFeature feature, String provider, String model,
+                               String systemPrompt, List<Message> history, String userMessage,
+                               byte[] imageData, String imageMimeType) {
         // 첫 토큰 전 실패(타임아웃·쿼터)만 1회 재시도한다 (F2.3).
         // 이미 토큰을 흘린 뒤 재시도하면 클라이언트에 중복 응답이 쌓이므로, 재시도 조건에서 제외한다.
         AtomicBoolean tokenEmitted = new AtomicBoolean(false);
@@ -64,7 +66,9 @@ public class ChatStreamClientImpl implements ChatStreamClient {
                 org.springframework.ai.chat.prompt.ChatOptions.builder().model(model).build();
         // Flux.defer 로 감싸 재시도 시마다 prompt·stream 을 새로 만든다 — Spring AI 의
         // stream().content() Flux 는 재구독이 불가("No StreamAdvisors available")해서다.
-        return Flux.defer(() -> chatClient.prompt()
+        // 제공자별 클라이언트를 요청마다 고른다 — 재시작 없이 Gemini·Groq 을 오갈 수 있다
+        ChatClient client = chatClientRegistry.get(provider);
+        return Flux.defer(() -> client.prompt()
                         .options(options)
                         .system(systemPrompt)
                         .messages(history)          // 이전 맥락 (F2-10)

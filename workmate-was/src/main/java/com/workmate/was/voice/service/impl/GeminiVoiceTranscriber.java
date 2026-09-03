@@ -1,6 +1,7 @@
 package com.workmate.was.voice.service.impl;
 
 import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.global.config.ChatClientRegistry;
 import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.voice.service.VoiceTranscriber;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +24,9 @@ public class GeminiVoiceTranscriber implements VoiceTranscriber {
     private final ChatClient chatClient;
     private final LlmUsageService llmUsageService;
 
-    public GeminiVoiceTranscriber(ChatClient.Builder chatClientBuilder, LlmUsageService llmUsageService) {
-        this.chatClient = chatClientBuilder.build();
+    /** @param registry 오디오 입력이라 제공자를 고를 수 없다 — 멀티모달 고정 클라이언트를 받는다 */
+    public GeminiVoiceTranscriber(ChatClientRegistry registry, LlmUsageService llmUsageService) {
+        this.chatClient = registry.multimodal();
         this.llmUsageService = llmUsageService;
     }
 

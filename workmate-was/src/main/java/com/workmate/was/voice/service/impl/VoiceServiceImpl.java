@@ -11,6 +11,7 @@ import com.workmate.was.voice.vo.VoiceRecordPageVo;
 import com.workmate.was.voice.vo.VoiceRecordSummaryVo;
 import lombok.extern.slf4j.Slf4j;
 import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.global.config.ChatClientRegistry;
 import com.workmate.was.usage.vo.LlmFeature;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -45,12 +46,13 @@ public class VoiceServiceImpl implements VoiceService {
     public VoiceServiceImpl(VoiceTranscriber transcriber,
                             VoiceRecordRepository voiceRecordRepository,
                             VoiceAudioStore audioStore,
-                            ChatClient.Builder chatClientBuilder,
+                            ChatClientRegistry registry,
                             LlmUsageService llmUsageService) {
         this.transcriber = transcriber;
         this.voiceRecordRepository = voiceRecordRepository;
         this.audioStore = audioStore;
-        this.chatClient = chatClientBuilder.build();
+        // 전사(STT) 결과와 같은 경로를 유지한다 — 요약만 다른 제공자로 보내면 품질이 들쭉날쭉해진다
+        this.chatClient = registry.multimodal();
         this.llmUsageService = llmUsageService;
     }
 

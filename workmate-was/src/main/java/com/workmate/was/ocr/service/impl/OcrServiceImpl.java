@@ -6,6 +6,7 @@ import com.workmate.was.ocr.service.OcrService;
 import com.workmate.was.ocr.vo.OcrResultVo;
 import lombok.extern.slf4j.Slf4j;
 import com.workmate.was.usage.service.LlmUsageService;
+import com.workmate.was.global.config.ChatClientRegistry;
 import com.workmate.was.usage.vo.LlmFeature;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ResponseEntity;
@@ -31,9 +32,13 @@ public class OcrServiceImpl implements OcrService {
     private final ObjectMapper objectMapper;
     private final LlmUsageService llmUsageService;
 
-    public OcrServiceImpl(ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper,
+    /**
+     * @param registry 멀티모달(이미지) 입력이라 제공자를 고를 수 없다 — 고정 클라이언트를 받는다.
+     *                 사용자가 텍스트 전용 모델을 골라 둔 채로 영수증을 올리면 조용히 실패한다.
+     */
+    public OcrServiceImpl(ChatClientRegistry registry, ObjectMapper objectMapper,
                           LlmUsageService llmUsageService) {
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = registry.multimodal();
         this.objectMapper = objectMapper;
         this.llmUsageService = llmUsageService;
     }

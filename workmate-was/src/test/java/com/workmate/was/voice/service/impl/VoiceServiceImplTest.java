@@ -7,6 +7,7 @@ import com.workmate.was.voice.vo.VoiceRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import com.workmate.was.global.config.ChatClientRegistry;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,9 +25,9 @@ class VoiceServiceImplTest {
 
     /** ChatClient 는 요약 호출에만 쓰이므로 요약을 우회하도록 오버라이드한다 */
     private VoiceServiceImpl service() {
-        ChatClient.Builder builder = mock(ChatClient.Builder.class);
-        when(builder.build()).thenReturn(mock(ChatClient.class));
-        return new VoiceServiceImpl(transcriber, repository, audioStore, builder,
+        ChatClientRegistry registry = mock(ChatClientRegistry.class);
+        when(registry.multimodal()).thenReturn(mock(ChatClient.class));
+        return new VoiceServiceImpl(transcriber, repository, audioStore, registry,
                 mock(com.workmate.was.usage.service.LlmUsageService.class)) {
             @Override
             protected String summarize(Long userSeq, String sttText) {
