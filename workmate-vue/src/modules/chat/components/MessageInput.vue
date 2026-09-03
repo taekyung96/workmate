@@ -47,7 +47,7 @@ function onKeydown(event: KeyboardEvent): void {
 </script>
 
 <template>
-    <div class="mx-auto w-full max-w-3xl px-4 pb-4">
+    <div class="mx-auto w-full max-w-5xl px-4 pb-4">
         <div class="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm">
             <!-- AI 모델 선택 (공통코드 AI_MODEL) — 목록이 있을 때만 노출. 선택값은 전송 시 modelCode 로 전달 -->
             <Select

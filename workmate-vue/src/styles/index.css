@@ -132,6 +132,56 @@
     margin: 0.5rem 0 0.25rem;
     font-weight: 600;
 }
+/*
+ * 제목은 크기로도 구분해야 한다. 굵기만 다르면 목록·본문과 섞여 답변이 한 덩어리로 보인다
+ * (채팅 답변처럼 제목·표·목록이 섞여 오는 글에서 특히 티가 난다).
+ */
+.markdown-body h1 {
+    font-size: 1.25em;
+}
+.markdown-body h2 {
+    font-size: 1.15em;
+}
+.markdown-body h3 {
+    font-size: 1.05em;
+}
+
+/*
+ * 표·인용·구분선은 '문서형'이 아니라 마크다운의 기본 구성요소다. 여기에 없으면
+ * 표가 테두리 없이 뭉개져 셀 경계가 사라진다 — 사용량 조회처럼 답변이 표로 오는 화면에서
+ * 값이 서로 붙어 읽을 수 없게 된다. (예전엔 .markdown-doc 에만 있어서 채팅이 이 문제를 겪었다)
+ */
+.markdown-body table {
+    /* 칼럼보다 넓은 표는 잘리는 대신 표 안에서 가로 스크롤한다 */
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+}
+.markdown-body th,
+.markdown-body td {
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+    white-space: nowrap;
+}
+.markdown-body th {
+    background: color-mix(in oklch, currentColor 6%, transparent);
+    font-weight: 600;
+}
+.markdown-body blockquote {
+    margin: 0.5rem 0;
+    padding-left: 0.8rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted-foreground);
+}
+.markdown-body hr {
+    margin: 0.75rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+}
 
 /*
  * 문서형 마크다운 — 가이드 상세처럼 전체 문서를 볼 때 .markdown-body 와 함께 붙인다.
@@ -171,15 +221,12 @@
     border-left: 3px solid var(--border);
     color: var(--muted-foreground);
 }
+/* 표의 테두리·스크롤은 .markdown-body 가 담당한다. 문서형은 여백만 키운다 */
 .markdown-doc table {
-    display: block;
-    overflow-x: auto;
-    border-collapse: collapse;
     margin: 0.75rem 0;
 }
 .markdown-doc th,
 .markdown-doc td {
-    border: 1px solid var(--border);
     padding: 0.4rem 0.7rem;
 }
 .markdown-doc hr {
