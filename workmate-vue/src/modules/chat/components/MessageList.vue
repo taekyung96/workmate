@@ -24,7 +24,7 @@ watch(
 
 <template>
     <div ref="scrollEl" class="slim-scroll flex-1 overflow-y-auto">
-        <div class="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+        <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6">
             <template v-for="(message, index) in messages" :key="index">
                 <div
                     v-if="

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 메시지 말풍선 — 사용자는 우측(평문), AI는 좌측.
- * AI 응답은 스트리밍 중엔 원문+커서, 완료 후 마크다운 렌더. RAG 출처 뱃지 표시.
+ * AI 응답은 스트리밍 중에도 마크다운으로 렌더하고 커서를 덧붙인다. RAG 출처 뱃지 표시.
  * 마크다운 코드 블록 상단 복사 버튼 클릭 시 이벤트 위임으로 클립보드 복사 및 피드백 처리.
  */
 import { computed } from 'vue'
@@ -24,22 +24,28 @@ const { onMarkdownClick } = useMarkdownCopy()
 <template>
     <div class="flex" :class="isUser ? 'justify-end' : 'justify-start'">
         <div
-            class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm"
-            :class="isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'"
+            class="rounded-2xl px-4 py-2.5 text-sm"
+            :class="
+                isUser
+                    ? 'max-w-[80%] bg-primary text-primary-foreground'
+                    : 'w-full min-w-0 bg-muted'
+            "
         >
             <p v-if="isUser" class="whitespace-pre-wrap">{{ message.content }}</p>
 
             <template v-else>
-                <div v-if="message.streaming" class="whitespace-pre-wrap">
-                    {{ message.content }}<span class="ml-0.5 inline-block animate-pulse">▌</span>
-                </div>
+                <!--
+                    스트리밍 중에도 마크다운으로 그린다. 원문을 그대로 흘리면 답변이 끝날 때까지
+                    '##'·'|' 같은 기호가 그대로 보이다가 완료 순간 화면이 통째로 바뀐다.
+                    markdown-it 은 미완성 입력도 그때까지의 내용으로 렌더하므로 중간 상태도 읽을 만하다.
+                -->
                 <div
-                    v-else
                     class="markdown-body"
                     :class="{ 'text-destructive': message.error }"
                     v-html="html"
                     @click="onMarkdownClick"
                 />
+                <span v-if="message.streaming" class="ml-0.5 inline-block animate-pulse">▌</span>
 
                 <button
                     v-if="message.error && message.canRetry"
