@@ -116,11 +116,22 @@ async function installApiMock(page: Page): Promise<ApiMock> {
     }
 }
 
+/**
+ * api 목은 <b>auto</b> 다 — 테스트가 요청하지 않아도 항상 설치된다.
+ *
+ * 요청할 때만 설치하면, 목을 안 쓰는 테스트의 /api 호출이 vite preview 의 프록시를 타고
+ * 진짜 서버(localhost:8080)로 나간다. 개발 머신에서는 백엔드가 떠 있어 그대로 통과하고
+ * CI 에서는 502 로 실패한다 — 실제로 그 차이 때문에 CI 만 깨졌다.
+ * 목이 항상 켜져 있어야 테스트가 환경과 무관해진다.
+ */
 export const test = base.extend<{ api: ApiMock }>({
-    api: async ({ page }, use) => {
-        const mock = await installApiMock(page)
-        await use(mock)
-    },
+    api: [
+        async ({ page }, use) => {
+            const mock = await installApiMock(page)
+            await use(mock)
+        },
+        { auto: true },
+    ],
 })
 
 export { expect } from '@playwright/test'
