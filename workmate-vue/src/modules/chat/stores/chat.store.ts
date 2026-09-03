@@ -39,13 +39,26 @@ export const useChatStore = defineStore('chat', () => {
         roomsLoaded.value = true
     }
 
-    /** 선택 가능한 AI 모델 목록 로드 (AI_MODEL 공통코드). 선택값이 없으면 첫 모델을 기본으로 */
+    /**
+     * 선택 가능한 AI 모델 목록 로드 (AI_MODEL 공통코드). 선택값이 없으면 첫 모델을 기본으로.
+     *
+     * 실패해도 삼킨다 — 이 목록은 편의 기능이고, 채팅 자체를 막을 이유가 없다.
+     * modelCode 를 비워 보내면 서버가 기본 모델(LLM_CHAT_MODEL)로 답하므로 대화는 그대로 된다.
+     * 던지면 호출부(onMounted)가 받지 않아 unhandled rejection 이 된다.
+     *
+     * 실패 시 modelsLoaded 를 세우지 않는 이유: 다음에 채팅 화면에 다시 들어오면 한 번 더
+     * 시도하게 두는 편이, 세션 내내 드롭다운이 빈 채로 남는 것보다 낫다.
+     */
     async function loadModels(): Promise<void> {
-        models.value = await commonCodeApi.codes('AI_MODEL')
-        if (!selectedModel.value && models.value.length > 0) {
-            selectedModel.value = models.value[0]!.code
+        try {
+            models.value = await commonCodeApi.codes('AI_MODEL')
+            if (!selectedModel.value && models.value.length > 0) {
+                selectedModel.value = models.value[0]!.code
+            }
+            modelsLoaded.value = true
+        } catch {
+            models.value = []
         }
-        modelsLoaded.value = true
     }
 
     /** 새 채팅 시작 — 현재 방/메시지 초기화 (빈 상태) */
