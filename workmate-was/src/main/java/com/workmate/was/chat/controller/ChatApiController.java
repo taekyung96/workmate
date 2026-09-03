@@ -67,8 +67,10 @@ public class ChatApiController {
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> stream(
             @RequestHeader("X-User-Seq") Long userSeq,
+            // WEB 의 WebClient 가 세션 권한으로 넣어주는 값이다. 없으면 권한 없는 것으로 본다
+            @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestBody ChatStreamRequestVo request) {
         log.info("채팅 스트리밍 요청 - userSeq: {}, roomSeq: {}", userSeq, request.getRoomSeq());
-        return chatService.streamChat(userSeq, request);
+        return chatService.streamChat(userSeq, role, request);
     }
 }

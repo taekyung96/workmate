@@ -8,6 +8,7 @@ import com.workmate.was.chat.dao.ChatRoomRepository;
 import com.workmate.was.chat.service.ChatRateLimiter;
 import com.workmate.was.chat.service.ChatService;
 import com.workmate.was.chat.service.ChatStreamClient;
+import com.workmate.was.usage.vo.LlmFeature;
 import com.workmate.was.chat.service.RagPromptBuilder;
 import com.workmate.was.chat.vo.ChatImageVo;
 import com.workmate.was.chat.vo.ChatMessageVo;
@@ -60,8 +61,12 @@ public class ChatServiceImpl implements ChatService {
     /** AI 모델 화이트리스트 그룹 (F9-04) */
     private static final String MODEL_GROUP = "AI_MODEL";
 
-    /** 응답 생성 모델명 기록용 (F2-09). 멀티모델(마일스톤 4) 전까지는 설정된 기본 모델 고정 */
-    @Value("${spring.ai.google.genai.chat.options.model:gemini-flash-latest}")
+    /**
+     * 사용자가 모델을 고르지 않았을 때 쓸 기본 모델 (F2-09).
+     * 제공자별 경로(spring.ai.<provider>.chat...)를 직접 읽지 않는다 — 제공자를 바꾸면
+     * 엉뚱한 제공자의 설정을 읽게 되기 때문이다. 허용 목록은 AI_MODEL 공통코드가 관리한다.
+     */
+    @Value("${LLM_CHAT_MODEL:gemini-flash-latest}")
     private String modelName;
 
     private static final String SYSTEM_PROMPT =
@@ -127,7 +132,7 @@ public class ChatServiceImpl implements ChatService {
 
     /** {@inheritDoc} */
     @Override
-    public Flux<ServerSentEvent<String>> streamChat(Long userSeq, ChatStreamRequestVo request) {
+    public Flux<ServerSentEvent<String>> streamChat(Long userSeq, String role, ChatStreamRequestVo request) {
         // 첨부 이미지 디코딩 (있으면)
         byte[] imageData = decodeImage(request.getImage());
         boolean hasImage = imageData != null;
@@ -175,8 +180,8 @@ public class ChatServiceImpl implements ChatService {
         // 토큰 스트림 — 응답 전문을 누적해 done 시점에 저장
         StringBuilder accumulated = new StringBuilder();
         Flux<ServerSentEvent<String>> tokenEvents = chatStreamClient
-                .stream(userSeq, effectiveModel, effectiveSystemPrompt, prepared.history(),
-                        request.getMessage(), imageData, imageMimeType)
+                .stream(userSeq, role, LlmFeature.CHAT, effectiveModel, effectiveSystemPrompt,
+                        prepared.history(), request.getMessage(), imageData, imageMimeType)
                 .doOnNext(accumulated::append)
                 .doOnNext(token -> {
                     if (ttftRecorded.compareAndSet(false, true)) {

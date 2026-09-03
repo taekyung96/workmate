@@ -28,5 +28,5 @@ public interface ChatService {
      *
      * @return meta/token/done/error 이벤트 Flux (text/event-stream)
      */
-    Flux<ServerSentEvent<String>> streamChat(Long userSeq, ChatStreamRequestVo request);
+    Flux<ServerSentEvent<String>> streamChat(Long userSeq, String role, ChatStreamRequestVo request);
 }

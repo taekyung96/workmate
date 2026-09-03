@@ -15,5 +15,7 @@ public enum LlmFeature {
     /** 회의록 요약 (F8-1) */
     SUMMARY,
     /** 가이드 문서 임베딩 (F4) */
-    EMBEDDING
+    EMBEDDING,
+    /** 페이지 인식 도우미 챗봇 — 채팅과 분리해 비용을 따로 본다 */
+    ASSISTANT
 }

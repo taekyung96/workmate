@@ -119,7 +119,7 @@ class LlmUsageQueryServiceImplTest {
     }
 
     @Test
-    @DisplayName("기능별 집계는 호출이 없는 기능도 0건으로 채워 5종 전부 반환한다")
+    @DisplayName("기능별 집계는 호출이 없는 기능도 0건으로 채워 전 기능을 반환한다")
     void getSummary_fills_all_features() {
         when(llmUsageQueryMapper.selectTotal(any(), any(), any())).thenReturn(totalRow(2, 100L, 50L, 0));
         when(llmUsageQueryMapper.selectModelUsageTotal(any(), any(), any())).thenReturn(List.of());
