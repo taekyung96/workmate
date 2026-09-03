@@ -64,9 +64,11 @@ spring:
             base-url: https://api.groq.com/openai
             chat:
                 options:
-                    # 기본 모델. 허용 목록(화이트리스트)은 AI_MODEL 공통코드가 관리한다 —
-                    # 여기 값은 '사용자가 모델을 안 고를 때 무엇을 쓰나' 뿐이다.
-                    model: ${LLM_CHAT_MODEL:llama-3.3-70b-versatile}
+                    # 이 값은 거의 쓰이지 않는다 — 채팅은 요청마다 ChatOptions 로 모델을 덮어쓴다.
+                    # 그래도 '실재하는 모델'이어야 한다: 덮어쓰기가 빠지는 경로가 생기면
+                    # 없는 모델명이 그대로 나가 404 가 된다(직전 값 llama-3.3-70b-versatile 은 Groq 에 없었다).
+                    # 사용자가 고를 수 있는 목록은 AI_MODEL 공통코드가 관리한다.
+                    model: qwen/qwen3.8-27b
                     temperature: 0.7
         google:
             genai:
@@ -74,8 +76,14 @@ spring:
                 chat:
                     options:
                         # gemini-2.5-flash 는 신규 사용자에게 404(폐기) → 항상 최신 flash 를 가리키는 별칭 사용
-                        # (chat·OCR·voice 가 공유하는 기본 모델. 특정 버전 고정이 필요하면 gemini-3.5-flash 등으로 교체)
-                        model: ${LLM_CHAT_MODEL:gemini-flash-latest}
+                        #
+                        # [주의] 이 값은 LLM_CHAT_MODEL 과 분리돼 있어야 한다.
+                        # OCR(영수증)·음성 전사·회의 요약은 ChatClientRegistry.multimodal() 이 주는
+                        # 이 Gemini 클라이언트를 쓰면서 모델 옵션을 따로 지정하지 않는다 — 즉 여기 값이 곧
+                        # 그 기능들의 모델이다. 예전처럼 LLM_CHAT_MODEL 을 같이 물리면 채팅 기본 모델을
+                        # Groq 계열로 바꾸는 순간 Gemini 에 'qwen/...' 같은 모델명이 나가 영수증·회의록이
+                        # 통째로 깨진다. 채팅 기본 모델은 LLM_CHAT_MODEL(ChatModelResolver)이 따로 정한다.
+                        model: ${LLM_MULTIMODAL_MODEL:gemini-flash-latest}
                 # 임베딩은 채팅과 자동설정이 분리되어 있어 api-key 를 별도로 요구한다
                 # (경로 주의: embedding.options.model 이 아니라 embedding.text.options.model)
                 # text-embedding-004 는 현재 genai v1beta embedContent 에서 404 → 사용 가능한
