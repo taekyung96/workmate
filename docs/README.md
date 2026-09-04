@@ -98,6 +98,7 @@ Workmate v3의 모든 문서를 범주별로 모은 목차입니다. **문서를
 | [RAG 검색 품질 평가 하네스 — 구현 계획](features/rag-eval/RAG_EVAL_HARNESS_PLAN.md)   | 위 설계의 작업 계획서     |
 | [RAG 검색 품질 평가 리포트 (2026-07-29)](features/rag-eval/REPORT-2026-07-29.md)      | 첫 평가 — 골든셋 23문항·코퍼스 17건 (전 구간 포화) |
 | [RAG 검색 품질 평가 리포트 (2026-08-28)](features/rag-eval/REPORT-2026-08-28.md)      | 재평가 — 골든셋 33문항·코퍼스 34건, 운영 기본값 근거 |
+| [RAG 검색 품질 평가 리포트 (2026-09-04)](features/rag-eval/REPORT-2026-09-04.md)      | **오탐 측정 도입** — 답이 없는 질문 8문항 추가, threshold 0.4 → 0.5 근거 |
 | [Redis 도입 전후 검증 리포트 (2026-09-02)](features/redis/REPORT-2026-09-02.md)       | 인스턴스 2개에서 세션·F1-08·레이트리밋 전후 측정 |
 
 ---
