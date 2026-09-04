@@ -107,4 +107,86 @@ test.describe('도우미 패널', () => {
         // 토큰 두 개가 이어 붙어야 한다 (가로챈 SSE 가 정해진 값을 흘린다)
         await expect(page.getByText('안녕하세요. 무엇을 도와드릴까요?')).toBeVisible()
     })
+
+    /**
+     * 도킹 기준을 md(768) 에서 xl(1280) 로 올린 것을 지킨다.
+     *
+     * <p>768px 에서 도킹하면 사이드바(256) + 패널(384) 을 빼고 본문에 <b>128px</b> 만 남았다.
+     * 글자가 세로로 쪼개지고 채팅 입력 바가 잘렸다. 폭이 부족하면 나란히 두는 이득이 이미
+     * 사라지므로 덮는 편이 낫다.</p>
+     */
+    const NARROW_WIDTHS = [768, 1024, 1279]
+
+    for (const width of NARROW_WIDTHS) {
+        test(`태블릿 ${width}px: 도킹하지 않고 덮는다`, async ({ page, api }) => {
+            test.skip(test.info().project.name !== 'desktop', '폭을 직접 지정하므로 한 번만 돈다')
+            await page.setViewportSize({ width, height: 900 })
+            await api.signIn()
+            await openChat(page)
+
+            await page.getByRole('button', { name: '도우미 열기' }).click()
+            const panel = page.getByRole('complementary').filter({ hasText: '도우미' })
+            await expect(panel).toBeVisible()
+
+            const box = await stableBox(panel)
+            // 뷰포트를 꽉 채워야 한다 — 도킹되면 384px 로 좁아지고 본문이 찌그러진다
+            expect(box.width, `${width}px 에서 패널이 도킹됐다 — 본문이 찌그러진다`).toBeGreaterThan(
+                width - 2,
+            )
+        })
+    }
+
+    test('1280px: 여기서부터는 도킹한다', async ({ page, api }) => {
+        test.skip(test.info().project.name !== 'desktop', '폭을 직접 지정하므로 한 번만 돈다')
+        await page.setViewportSize({ width: 1280, height: 900 })
+        await api.signIn()
+        await openChat(page)
+
+        const main = page.locator('main')
+        const before = (await main.boundingBox())!.width
+
+        await page.getByRole('button', { name: '도우미 열기' }).click()
+        const panel = page.getByRole('complementary').filter({ hasText: '도우미' })
+        const box = await stableBox(panel)
+
+        // 덮지 않고 한 칸을 차지해야 한다
+        expect(box.width).toBeLessThan(1280 / 2)
+        expect((await main.boundingBox())!.width).toBeLessThan(before)
+    })
+
+    test('닫았다 열어도 대화가 남는다 — 새 대화로만 비운다', async ({ page, api }) => {
+        await api.signIn()
+        await openChat(page)
+
+        await page.getByRole('button', { name: '도우미 열기' }).click()
+        const panel = page.getByRole('complementary').filter({ hasText: '도우미' })
+        await panel.getByPlaceholder('질문을 입력하세요').fill('이 화면 뭔가요')
+        await panel.getByPlaceholder('질문을 입력하세요').press('Enter')
+        await expect(page.getByText('안녕하세요. 무엇을 도와드릴까요?')).toBeVisible()
+
+        // 닫는다 — 좁은 화면에서는 본문을 보려면 닫을 수밖에 없다. 그때 대화가 날아가면 못 쓴다
+        await panel.getByRole('button', { name: '닫기' }).click()
+        await expect(page.getByRole('button', { name: '도우미 열기' })).toBeVisible()
+
+        await page.getByRole('button', { name: '도우미 열기' }).click()
+        await expect(page.getByText('안녕하세요. 무엇을 도와드릴까요?')).toBeVisible()
+
+        // 비우는 것은 "새 대화" 로만 일어난다
+        const reopened = page.getByRole('complementary').filter({ hasText: '도우미' })
+        await reopened.getByRole('button', { name: '새 대화' }).click()
+        await expect(page.getByText('안녕하세요. 무엇을 도와드릴까요?')).toBeHidden()
+        await expect(page.getByText('지금 보고 있는 화면에 대해 물어보세요')).toBeVisible()
+    })
+
+    test('대화가 없으면 새 대화 버튼을 보이지 않는다', async ({ page, api }) => {
+        await api.signIn()
+        await openChat(page)
+
+        await page.getByRole('button', { name: '도우미 열기' }).click()
+        const panel = page.getByRole('complementary').filter({ hasText: '도우미' })
+        await expect(panel).toBeVisible()
+
+        // 비어 있는데 버튼이 있으면 누를 이유가 없는 버튼이 하나 더 있는 셈이다
+        await expect(panel.getByRole('button', { name: '새 대화' })).toBeHidden()
+    })
 })

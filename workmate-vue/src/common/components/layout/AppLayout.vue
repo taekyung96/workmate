@@ -74,23 +74,29 @@ const sidebarOpen = ref(false)
         <!--
             페이지 인식 도우미 — 로그인 후 모든 화면에 뜬다 (로그인 화면은 이 레이아웃을 쓰지 않는다).
 
-            데스크탑(md↑): static 이라 레이아웃의 한 칸이 된다 → 본문이 왼쪽으로 밀린다.
-            모바일: 나눠 쓸 폭이 없어 전체 화면 오버레이로 덮는다.
+            넓은 화면(xl↑): static 이라 레이아웃의 한 칸이 된다 → 본문이 왼쪽으로 밀린다.
+            그 아래: 나눠 쓸 폭이 없어 전체 화면 오버레이로 덮는다.
 
-            v-if 로 마운트/언마운트하는 이유: 닫을 때 useAssistant 의 상태가 함께 사라져야
-            "닫으면 대화가 비워진다"는 규칙이 컴포넌트 생명주기로 보장된다.
+            기준이 md(768) 가 아니라 xl(1280) 인 이유 — 내리지 말 것. 도킹의 존재 이유는
+            "본문을 보면서 대화하는 것"인데, 사이드바(256) + 패널(384) 을 빼고 남는 폭이
+            그만큼 돼야 성립한다. 768px 에서 도킹하면 본문에 128px 만 남아 글자가 세로로
+            쪼개지고 채팅 입력 바가 잘렸다. 1024px 이어도 본문이 384px 라 폰 너비다.
+            폭이 부족하면 나란히 두는 이득이 이미 사라지므로, 덮고 집중하는 편이 낫다.
+
+            v-if 로 마운트/언마운트하는 것은 그대로다. 다만 대화는 이제 함께 사라지지 않는다 —
+            useAssistant 의 상태를 모듈 스코프로 옮겨, 닫아도 남고 "새 대화"로만 비운다.
         -->
         <Transition name="assistant-dock">
             <div
                 v-if="assistantOpen"
-                class="fixed inset-0 z-50 md:static md:z-auto md:w-96 md:shrink-0"
+                class="fixed inset-0 z-50 xl:static xl:z-auto xl:w-96 xl:shrink-0"
             >
                 <!--
                     안쪽 폭을 24rem 으로 고정한다. 바깥 폭이 0 → 24rem 으로 애니메이션되는 동안
                     안쪽까지 같이 줄었다 늘어나면 글자가 매 프레임 재배치돼 덜컹거린다.
                     안쪽을 고정해 두면 '가려져 있던 패널이 드러나는' 움직임이 된다.
                 -->
-                <div class="h-full w-full md:w-96">
+                <div class="h-full w-full xl:w-96">
                     <AssistantPanel @close="assistantOpen = false" />
                 </div>
             </div>
@@ -107,7 +113,7 @@ const sidebarOpen = ref(false)
  * 폭이 변하면 flex 가 본문 폭을 다시 계산하므로, 본문이 따라서 부드럽게 밀린다.
  * (transform 으로 밀면 패널만 움직이고 본문은 그대로라 목적을 이루지 못한다.)
  */
-@media (min-width: 768px) {
+@media (min-width: 1280px) {
     .assistant-dock-enter-active,
     .assistant-dock-leave-active {
         /* 폭이 줄어드는 동안만 잘라낸다. 평상시에도 걸어 두면 패널 안에서 바깥으로
@@ -122,8 +128,8 @@ const sidebarOpen = ref(false)
     }
 }
 
-/* 모바일: 전체 화면 오버레이라 폭이 아니라 오른쪽에서 밀려 들어오게 한다 */
-@media (max-width: 767px) {
+/* 좁은 화면: 전체 화면 오버레이라 폭이 아니라 오른쪽에서 밀려 들어오게 한다 */
+@media (max-width: 1279px) {
     .assistant-dock-enter-active,
     .assistant-dock-leave-active {
         transition:
