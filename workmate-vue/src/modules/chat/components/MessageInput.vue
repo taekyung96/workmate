@@ -99,6 +99,8 @@ function onKeydown(event: KeyboardEvent): void {
             <Button
                 size="icon"
                 class="shrink-0"
+                aria-label="전송"
+                title="전송"
                 :disabled="disabled || text.trim() === ''"
                 @click="submit"
             >
