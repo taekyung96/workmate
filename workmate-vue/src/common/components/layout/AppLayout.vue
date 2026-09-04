@@ -3,9 +3,12 @@
  * 앱 기본 레이아웃 — 좌측 공통 사이드바 + 본문(RouterView) + 우측 도우미 패널.
  */
 import { ref } from 'vue'
+import { Menu } from 'lucide-vue-next'
 import AppSidebar from './AppSidebar.vue'
 import AssistantToggle from '@/common/components/assistant/AssistantToggle.vue'
 import AssistantPanel from '@/common/components/assistant/AssistantPanel.vue'
+import BrandMark from '@/common/components/BrandMark.vue'
+import { Button } from '@/common/components/ui/button'
 
 /**
  * 도우미 패널 열림 상태.
@@ -17,17 +20,56 @@ import AssistantPanel from '@/common/components/assistant/AssistantPanel.vue'
  * 여러 화면이 공유하는 값이 아니라 이 레이아웃 한 곳의 상태라 store 가 아니라 로컬 ref 다.
  */
 const assistantOpen = ref(false)
+
+/**
+ * 모바일 사이드바(서랍) 열림 상태.
+ *
+ * 사이드바가 아니라 레이아웃이 드는 이유: 여는 버튼(햄버거)이 사이드바 <b>바깥</b>
+ * 상단 바에 있어야 한다. 닫혀 있을 때 사이드바는 화면 밖이라 스스로를 열 수 없다.
+ *
+ * md 이상에서는 사이드바가 항상 보이므로 이 값은 쓰이지 않는다.
+ */
+const sidebarOpen = ref(false)
 </script>
 
 <template>
     <div class="flex h-screen">
-        <AppSidebar />
+        <AppSidebar :open="sidebarOpen" @close="sidebarOpen = false" />
 
-        <!-- 본문 — 패널이 열리면 flex 가 남은 폭으로 줄여 준다(min-w-0 이 있어야 실제로 줄어든다).
-             패널 폭이 애니메이션되는 동안 본문 폭도 매 프레임 다시 계산돼 함께 부드럽게 밀린다 -->
-        <main class="min-w-0 flex-1 overflow-hidden">
-            <slot />
-        </main>
+        <!-- 모바일 서랍 배경 덮개 — 바깥을 누르면 닫힌다. 서랍(z-50)보다 뒤(z-40)에 둔다 -->
+        <div
+            v-if="sidebarOpen"
+            class="fixed inset-0 z-40 bg-black/50 md:hidden"
+            aria-hidden="true"
+            @click="sidebarOpen = false"
+        />
+
+        <!-- 본문 열 — 모바일에서는 위에 상단 바가 얹히므로 세로로 쌓는다.
+             min-w-0 는 도우미 패널이 열릴 때 본문이 실제로 줄어들게 하고,
+             min-h-0 는 안쪽 화면(h-full)이 상단 바를 뺀 높이를 정확히 받게 한다 -->
+        <div class="flex min-w-0 min-h-0 flex-1 flex-col">
+            <!-- 모바일 상단 바 — 사이드바가 접혀 있어 로고와 메뉴 진입점이 여기 필요하다 -->
+            <header
+                class="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 md:hidden"
+            >
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="메뉴 열기"
+                    @click="sidebarOpen = true"
+                >
+                    <Menu class="size-5" />
+                </Button>
+                <BrandMark :sparkle="false" class="size-6 shrink-0" />
+                <span class="font-semibold">Workmate</span>
+            </header>
+
+            <!-- 패널이 열리면 flex 가 남은 폭으로 줄여 준다(min-w-0 이 있어야 실제로 줄어든다).
+                 패널 폭이 애니메이션되는 동안 본문 폭도 매 프레임 다시 계산돼 함께 부드럽게 밀린다 -->
+            <main class="min-h-0 min-w-0 flex-1 overflow-hidden">
+                <slot />
+            </main>
+        </div>
 
         <!--
             페이지 인식 도우미 — 로그인 후 모든 화면에 뜬다 (로그인 화면은 이 레이아웃을 쓰지 않는다).

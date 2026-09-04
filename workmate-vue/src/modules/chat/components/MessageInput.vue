@@ -48,7 +48,17 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
     <div class="mx-auto w-full max-w-5xl px-4 pb-4">
-        <div class="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm">
+        <!--
+            좁은 화면에서는 두 줄로 나눈다. 모델 선택·가이드 참고는 shrink-0 이라 폭을 양보하지
+            않는데, 393px 화면에서 둘이 폭을 거의 다 먹어 입력창에 20px 남짓만 남았다.
+            글자가 세로로 한 자씩 쪼개져 읽을 수 없었다.
+            sm 이상에서는 예전과 같은 한 줄이다.
+        -->
+        <div
+            class="flex flex-col gap-2 rounded-2xl border bg-background p-2 shadow-sm sm:flex-row sm:items-end"
+        >
+            <!-- 컨트롤 행 — 모바일에서는 입력창 위에 따로 놓인다 -->
+            <div class="flex items-center gap-2">
             <!-- AI 모델 선택 (공통코드 AI_MODEL) — 목록이 있을 때만 노출. 선택값은 전송 시 modelCode 로 전달 -->
             <Select
                 v-if="models && models.length > 0"
@@ -89,23 +99,28 @@ function onKeydown(event: KeyboardEvent): void {
                 <BookText class="size-4" />
                 가이드 참고
             </button>
-            <Textarea
-                v-model="text"
-                rows="1"
-                placeholder="메시지를 입력하세요…"
-                class="max-h-40 min-h-0 resize-none border-0 py-1.5 shadow-none focus-visible:ring-0"
-                @keydown="onKeydown"
-            />
-            <Button
-                size="icon"
-                class="shrink-0"
-                aria-label="전송"
-                title="전송"
-                :disabled="disabled || text.trim() === ''"
-                @click="submit"
-            >
-                <SendHorizontal class="size-4" />
-            </Button>
+            </div>
+
+            <!-- 입력 + 전송 행 — min-w-0 이 있어야 textarea 가 실제로 줄어든다 -->
+            <div class="flex min-w-0 flex-1 items-end gap-2">
+                <Textarea
+                    v-model="text"
+                    rows="1"
+                    placeholder="메시지를 입력하세요…"
+                    class="max-h-40 min-h-0 resize-none border-0 py-1.5 shadow-none focus-visible:ring-0"
+                    @keydown="onKeydown"
+                />
+                <Button
+                    size="icon"
+                    class="shrink-0"
+                    aria-label="전송"
+                    title="전송"
+                    :disabled="disabled || text.trim() === ''"
+                    @click="submit"
+                >
+                    <SendHorizontal class="size-4" />
+                </Button>
+            </div>
         </div>
     </div>
 </template>
