@@ -38,4 +38,15 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("입력값 오류"));
     }
+
+    @Test
+    @DisplayName("없는 경로는 500이 아니라 404를 반환한다")
+    void unknownPath_returns404() throws Exception {
+        // 캐치올(Exception)이 NoResourceFoundException 을 삼켜 500 을 내던 결함을 지킨다.
+        // 없는 주소를 부른 것은 요청 잘못이지 서버 잘못이 아니다.
+        mockMvc.perform(get("/이런경로는없다"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("요청한 경로를 찾을 수 없습니다."));
+    }
 }
