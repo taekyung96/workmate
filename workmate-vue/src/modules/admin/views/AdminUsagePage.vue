@@ -17,6 +17,7 @@ import PageTabs from '@/common/components/PageTabs.vue'
 import LoadingArea from '@/common/components/LoadingArea.vue'
 import Pagination from '@/common/components/Pagination.vue'
 import UsageOverview from '@/common/components/usage/UsageOverview.vue'
+import TableScroller from '@/common/components/TableScroller.vue'
 import { adminTabs } from '../constants'
 import { useUsageStats } from '../composables/useUsageStats'
 
@@ -110,8 +111,8 @@ function num(v: number | null | undefined): string {
                         </span>
                     </h2>
 
-                    <div class="overflow-x-auto rounded-lg border">
-                        <table class="w-full text-sm">
+                    <TableScroller>
+                        <table class="w-full min-w-[520px] text-sm">
                             <thead class="bg-muted/50 text-left">
                                 <tr>
                                     <th class="px-4 py-2 font-medium">사용자</th>
@@ -152,7 +153,7 @@ function num(v: number | null | undefined): string {
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </TableScroller>
 
                     <Pagination
                         v-if="totalPages > 1"

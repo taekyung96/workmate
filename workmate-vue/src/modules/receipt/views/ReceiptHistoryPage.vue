@@ -14,6 +14,7 @@ import PageHeader from '@/common/components/PageHeader.vue'
 import Pagination from '@/common/components/Pagination.vue'
 import { formatBizNo, formatYmd, formatAmount } from '@/common/utils/format'
 import { useReceiptHistory } from '../composables/useReceiptHistory'
+import TableScroller from '@/common/components/TableScroller.vue'
 import { receiptTabs } from '../routes'
 
 const { receipts, page, totalPages, totalElements, loading, error, load, goToPage, downloadCsv } =
@@ -59,8 +60,8 @@ onMounted(load)
                     아직 분석한 영수증이 없습니다.
                 </p>
 
-                <div v-else class="overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm">
+                <TableScroller v-else>
+                    <table class="w-full min-w-[640px] text-sm">
                         <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                             <tr>
                                 <th class="px-4 py-2.5 font-medium">결제일</th>
@@ -91,7 +92,7 @@ onMounted(load)
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableScroller>
 
                 <!-- 페이징 -->
                 <div
