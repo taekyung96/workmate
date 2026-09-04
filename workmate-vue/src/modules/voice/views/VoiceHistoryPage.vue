@@ -17,6 +17,7 @@ import Pagination from '@/common/components/Pagination.vue'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import { formatDate, formatFileSize } from '@/common/utils/format'
 import { useVoiceHistory } from '../composables/useVoiceHistory'
+import TableScroller from '@/common/components/TableScroller.vue'
 import { voiceTabs } from '../routes'
 
 const router = useRouter()
@@ -74,8 +75,8 @@ async function confirmDelete(): Promise<void> {
                 아직 분석한 회의록이 없습니다.
             </p>
 
-            <div v-else class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+            <TableScroller v-else>
+                <table class="w-full min-w-[760px] text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-2.5 font-medium">제목</th>
@@ -112,7 +113,7 @@ async function confirmDelete(): Promise<void> {
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableScroller>
 
             <!-- 페이징 -->
             <div

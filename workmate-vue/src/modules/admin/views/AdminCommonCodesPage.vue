@@ -27,6 +27,7 @@ import PageHeader from '@/common/components/PageHeader.vue'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import LoadingArea from '@/common/components/LoadingArea.vue'
 
+import TableScroller from '@/common/components/TableScroller.vue'
 import { adminTabs } from '../constants'
 import { useCommonCodes } from '../composables/useCommonCodes'
 import type { CommonCodeGroup, CommonCodeItem } from '../types'
@@ -303,8 +304,8 @@ async function confirmDeleteCode(): Promise<void> {
                         코드가 없습니다.
                     </p>
 
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                    <TableScroller v-else>
+                        <table class="w-full min-w-[600px] text-sm">
                             <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                                 <tr>
                                     <th class="px-3 py-2 font-medium">코드</th>
@@ -348,7 +349,7 @@ async function confirmDeleteCode(): Promise<void> {
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </TableScroller>
                 </section>
             </div>
 

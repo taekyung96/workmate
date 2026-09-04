@@ -14,6 +14,7 @@ import { ShieldCheck } from 'lucide-vue-next'
 import PageTabs from '@/common/components/PageTabs.vue'
 import PageHeader from '@/common/components/PageHeader.vue'
 
+import TableScroller from '@/common/components/TableScroller.vue'
 import { adminTabs } from '../constants'
 import { useAdminAuditLogs } from '../composables/useAdminAuditLogs'
 
@@ -55,8 +56,8 @@ function actionLabel(action: string): string {
             </p>
 
             <template v-else>
-                <div class="overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm">
+                <TableScroller>
+                    <table class="w-full min-w-[520px] text-sm">
                         <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                             <tr>
                                 <th class="px-4 py-2.5 font-medium">시각</th>
@@ -90,7 +91,7 @@ function actionLabel(action: string): string {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableScroller>
 
                 <!-- 페이징 -->
                 <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">

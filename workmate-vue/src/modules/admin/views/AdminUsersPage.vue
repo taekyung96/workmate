@@ -28,6 +28,7 @@ import Pagination from '@/common/components/Pagination.vue'
 import ConfirmDialog from '@/common/components/ConfirmDialog.vue'
 import { useDebouncedWatch } from '@/common/composables/useDebouncedWatch'
 
+import TableScroller from '@/common/components/TableScroller.vue'
 import { adminTabs } from '../constants'
 import { useAdminUsers } from '../composables/useAdminUsers'
 import type { AdminUser } from '../types'
@@ -160,8 +161,8 @@ function roleLabel(role: string): string {
             </p>
 
             <template v-else>
-                <div class="overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm">
+                <TableScroller>
+                    <table class="w-full min-w-[720px] text-sm">
                         <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                             <tr>
                                 <th class="px-4 py-2.5 font-medium">이름</th>
@@ -206,7 +207,7 @@ function roleLabel(role: string): string {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableScroller>
 
                 <!-- 페이징 -->
                 <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">

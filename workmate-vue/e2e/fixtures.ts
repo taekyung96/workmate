@@ -22,6 +22,145 @@ export const AI_MODELS = [
     { code: 'gemini-flash-latest', codeName: 'Gemini Flash (latest)' },
 ]
 
+/**
+ * 목록 화면의 행 데이터.
+ *
+ * <p>빈 목록으로 두면 표가 아예 렌더되지 않아 <b>레이아웃을 잴 대상이 없다.</b>
+ * 표가 좁은 화면에서 찌그러지는지 보려면 행이 실제로 있어야 한다
+ * (e2e/table-scroll.spec.ts). 값은 실제 화면에서 가장 긴 축에 맞춰 골랐다 —
+ * 짧은 값만 넣으면 줄바꿈이 안 일어나 결함을 재현하지 못한다.</p>
+ */
+const AUDIT_LOGS = [
+    {
+        auditSeq: 1,
+        adminUserSeq: 1,
+        adminUserName: '관리자 (데모)',
+        targetUserSeq: 2,
+        targetUserName: '홍길동 (데모)',
+        action: 'RESET_PASSWORD',
+        createdAt: '2026-08-25T00:07:00',
+    },
+    {
+        auditSeq: 2,
+        adminUserSeq: 1,
+        adminUserName: '관리자 (데모)',
+        targetUserSeq: 3,
+        targetUserName: '김서연 (데모)',
+        action: 'UNLOCK',
+        createdAt: '2026-08-24T18:31:00',
+    },
+]
+
+const RECEIPTS = [
+    {
+        receiptSeq: 1,
+        userSeq: 1,
+        imagePath: '/uploads/r1.jpg',
+        payAmount: 48100,
+        bizNo: '2208162517',
+        payDate: '2026-07-15',
+        cardName: '신한카드',
+        bizNoValid: true,
+        selectType: 'AUTO',
+        rawJson: null,
+    },
+    {
+        receiptSeq: 2,
+        userSeq: 1,
+        imagePath: '/uploads/r2.jpg',
+        payAmount: 22000,
+        bizNo: '6837602314',
+        payDate: '2026-04-01',
+        cardName: '국민카드',
+        bizNoValid: true,
+        selectType: 'MANUAL',
+        rawJson: null,
+    },
+]
+
+const VOICE_RECORDS = [
+    {
+        recordSeq: 1,
+        title: '2026년 3분기 제품 로드맵 검토 회의',
+        originFileName: 'roadmap-review-2026-q3.m4a',
+        fileSize: 12_582_912,
+        hasAudio: true,
+        createdAt: '2026-08-30T14:02:00',
+    },
+    {
+        recordSeq: 2,
+        title: '주간 스프린트 회고',
+        originFileName: 'sprint-retro.m4a',
+        fileSize: 4_194_304,
+        hasAudio: false,
+        createdAt: '2026-08-28T10:00:00',
+    },
+]
+
+const USER_USAGE = [
+    {
+        userSeq: 1,
+        maskedEmail: 'd**@e*****.com',
+        userName: '관리자 (데모)',
+        callCount: 128,
+        inputTokens: 45_120,
+        outputTokens: 18_900,
+        untrackedCallCount: 3,
+        estimatedCostUsd: 0.42,
+        estimatedCostKrw: 580,
+    },
+    {
+        userSeq: 2,
+        maskedEmail: 'h**@e*****.com',
+        userName: '홍길동 (데모)',
+        callCount: 34,
+        inputTokens: 9_800,
+        outputTokens: 4_210,
+        untrackedCallCount: 0,
+        estimatedCostUsd: 0.09,
+        estimatedCostKrw: 124,
+    },
+]
+
+/**
+ * 사용량 요약.
+ *
+ * 사용자별 표가 <code>v-else-if="summary"</code> 안에 있어, 요약이 없으면 표가 아예
+ * 렌더되지 않는다. 레이아웃을 재려면 이 응답이 필요하다.
+ */
+const USAGE_SUMMARY = {
+    period: { from: '2026-08-01', to: '2026-08-31' },
+    total: {
+        callCount: 162,
+        inputTokens: 54_920,
+        outputTokens: 23_110,
+        untrackedCallCount: 3,
+        unpricedCallCount: 5,
+        estimatedCostUsd: 0.51,
+        estimatedCostKrw: 704,
+    },
+    byFeature: [
+        { feature: 'CHAT', callCount: 120, inputTokens: 40_000, outputTokens: 18_000, untrackedCallCount: 0 },
+        { feature: 'RECEIPT', callCount: 20, inputTokens: 8_000, outputTokens: 3_000, untrackedCallCount: 0 },
+        { feature: 'VOICE', callCount: 12, inputTokens: 5_000, outputTokens: 1_900, untrackedCallCount: 0 },
+        { feature: 'ASSISTANT', callCount: 7, inputTokens: 1_920, outputTokens: 210, untrackedCallCount: 0 },
+        { feature: 'EMBEDDING', callCount: 3, inputTokens: 0, outputTokens: 0, untrackedCallCount: 3 },
+    ],
+    daily: [
+        { date: '2026-08-29', callCount: 40, inputTokens: 14_000, outputTokens: 6_000, untrackedCallCount: 0 },
+        { date: '2026-08-30', callCount: 62, inputTokens: 20_920, outputTokens: 9_110, untrackedCallCount: 1 },
+        { date: '2026-08-31', callCount: 60, inputTokens: 20_000, outputTokens: 8_000, untrackedCallCount: 2 },
+    ],
+}
+
+/** 목록 응답 한 페이지로 감싼다 */
+const asPage = (content: unknown[]) => ({
+    content,
+    page: 0,
+    totalPages: 1,
+    totalElements: content.length,
+})
+
 /** 브라우저가 서버로 보내는 모든 요청을 가로채는 라우터 */
 export interface ApiMock {
     /** 로그인 상태로 만든다 (세션 복원 요청이 사용자 정보를 돌려준다) */
@@ -96,6 +235,23 @@ async function installApiMock(page: Page): Promise<ApiMock> {
                     'event:token\ndata:{"delta":"무엇을 도와드릴까요?"}\n\n' +
                     'event:done\ndata:{}\n\n',
             })
+        }
+
+        // 목록 화면 — 행이 있어야 표 레이아웃을 잴 수 있다(table-scroll.spec.ts)
+        if (path === '/v1/admin/audit-logs') {
+            return route.fulfill({ status: 200, headers, body: JSON.stringify(ok(asPage(AUDIT_LOGS))) })
+        }
+        if (path === '/v1/receipts') {
+            return route.fulfill({ status: 200, headers, body: JSON.stringify(ok(asPage(RECEIPTS))) })
+        }
+        if (path === '/v1/voice') {
+            return route.fulfill({ status: 200, headers, body: JSON.stringify(ok(asPage(VOICE_RECORDS))) })
+        }
+        if (path.endsWith('/usage/summary')) {
+            return route.fulfill({ status: 200, headers, body: JSON.stringify(ok(USAGE_SUMMARY)) })
+        }
+        if (path === '/v1/admin/usage/by-user') {
+            return route.fulfill({ status: 200, headers, body: JSON.stringify(ok(asPage(USER_USAGE))) })
         }
 
         // 그 외는 빈 결과 — 화면이 데이터 없이도 떠야 한다
