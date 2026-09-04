@@ -105,14 +105,28 @@ describe('useAssistant', () => {
         expect(messages.value.at(-1)?.content).toBe('안녕')
     })
 
-    it('패널을 닫으면 대화가 비워진다', async () => {
+    it('패널을 닫아도 대화가 남는다 — 좁은 화면에서는 닫기가 강제다', async () => {
+        // 예전에는 닫으면 비웠다. 패널이 본문을 덮는 화면에서는 본문을 보려면 닫아야 하는데,
+        // 그때마다 대화가 날아갔다. 닫기는 "그만 보겠다"이지 "지우겠다"가 아니다.
         respondWith('답')
-        const { send, messages, close } = useAssistant()
+        const { send, messages, abort } = useAssistant()
+
+        await send('질문')
+        const before = messages.value.length
+        expect(before).toBeGreaterThan(0)
+
+        abort()
+        expect(messages.value).toHaveLength(before)
+    })
+
+    it('새 대화를 시작하면 비워진다 — 비우기는 이 경로로만 일어난다', async () => {
+        respondWith('답')
+        const { send, messages, clear } = useAssistant()
 
         await send('질문')
         expect(messages.value.length).toBeGreaterThan(0)
 
-        close()
+        clear()
         expect(messages.value).toHaveLength(0)
     })
 
