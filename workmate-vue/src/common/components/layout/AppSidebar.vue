@@ -37,8 +37,29 @@ import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useChatStore } from '@/modules/chat/stores/chat.store'
 import type { ChatRoom } from '@/modules/chat/types'
 
+/**
+ * 모바일 서랍 열림 상태는 부모(AppLayout)가 들고 있다.
+ * 여는 버튼(햄버거)이 사이드바 <b>바깥</b> 상단 바에 있어야 하기 때문이다 —
+ * 닫혀 있을 때는 사이드바 자신이 화면에 없어 스스로를 열 수 없다.
+ */
+const props = defineProps<{
+    /** 모바일에서 서랍이 열려 있는가 (md 이상에서는 무시된다 — 항상 보인다) */
+    open?: boolean
+}>()
+const emit = defineEmits<{
+    /** 서랍을 닫아 달라는 요청 */
+    close: []
+}>()
+
 const route = useRoute()
 const router = useRouter()
+
+// 메뉴나 채팅방을 고르면 서랍을 닫는다 — 안 닫으면 화면이 바뀌어도 서랍이 본문을 계속 가린다.
+// (md 이상에서는 부모가 open 을 보지 않으므로 이 emit 이 레이아웃에 영향을 주지 않는다)
+watch(
+    () => route.fullPath,
+    () => emit('close'),
+)
 const auth = useAuthStore()
 const { logout } = useAuth()
 const chat = useChatStore()
@@ -92,7 +113,20 @@ async function confirmDeleteRoom(): Promise<void> {
 </script>
 
 <template>
-    <aside class="flex h-screen w-64 shrink-0 flex-col border-r bg-muted/30">
+    <!--
+        데스크탑(md↑): static 이라 레이아웃의 한 칸이 된다 — 본문이 오른쪽에 나란히 놓인다.
+        모바일: fixed 서랍이다. 닫히면 -translate-x-full 로 화면 밖에 대기한다.
+
+        모바일에서 접는 이유: w-64(256px) 를 고정으로 두면 393px 화면에서 본문에 137px 만
+        남아 채팅 입력 바가 통째로 넘치고 전송 버튼이 화면 밖으로 밀려났다.
+
+        모바일에서 bg-background 로 덮는 이유: bg-muted/30 은 반투명이라 서랍으로 띄우면
+        뒤 본문이 비쳐 글자가 겹쳐 읽힌다. 레이아웃의 한 칸일 때(md↑)만 반투명이어도 된다.
+    -->
+    <aside
+        class="fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r bg-background transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:bg-muted/30"
+        :class="props.open ? 'translate-x-0' : '-translate-x-full'"
+    >
         <!-- 로고 + 새 채팅 -->
         <div class="p-3">
             <div class="mb-3 flex items-center gap-2 px-2">

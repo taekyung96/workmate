@@ -92,18 +92,14 @@ test.describe('채팅 입력 바 — 도우미 버튼과 겹치지 않는다', (
     })
 
     /**
-     * 아직 통과하지 못한다 — <b>알려진 결함을 코드에 남겨 두는 것</b>이 목적이다.
+     * 모바일에서 입력 바가 화면을 넘치던 결함을 지킨다.
      *
-     * <p>AppSidebar 가 <code>w-64</code> 고정이고 반응형 클래스가 없어, 393px 화면에서도
-     * 사이드바가 256px 를 차지한다. 본문에 137px 만 남아 입력 바가 통째로 넘치고
-     * 전송 버튼이 화면 오른쪽 밖 222px 지점에 놓인다(실제 앱 기준 측정값).</p>
-     *
-     * <p>여기서 재면 값이 훨씬 작게 나온다 — E2E 는 API 를 가로채 모델 목록이 비어 있고,
-     * 그만큼(약 120px) 모델 드롭다운이 빠져 입력 바가 좁기 때문이다. <b>이 테스트가 통과해도
-     * 실제 화면이 정상이라는 뜻은 아니다.</b> 사이드바를 접는 수정이 들어가면 fixme 를 떼고
-     * 목 데이터에 모델 목록을 채워 다시 재야 한다.</p>
+     * <p>예전에는 AppSidebar 가 <code>w-64</code> 고정이고 반응형 클래스가 없어, 393px
+     * 화면에서도 사이드바가 256px 를 차지했다. 본문에 137px 만 남아 입력 바가 통째로 넘치고
+     * 전송 버튼이 화면 오른쪽 밖 222px 지점에 놓였다. 지금은 md 미만에서 사이드바를
+     * 서랍으로 접고, 입력 바도 두 줄로 나눈다.</p>
      */
-    test.fixme('모바일: 전송 버튼이 화면 안에 있고 누를 수 있다', async ({ page, api }) => {
+    test('모바일: 전송 버튼이 화면 안에 있고 누를 수 있다', async ({ page, api }) => {
         test.skip(test.info().project.name !== 'mobile', '모바일 전용')
         await api.signIn()
         await openChatWithDraft(page)
@@ -121,5 +117,45 @@ test.describe('채팅 입력 바 — 도우미 버튼과 겹치지 않는다', (
         expect(
             await buttonAtPoint(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 }),
         ).not.toBe('도우미 열기')
+    })
+
+    test('모바일: 사이드바는 접혀 있고 햄버거로 연다', async ({ page, api }) => {
+        test.skip(test.info().project.name !== 'mobile', '모바일 전용')
+        await api.signIn()
+        await page.goto('/chat')
+
+        const sidebar = page.locator('aside')
+        const viewport = page.viewportSize()!
+
+        // 접혀 있어야 한다 — 펼쳐진 채로 두면 본문이 그만큼 좁아져 입력 바가 넘친다
+        await expect(page.getByRole('button', { name: '메뉴 열기' })).toBeVisible()
+        expect((await sidebar.boundingBox())!.x, '사이드바가 접히지 않았다').toBeLessThan(0)
+
+        // 햄버거로 열리고, 화면 안으로 들어와야 한다
+        await page.getByRole('button', { name: '메뉴 열기' }).click()
+        await expect
+            .poll(async () => (await sidebar.boundingBox())!.x, { timeout: 2000 })
+            .toBeGreaterThanOrEqual(0)
+        expect((await sidebar.boundingBox())!.width).toBeLessThanOrEqual(viewport.width)
+
+        // 메뉴를 고르면 스스로 닫힌다 — 안 닫히면 이동해도 서랍이 본문을 계속 가린다
+        await page.getByRole('link', { name: '가이드', exact: true }).click()
+        await expect
+            .poll(async () => (await sidebar.boundingBox())!.x, { timeout: 2000 })
+            .toBeLessThan(0)
+    })
+
+    test('데스크탑: 사이드바는 항상 보이고 상단 바는 없다', async ({ page, api }) => {
+        test.skip(test.info().project.name !== 'desktop', '데스크탑 전용')
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await api.signIn()
+        await page.goto('/chat')
+
+        // 모바일 대응을 넣으면서 데스크탑이 바뀌지 않았는지 지킨다
+        const sidebar = page.locator('aside')
+        expect((await sidebar.boundingBox())!.x).toBe(0)
+        await expect(page.getByRole('button', { name: '메뉴 열기' })).toBeHidden()
+        // 본문이 사이드바 오른쪽에서 시작해야 한다 (겹치면 x 가 0 이 된다)
+        expect((await page.locator('main').boundingBox())!.x).toBeGreaterThanOrEqual(256)
     })
 })
