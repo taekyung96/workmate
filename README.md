@@ -17,7 +17,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 
 <!-- demo-url:end -->
 
-**스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다.
+**스트리밍 채팅** — Spring AI 로 LLM 응답을 SSE 로 토큰 단위 스트리밍하고, 사내 가이드를 먼저 검색(RAG)해 출처와 함께 답한다. 모델은 화면에서 고르며 Gemini·Groq 을 재시작 없이 오간다.
 
 ![스트리밍 채팅](docs/images/02_chat.png)
 
@@ -33,7 +33,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 
 ## 주요 기능
 
-- **스트리밍 채팅** — Spring AI(Gemini) 응답을 SSE로 토큰 단위 스트리밍한다. 기본적으로 사내 가이드를 먼저 검색(RAG)해 근거가 있으면 출처와 함께 답하고, 없으면 순수 AI 답변으로 자동 폴백한다.
+- **스트리밍 채팅** — Spring AI 로 LLM 응답을 SSE 로 토큰 단위 스트리밍한다. 모델 드롭다운에서 Gemini·Groq 을 재시작 없이 바꿀 수 있고, 어느 모델이 어느 제공자인지는 공통코드가 정한다. 기본적으로 사내 가이드를 먼저 검색(RAG)해 근거가 있으면 출처와 함께 답하고, 없으면 순수 AI 답변으로 자동 폴백한다.
 - **영수증 자동 인식** — 이미지를 멀티모달로 분석해 금액·사업자번호·결제일을 뽑아낸다.
 - **사내 가이드 RAG** — pgvector에 임베딩한 가이드 문서를 검색해 답변에 인용한다.
 - **회의록 요약** — 회의 음성을 받아 STT + AI 요약으로 회의록을 만들고, 원본 오디오와 함께 이력으로 보관한다.
@@ -66,7 +66,7 @@ DB → WAS → WEB 순으로 띄우고 브라우저로 8080에 접속하면 운�
 
 ```bash
 docker compose up -d db                 # pgvector PostgreSQL 17
-./gradlew :workmate-was:bootRun         # 8081, .env의 Gemini·AES 키 필요
+./gradlew :workmate-was:bootRun         # 8081, .env의 Gemini(임베딩)·Groq(채팅)·AES 키 필요
 ./gradlew :workmate-web:bootRun         # 8080, Vue 빌드까지 자동
 ```
 
@@ -82,11 +82,14 @@ WAS 를 처음 띄우면 Flyway 가 스키마와 참조 데이터를 자동으�
 
 ### 자동화 테스트
 
-| 대상             | 테스트 |     결과 | 실행 명령                              |
-| ---------------- | -----: | -------: | -------------------------------------- |
-| **workmate-was** |    105 | 105 통과 | `./gradlew :workmate-was:test`         |
-| **workmate-web** |      9 |   9 통과 | `./gradlew :workmate-web:test`         |
-| **workmate-vue** |      3 |   3 통과 | `cd workmate-vue && npm run test:unit` |
+| 대상                    | 테스트 |     결과 | 실행 명령                              |
+| ----------------------- | -----: | -------: | -------------------------------------- |
+| **workmate-was**        |    156 | 156 통과 | `./gradlew :workmate-was:test`         |
+| **workmate-web**        |     10 |  10 통과 | `./gradlew :workmate-web:test`         |
+| **workmate-vue** (유닛) |     73 |  73 통과 | `cd workmate-vue && npm run test:unit` |
+| **E2E** (실제 브라우저) |     25 |  25 통과 | `cd workmate-vue && npm run test:e2e`  |
+
+프론트는 15개 화면 전부를 마운트해 렌더·빈 상태·오류 상태를 확인하고, E2E 는 실제 브라우저(Chromium)로 데스크탑·모바일 두 폭에서 레이아웃과 라우팅을 검증한다. E2E 는 백엔드를 띄우지 않고 API 를 브라우저에서 가로챈다 — 실제 LLM 을 부르면 응답이 매번 달라 단언할 수 없고 무료 한도를 테스트가 소모하기 때문이다. 서버 계약은 아래 백엔드 테스트가 지킨다.
 
 WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 스키마는 Flyway 가 스프링 컨텍스트 로딩 시 자동으로 적용하므로 별도 준비가 필요 없다. 위 수치는 개발 DB 에서 측정했고, Flyway 마이그레이션만으로 만든 빈 DB 에서도 같은 결과가 나오는지는 아래 CI 가 매 push 마다 검증한다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
 
