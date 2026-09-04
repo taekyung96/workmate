@@ -57,15 +57,28 @@ const { onMarkdownClick } = useMarkdownCopy()
                     다시 시도
                 </button>
 
-                <div v-if="message.sources?.length" class="mt-2 flex flex-wrap gap-1">
-                    <RouterLink
-                        v-for="source in message.sources"
-                        :key="source.guideSeq"
-                        :to="{ name: 'guide-detail', params: { id: source.guideSeq } }"
-                        class="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                        📎 {{ source.title }}
-                    </RouterLink>
+                <!--
+                    "출처"가 아니라 "찾은 문서"라고 쓴다.
+
+                    이 목록은 <b>검색이 임계값을 넘겨 가져온 문서</b>이지, 답변이 실제로 인용한
+                    문서가 아니다. 코퍼스에 답이 없는 질문에서도 유사도만 넘기면 딸려 나온다 —
+                    실제로 "연차 휴가 며칠?"에 무관한 개발 가이드 4건이 붙었고, 답변 본문은
+                    "자료에 없습니다"라고 말하는데 화면만 출처를 단 것처럼 보였다.
+                    이 목록이 얼마나 헛도는지는 평가 하네스의 오탐률로 잰다
+                    (rageval/negative-queries.json).
+                -->
+                <div v-if="message.sources?.length" class="mt-2">
+                    <p class="mb-1 text-xs text-muted-foreground">가이드에서 찾은 문서</p>
+                    <div class="flex flex-wrap gap-1">
+                        <RouterLink
+                            v-for="source in message.sources"
+                            :key="source.guideSeq"
+                            :to="{ name: 'guide-detail', params: { id: source.guideSeq } }"
+                            class="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            📎 {{ source.title }}
+                        </RouterLink>
+                    </div>
                 </div>
             </template>
         </div>

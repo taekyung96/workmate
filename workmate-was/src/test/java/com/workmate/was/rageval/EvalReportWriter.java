@@ -33,6 +33,17 @@ public class EvalReportWriter {
     }
 
     /**
+     * 오탐 스윕 결과 한 줄 — 코퍼스에 답이 없는 질문들을 같은 파라미터로 돌린 결과.
+     *
+     * @param topK      상위 K
+     * @param threshold 최소 유사도 임계값
+     * @param metrics   오탐 지표
+     */
+    public record NegativeSweepResult(int topK, double threshold,
+                                      RetrievalMetrics.NegativeMetrics metrics) {
+    }
+
+    /**
      * 마크다운 문자열 생성 (파일 IO 없음).
      *
      * @param results 스윕 결과 리스트
@@ -40,6 +51,22 @@ public class EvalReportWriter {
      * @return 마크다운 문자열
      */
     public String render(List<SweepResult> results, CorpusMeta meta) {
+        return render(results, List.of(), meta);
+    }
+
+    /**
+     * 마크다운 문자열 생성 — 오탐 절을 함께 낸다.
+     *
+     * <p>표를 하나로 합치지 않고 절을 나눈 이유: 위 표는 리포트끼리 비교하는 기준이라
+     * 열 구성이 바뀌면 예전 리포트와 나란히 읽기 어려워진다. 오탐은 뒤에 덧붙인다.
+     *
+     * @param results   정답이 있는 문항의 스윕 결과
+     * @param negatives 답이 없는 문항의 스윕 결과 (비어 있으면 절을 만들지 않는다)
+     * @param meta      코퍼스 메타데이터
+     * @return 마크다운 문자열
+     */
+    public String render(List<SweepResult> results, List<NegativeSweepResult> negatives,
+                         CorpusMeta meta) {
         StringBuilder sb = new StringBuilder();
         sb.append("# RAG 검색 품질 평가 리포트\n\n");
         sb.append("- 실행일: ").append(meta.runDate()).append("\n");
@@ -54,7 +81,35 @@ public class EvalReportWriter {
                     r.metrics().hitRate() * 100, r.metrics().mrr(), r.metrics().missRate() * 100,
                     r.avgContextChars()));
         }
+        appendNegativeSection(sb, negatives);
         return sb.toString();
+    }
+
+    /**
+     * 오탐 절을 덧붙인다 — "답이 없는 질문에 근거를 몇 건이나 내놓는가".
+     *
+     * <p>Hit@K·MRR 만으로는 이 축을 못 본다. 정답이 있는 질문만 재기 때문이다.
+     * 임계값을 올리면 오탐률은 내려가고 재현율(Hit@K)은 깎이므로, 두 표를 함께 봐야
+     * 임계값을 어디에 둘지 판단할 수 있다.
+     *
+     * @param sb        누적 중인 마크다운
+     * @param negatives 오탐 스윕 결과 (비어 있으면 아무것도 하지 않는다)
+     */
+    private void appendNegativeSection(StringBuilder sb, List<NegativeSweepResult> negatives) {
+        if (negatives.isEmpty()) {
+            return;
+        }
+        sb.append("\n\n## 오탐 — 코퍼스에 답이 없는 질문\n\n");
+        sb.append("정답이 코퍼스에 **없는** 질문 ").append(negatives.get(0).metrics().total())
+                .append("건을 같은 파라미터로 돌린 결과다. 근거를 한 건이라도 돌려주면 화면에 문서 목록이 붙으므로, ")
+                .append("답변은 자료에 없다고 말하는데 목록만 딸려 나오는 상태가 된다.\n\n");
+        sb.append("| topK | threshold | 오탐률 | 평균 반환 건수 |\n");
+        sb.append("| ---: | ---: | ---: | ---: |\n");
+        for (NegativeSweepResult n : negatives) {
+            sb.append(String.format(Locale.ROOT, "| %d | %.2f | %.1f%% | %.2f |\n",
+                    n.topK(), n.threshold(),
+                    n.metrics().falsePositiveRate() * 100, n.metrics().avgReturned()));
+        }
     }
 
     /**

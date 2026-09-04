@@ -1,0 +1,34 @@
+[
+    {
+        "question": "연차 휴가는 며칠까지 쓸 수 있어?",
+        "expectedTitles": []
+    },
+    {
+        "question": "경조사 휴가 규정 알려줘",
+        "expectedTitles": []
+    },
+    {
+        "question": "점심 식대 지원 얼마나 나와?",
+        "expectedTitles": []
+    },
+    {
+        "question": "주차 등록은 어디서 해?",
+        "expectedTitles": []
+    },
+    {
+        "question": "건강검진은 언제 받아야 해?",
+        "expectedTitles": []
+    },
+    {
+        "question": "이번 분기 영업 매출 얼마야?",
+        "expectedTitles": []
+    },
+    {
+        "question": "오늘 서울 날씨 어때?",
+        "expectedTitles": []
+    },
+    {
+        "question": "회식 장소 예약됐어?",
+        "expectedTitles": []
+    }
+]

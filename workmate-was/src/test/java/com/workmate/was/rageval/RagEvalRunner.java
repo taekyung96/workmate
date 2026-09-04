@@ -79,39 +79,23 @@ class RagEvalRunner {
         List<EvalQuery> queries = new GoldenSetLoader().load("rageval/queries.json");
         assertThat(queries).as("골든셋이 비어 있으면 안 된다").isNotEmpty();
 
+        // 코퍼스에 답이 <b>없는</b> 질문들 — Hit@K·MRR 이 못 보는 반대편(오탐)을 재기 위한 것이다.
+        List<EvalQuery> negativeQueries = new GoldenSetLoader().load("rageval/negative-queries.json");
+
         // 1) 쿼리당 1회만 임베딩·검색(topK=최대, threshold=0) → 점수 포함 결과를 캐시.
         //    파라미터 스윕은 이 캐시를 재사용하므로 임베딩 호출은 여기서 쿼리 수만큼만 발생한다.
-        List<List<ScoredChunk>> perQueryChunks = new ArrayList<>(queries.size());
-        for (EvalQuery q : queries) {
-            List<Document> docs = vectorStore.similaritySearch(SearchRequest.builder()
-                    .query(q.question())
-                    .topK(MAX_TOP_K)
-                    .similarityThreshold(0.0) // 임계값은 메모리에서 적용하므로 여기선 전부 허용
-                    .build());
-            List<ScoredChunk> chunks = docs.stream()
-                    .map(doc -> new ScoredChunk(
-                            toLong(doc.getMetadata().get("guideSeq")),
-                            String.valueOf(doc.getMetadata().get("title")),
-                            doc.getText(),
-                            doc.getScore() == null ? 0.0 : doc.getScore(),
-                            isAccessible(doc, ownerSeq)))
-                    .toList();
-            perQueryChunks.add(chunks);
-        }
+        List<List<ScoredChunk>> perQueryChunks = search(queries, ownerSeq);
+        List<List<ScoredChunk>> perNegativeChunks = search(negativeQueries, ownerSeq);
 
         // 2) 파라미터 스윕 — 임베딩 없이 캐시된 결과만 메모리에서 자르고 걸러 재현한다.
         List<EvalReportWriter.SweepResult> results = new ArrayList<>();
+        List<EvalReportWriter.NegativeSweepResult> negativeResults = new ArrayList<>();
         for (int topK : TOP_KS) {
             for (double threshold : THRESHOLDS) {
                 List<RetrievalMetrics.EvalCase> cases = new ArrayList<>(queries.size());
                 long contextCharSum = 0;
                 for (int i = 0; i < queries.size(); i++) {
-                    // GuideRetriever 와 동일 순서: threshold(DB) → topK(DB) → 접근필터(Java)
-                    List<ScoredChunk> retained = perQueryChunks.get(i).stream()
-                            .filter(c -> c.score() >= threshold)
-                            .limit(topK)
-                            .filter(ScoredChunk::accessible)
-                            .toList();
+                    List<ScoredChunk> retained = retain(perQueryChunks.get(i), topK, threshold);
                     cases.add(new RetrievalMetrics.EvalCase(
                             retained.stream().map(ScoredChunk::title).toList(),
                             new HashSet<>(queries.get(i).expectedTitles())));
@@ -123,13 +107,22 @@ class RagEvalRunner {
                 results.add(new EvalReportWriter.SweepResult(
                         topK, threshold, RetrievalMetrics.compute(cases),
                         (double) contextCharSum / queries.size()));
+
+                // 오탐 — 같은 파라미터로 "답이 없는 질문"이 근거를 몇 건이나 물고 오는지 잰다
+                List<List<String>> negativeReturned = perNegativeChunks.stream()
+                        .map(chunks -> retain(chunks, topK, threshold).stream()
+                                .map(ScoredChunk::title)
+                                .toList())
+                        .toList();
+                negativeResults.add(new EvalReportWriter.NegativeSweepResult(
+                        topK, threshold, RetrievalMetrics.computeNegative(negativeReturned)));
             }
         }
 
         EvalReportWriter writer = new EvalReportWriter();
         EvalReportWriter.CorpusMeta meta =
                 new EvalReportWriter.CorpusMeta(guides.size(), queries.size(), LocalDate.now());
-        String markdown = writer.render(results, meta);
+        String markdown = writer.render(results, negativeResults, meta);
         System.out.println(markdown);
 
         String reportDir = System.getProperty("ragEval.reportDir", "../docs/features/rag-eval");
@@ -138,6 +131,52 @@ class RagEvalRunner {
         assertThat(Files.exists(file)).isTrue();
         // 최소 한 조합에서는 정답을 건져야 골든셋·검색이 정상 연결된 것
         assertThat(results).anyMatch(r -> r.metrics().hitRate() > 0);
+    }
+
+    /**
+     * 골든셋 문항들을 검색해 점수 포함 결과를 캐시한다 — <b>문항당 임베딩 1회</b>.
+     *
+     * @param queries  검색할 문항들
+     * @param ownerSeq 접근 필터 재현에 쓸 사용자 seq
+     * @return 문항별 검색 결과(자르기 전 원본)
+     */
+    private List<List<ScoredChunk>> search(List<EvalQuery> queries, Long ownerSeq) {
+        List<List<ScoredChunk>> perQuery = new ArrayList<>(queries.size());
+        for (EvalQuery q : queries) {
+            List<Document> docs = vectorStore.similaritySearch(SearchRequest.builder()
+                    .query(q.question())
+                    .topK(MAX_TOP_K)
+                    .similarityThreshold(0.0) // 임계값은 메모리에서 적용하므로 여기선 전부 허용
+                    .build());
+            perQuery.add(docs.stream()
+                    .map(doc -> new ScoredChunk(
+                            toLong(doc.getMetadata().get("guideSeq")),
+                            String.valueOf(doc.getMetadata().get("title")),
+                            doc.getText(),
+                            doc.getScore() == null ? 0.0 : doc.getScore(),
+                            isAccessible(doc, ownerSeq)))
+                    .toList());
+        }
+        return perQuery;
+    }
+
+    /**
+     * 캐시된 검색 결과에 파라미터를 적용해 최종 반환 청크를 재현한다.
+     *
+     * <p>순서는 프로덕션 {@code GuideRetriever} 와 같다: threshold(DB) → topK(DB) → 접근필터(Java).
+     * 정답 문항과 오탐 문항이 <b>같은 메서드</b>를 쓰게 해, 두 표가 서로 다른 규칙으로 계산되는 일을 막는다.
+     *
+     * @param chunks    검색 원본
+     * @param topK      상위 K
+     * @param threshold 최소 유사도
+     * @return 재현된 반환 청크
+     */
+    private List<ScoredChunk> retain(List<ScoredChunk> chunks, int topK, double threshold) {
+        return chunks.stream()
+                .filter(c -> c.score() >= threshold)
+                .limit(topK)
+                .filter(ScoredChunk::accessible)
+                .toList();
     }
 
     /**
