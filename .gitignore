@@ -70,6 +70,8 @@ scripts/*
 !scripts/gen-brand-assets.js
 !scripts/package.json
 !scripts/package-lock.json
+# 부하 테스트 스크립트 — 리포트가 참조하고 재실행 가능해야 한다
+!scripts/loadtest/
 
 # Playwright E2E 산출물
 workmate-vue/test-results/
