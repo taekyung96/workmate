@@ -63,7 +63,7 @@ KEY_HEX=$(printf '%s' "$AES_KEY" | base64 -d | xxd -p -c 64)
 IV_HEX=$(printf '%s' "$AES_IV" | base64 -d | xxd -p -c 64)
 enc() { printf '%s' "$1" | openssl enc -aes-256-cbc -K "$KEY_HEX" -iv "$IV_HEX" -base64 -A; }
 
-# 데모 계정 평문 — db/init/legacy/13-seed-demo-data.sql 이 넣던 세 계정과 같다.
+# 데모 계정 평문.
 # user_name 은 암호화 대상이 아니라서 키가 달라도 그대로 매칭된다.
 NAMES=('관리자 (데모)'      '홍길동 (데모)'   '김서연 (데모)')
 MAILS=('demo.admin@example.com' 'hong@example.com' 'kim@example.com')
@@ -100,7 +100,7 @@ if [ "$GRANT_ADMIN" = true ]; then
 "
 fi
 
-# 3) 데모 콘텐츠 — AES 와 무관한 평문 데이터라 db/init/legacy/13-seed-demo-data.sql 원문 그대로다.
+# 3) 데모 콘텐츠 — AES 와 무관한 평문 데이터라 그대로 넣는다.
 #    작은따옴표 대신 $wm$ 달러 인용을 쓴다 — 가이드·회의록 본문에 작은따옴표(아포스트로피)가
 #    섞여 있어도 안전하게 넣기 위함(원본 SQL 의 방식을 그대로 유지). 이 블록은 AES 키와
 #    무관하므로 재암호화가 필요 없고, 통째로 따옴표 처리된 heredoc 이라 bash 변수 치환이
@@ -200,8 +200,8 @@ WHERE NOT EXISTS (SELECT 1 FROM receipt WHERE user_seq = (SELECT user_seq FROM a
 
 -- 회의록 이력 — 실제 STT 전사문과 AI 3단 요약
 INSERT INTO voice_record (user_seq, title, stt_text, summary_md, audio_file_name, origin_file_name, file_size, content_type, created_at)
-SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$, $wm$오늘 회의에서는 Workmate v3의 Vue3 SPA 전환과 얇은 BFF 계층 설계에 대해 논의하겠습니다. 백엔드는 Spring Boot 3와 Spring AI를 기반으로 구축되며, 프론트엔드는 shadcn-vue와 Tailwind CSS v4를 사용하여 단독 SPA로 동적 렌더링됩니다. 브라우저는 8080포트의 WEB BFF만 바라보며, DB 직접 접근은 금지되고 백엔드 WAS(:8081)로 프록시 호출합니다.$wm$, $wm$### 1. 주요 안건
-- Vue3 SPA 전환 및 얇은 BFF 계층 설계 정립
+SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Workmate 아키텍처 및 3-tier BFF 설계 회의$wm$, $wm$오늘 회의에서는 Workmate의 Vue3 SPA 구성과 얇은 BFF 계층 설계에 대해 논의하겠습니다. 백엔드는 Spring Boot 3와 Spring AI를 기반으로 구축되며, 프론트엔드는 shadcn-vue와 Tailwind CSS v4를 사용하여 단독 SPA로 동적 렌더링됩니다. 브라우저는 8080포트의 WEB BFF만 바라보며, DB 직접 접근은 금지되고 백엔드 WAS(:8081)로 프록시 호출합니다.$wm$, $wm$### 1. 주요 안건
+- Vue3 SPA 구성 및 얇은 BFF 계층 설계 정립
 - Spring AI 및 pgvector 기반 RAG 구조 도입
 
 ### 2. 결정 사항
@@ -210,7 +210,7 @@ SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$w
 
 ### 3. 향후 일정
 - 프론트엔드 모듈화 구조 적용 및 통합 테스트 진행$wm$, $wm$meeting-test.wav$wm$, $wm$meeting-test.wav$wm$, 1923330, $wm$audio/wav$wm$, TIMESTAMP '2026-07-31 07:09:50'
-WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Workmate v3 아키텍처 및 3-tier BFF 설계 회의$wm$);
+WHERE NOT EXISTS (SELECT 1 FROM voice_record WHERE user_seq = (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$) AND title = $wm$Workmate 아키텍처 및 3-tier BFF 설계 회의$wm$);
 INSERT INTO voice_record (user_seq, title, stt_text, summary_md, audio_file_name, origin_file_name, file_size, content_type, created_at)
 SELECT (SELECT user_seq FROM app_user WHERE user_name = $wm$관리자 (데모)$wm$), $wm$Sprint 15 주간 기술 스크럼 및 RAG 성능 평가$wm$, $wm$Sprint 15 주간 회의입니다. 금주 진행된 RAG 파이프라인 성능 평가 결과 코사인 유사도 검색 정확도가 92%로 향상되었습니다. 영수증 OCR 자동 인식 모듈과 음성 회의록 STT 파이프라인 통합 작업도 성공적으로 마무리되었습니다.$wm$, $wm$### 1. 성과 공유
 - RAG 검색 정확도 92% 달성

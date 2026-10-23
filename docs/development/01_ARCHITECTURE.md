@@ -1,9 +1,9 @@
 # 01. 아키텍처 설계 (v3 SPA)
 
 - **상태**: 설계 확정 (구현 대기)
-- **상위**: [HANDOVER](../project/HANDOVER.md) · **결정 근거**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)
+- **결정 근거**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)
 
-이 문서는 workmate의 아키텍처를 확정한다. 프론트 디렉토리·계층 상세는 [02_FRONTEND_STRUCTURE_GUIDE](02_FRONTEND_STRUCTURE_GUIDE.md) 참조.
+이 문서는 workmate의 아키텍처를 확정한다.
 
 ---
 
@@ -52,7 +52,7 @@ PostgreSQL 17 + pgvector
 | **운영** | `vite build` 산출물을 WEB이 서빙(`static/`). **SPA fallback**: `/api`·정적자원 외 모든 경로 → `index.html` (Vue Router가 처리) |
 
 - Tailwind v4는 `@tailwindcss/vite` 플러그인으로 Vite에 통합.
-- Gradle 빌드에 `npm run build` 연동하거나 산출물 커밋 (v2 관례 계승 — [09_COMPATIBILITY_MATRIX](09_COMPATIBILITY_MATRIX.md) 참조).
+- Gradle 빌드에 `npm run build` 연동하거나 산출물 커밋.
 
 ---
 
@@ -71,7 +71,7 @@ PostgreSQL 17 + pgvector
 
 - **프론트**: Vitest(단위) — 핵심 흐름 위주(로그인·채팅·페이징 등). 과설계 지양(YAGNI).
 - **백엔드**: v2의 WAS 테스트 그대로 계승 (복사되므로).
-- **E2E**: v2처럼 수동 체크리스트 유지 (로그인~채팅 흐름). [FEATURE_SPEC 완료조건](../project/FEATURE_SPEC.md) 기준.
+- **E2E**: v2처럼 수동 체크리스트 유지 (로그인~채팅 흐름).
 
 ---
 

@@ -2,10 +2,6 @@
 server:
     port: 8080
 
-spring:
-    thymeleaf:
-        cache: true # 운영에서는 템플릿 캐시 활성화
-
 was:
     base-url: ${WAS_BASE_URL}
 
