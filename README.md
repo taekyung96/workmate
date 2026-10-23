@@ -115,16 +115,16 @@ WAS 를 처음 띄우면 Flyway 가 스키마와 참조 데이터를 자동으�
 
 | 대상                    | 테스트 |     결과 | 실행 명령                              |
 | ----------------------- | -----: | -------: | -------------------------------------- |
-| **workmate-was**        |    156 | 156 통과 | `./gradlew :workmate-was:test`         |
+| **workmate-was**        |    160 | 160 통과 | `./gradlew :workmate-was:test`         |
 | **workmate-web**        |     10 |  10 통과 | `./gradlew :workmate-web:test`         |
-| **workmate-vue** (유닛) |     73 |  73 통과 | `cd workmate-vue && npm run test:unit` |
-| **E2E** (실제 브라우저) |     25 |  25 통과 | `cd workmate-vue && npm run test:e2e`  |
+| **workmate-vue** (유닛) |     74 |  74 통과 | `cd workmate-vue && npm run test:unit` |
+| **E2E** (실제 브라우저) |     61 |  61 통과 | `cd workmate-vue && npm run test:e2e`  |
 
-프론트는 15개 화면 전부를 마운트해 렌더·빈 상태·오류 상태를 확인하고, E2E 는 실제 브라우저(Chromium)로 데스크탑·모바일 두 폭에서 레이아웃과 라우팅을 검증한다. E2E 는 백엔드를 띄우지 않고 API 를 브라우저에서 가로챈다 — 실제 LLM 을 부르면 응답이 매번 달라 단언할 수 없고 무료 한도를 테스트가 소모하기 때문이다. 서버 계약은 아래 백엔드 테스트가 지킨다.
+프론트는 15개 화면 전부를 마운트해 렌더·빈 상태·오류 상태를 확인하고, E2E 는 실제 브라우저(Chromium)로 데스크탑(1440)·노트북(1280)·모바일 세 뷰포트에서 레이아웃과 라우팅을 검증한다(테스트 35개를 세 뷰포트에 돌리되 그 폭에 해당하는 61건만 실행하고 나머지 44건은 건너뛴다). E2E 는 백엔드를 띄우지 않고 API 를 브라우저에서 가로챈다 — 실제 LLM 을 부르면 응답이 매번 달라 단언할 수 없고 무료 한도를 테스트가 소모하기 때문이다. 서버 계약은 아래 백엔드 테스트가 지킨다.
 
-WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 스키마는 Flyway 가 스프링 컨텍스트 로딩 시 자동으로 적용하므로 별도 준비가 필요 없다. 위 수치는 개발 DB 에서 측정했고, Flyway 마이그레이션만으로 만든 빈 DB 에서도 같은 결과가 나오는지는 아래 CI 가 매 push 마다 검증한다 — 즉 저장소를 클론한 상태에서 그대로 재현된다.
+WAS 테스트 일부는 실제 PostgreSQL 에 붙는 통합 테스트다. `docker compose up -d db` 로 DB 를 먼저 띄워야 하며, DB 없이 실행하면 스프링 컨텍스트 로딩 단계에서 실패한다. 스키마는 Flyway 가 스프링 컨텍스트 로딩 시 자동으로 적용하므로 별도 준비가 필요 없다. 위 백엔드 수치는 아래 CI 에서 측정했다 — Flyway 마이그레이션만으로 만든 빈 DB 에서 나온 값이라 저장소를 클론한 상태에서 그대로 재현된다.
 
-**측정 조건** — 2026-08-31 · Windows 10 · Oracle OpenJDK 17 (17+35) · Gradle 8.13 · Vitest 4.1.10 · pgvector/pgvector:pg17 · `--rerun-tasks` 로 캐시 없이 1회 전체 실행. (CI 는 Temurin 17)
+**측정 조건** — 2026-10-23 · 백엔드: GitHub Actions(Temurin 17 · pgvector/pgvector:pg17 서비스 컨테이너, [#44](https://github.com/taekyung96/workmate/pull/44) 실행분 테스트 리포트) · 프론트: Windows 10 · Node 22.16 · Vitest 4.1.10 · Playwright 1.62.1.
 
 같은 절차를 [GitHub Actions](.github/workflows/ci.yml)에서도 돌린다. push·PR 마다 빈 PostgreSQL 컨테이너를 띄우고 통합 테스트를 실행하면 Flyway 가 스키마를 알아서 적용하므로, 위 수치는 로컬 환경에만 의존하지 않는다.
 
