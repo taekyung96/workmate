@@ -158,6 +158,14 @@ Redis 분산 상태([ADR-0006](adr/0006-redis-distributed-state.md)) · 페이�
 - **`/api/auth/signup` 이 `ROLE_ADMIN` 전용**이다. 신규 배포에는 관리자가 없으므로
   계정을 새로 만들 수 없다. 위 부트스트랩이 유일한 진입 경로다
 
+### 최근 변경 (2026-10-23)
+
+| PR | 내용 |
+| --- | --- |
+| [#44](https://github.com/taekyung96/workmate/pull/44) | README 에 **DB 스키마 ERD** 추가(`docs/images/erd_schema.png`) · `.gitignore` 에 `.archify/` |
+
+ERD 를 그리면서 **실제 FK 제약이 3개뿐**이라는 게 드러났다 — ↓ §2 참고.
+
 ### 최근 변경 (2026-09-04)
 
 **실제 브라우저로 앱을 돌려 보며** 결함을 찾았다. 여기 적는 것들은 전부 **유닛 테스트 73건과
@@ -174,6 +182,9 @@ E2E 25건이 모두 통과한 상태로 살아 있던 것**들이다 — 화면�
 | [#38](https://github.com/taekyung96/workmate/pull/38) | **표가 좁은 화면에서 찌그러지던 문제** — `TableScroller` 공통 부품 |
 | [#39](https://github.com/taekyung96/workmate/pull/39) | 이 문서 갱신 |
 | [#40](https://github.com/taekyung96/workmate/pull/40) | **도우미 패널** — 태블릿에서 덮기(md → xl) · **닫아도 대화 유지** |
+| [#41](https://github.com/taekyung96/workmate/pull/41) | 이 문서 갱신 |
+| [#42](https://github.com/taekyung96/workmate/pull/42) | **E2E 에 1280px 뷰포트 추가** · 화면 11개 × 폭 3개 반응형 훑기 |
+| [#43](https://github.com/taekyung96/workmate/pull/43) | README 스크린샷 12종 재촬영 · 캡처 파일명 어긋남(관리자 화면만 갱신 안 되던 문제) 정정 |
 
 특히 기억할 것 셋.
 
@@ -189,8 +200,8 @@ E2E 25건이 모두 통과한 상태로 살아 있던 것**들이다 — 화면�
 
 전부 데스크탑에서는 멀쩡하고 좁아질수록 드러난다. **E2E 의 desktop 프로젝트 뷰포트가
 1440×900 하나뿐**이라 어느 것도 걸리지 않았다. 지금은 각 spec 이 `setViewportSize` 로 폭을
-직접 지정해 좁은 쪽을 함께 본다 — **프로젝트에 1280px 뷰포트를 하나 더 두면 새 화면도
-자동으로 걸린다**(미적용, 검토 대상).
+직접 지정해 좁은 쪽을 함께 보고, [#42](https://github.com/taekyung96/workmate/pull/42) 에서 **laptop 프로젝트(1280×800)를
+추가**했다. `e2e/responsive-smoke.spec.ts` 가 화면 11개를 393·768·1280 폭으로 훑으므로 새 화면은 `ROUTES` 에 한 줄 넣으면 함께 걸린다.
 
 마지막 둘은 **화면 크기가 동작의 의미까지 바꾼 사례**다. 도킹에서 "닫기"는 다 썼다는 뜻이지만
 덮는 화면에서는 본문을 보려는 이동이다. 폭만 맞추는 것으로는 부족하고 **의도를 갈라야 했다**.
@@ -285,6 +296,12 @@ PostgreSQL 17 + pgvector
 - **3-tier 유지**: 표현(Vue SPA) / 로직(WAS) / 데이터(PostgreSQL)
 - **브라우저는 8080만 바라봄**, WAS는 내부망에 숨김 (보안 경계)
 - **모노레포** 단일 저장소 (`workmate-was` / `workmate-web` / `workmate-vue`)
+- **DB 스키마** — 테이블 12개(Flyway V1–V8). ERD 는 [README](../../README.md#db-스키마)(`docs/images/erd_schema.png`).
+  **DB 가 강제하는 FK 는 3개뿐**(`user_social_account`·`voice_record` → `app_user`, `common_code` → `common_code_group`)이고,
+  나머지 `user_seq`·`room_seq` 는 컬럼 코멘트에 대상만 적은 논리 참조다 — 정합성은 WAS 서비스 코드가 지킨다.
+  `vector_store` ↔ `guide` 는 컬럼이 아니라 `metadata` JSONB 의 `guideSeq` 로 이어진다
+- **ERD 갱신** — 테이블을 추가·변경하는 마이그레이션을 넣으면 ERD 도 다시 그린다. Archify 스킬로 만들었는데
+  원본 JSON(`.archify/`)은 깃에 올리지 않으므로, 마이그레이션을 읽혀 새로 그린 뒤 뷰어의 **내보내기 → PNG** 로 이미지를 교체한다
 
 ---
 
