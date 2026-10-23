@@ -58,6 +58,14 @@ PostgreSQL 17 + pgvector
 - **workmate-was** — Java 17 · Spring Boot 3.5 · Spring AI 1.1(Google GenAI) · JPA + MyBatis · PostgreSQL 17 + pgvector
 - **빌드** — Gradle 8.13 멀티 프로젝트 (WEB 빌드 시 Vue 산출물 자동 포함)
 
+### DB 스키마
+
+Flyway 마이그레이션(V1–V8) 기준 테이블 12개. 타입 칸에는 각 컬럼의 `COMMENT ON` 을 줄여서 같이 적었다.
+
+![DB 스키마 ERD](docs/images/erd_schema.png)
+
+거의 모든 테이블이 `user_seq` 로 `app_user` 를 가리키지만 DB 가 실제로 FK 제약을 거는 건 3개(`user_social_account`·`voice_record` → `app_user`, `common_code` → `common_code_group`)뿐이다. 나머지는 컬럼 코멘트에 대상을 적어 둔 논리 참조이고, 정합성은 WAS 서비스 코드가 지킨다. `vector_store` 와 `guide` 는 컬럼이 아니라 `metadata` JSONB 안의 `guideSeq` 로 이어진다.
+
 ## RAG 파이프라인
 
 채팅은 답을 바로 만들지 않는다. 먼저 사내 가이드를 검색해 근거를 찾고, 그 근거와 함께 모델에 넘긴다.
