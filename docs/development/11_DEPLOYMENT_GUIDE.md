@@ -1,7 +1,6 @@
 # 11. 배포 가이드 (Deployment Guide)
 
 > 서버는 GHCR 이미지를 **받기만** 한다. 소스 빌드가 없으므로 **JDK·Node·Gradle 이 필요 없다.**
-> 개발 환경 구축은 [08. WSL2·Docker 셋업](08_DOCKER_WSL2_SETUP_GUIDE.md) 참고.
 
 - **관련**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)(3-tier·WAS 은닉) · [CI 워크플로](../../.github/workflows/ci.yml)
 
@@ -30,7 +29,7 @@ PostgreSQL 17 + pgvector (:5432, 포트 미공개)
 
 | 항목                    | 비고                                                            |
 | ----------------------- | --------------------------------------------------------------- |
-| Docker + Docker Compose | 서버에 설치. WSL2 라면 [08 문서](08_DOCKER_WSL2_SETUP_GUIDE.md) |
+| Docker + Docker Compose | 서버에 설치 (WSL2 도 된다) |
 | Git                     | `db/init/*.sh`(롤 생성·데모 승격 스크립트)가 필요해 클론한다    |
 | 도메인                  | Cloudflare 에 등록(네임서버 이전)                               |
 | Cloudflare 계정         | 무료로 충분                                                     |
@@ -171,7 +170,7 @@ V2__seed_reference_data.sql   -- guide·vector_store·common_code(_group) 참조
 
 ### 체크섬 불일치·baseline 문제가 생기면
 
-`docs/development/12_OPERATIONS.md` §9 참고.
+아래 §9 "기동이 안 될 때" 표의 Flyway 항목 참고.
 
 ---
 
@@ -270,7 +269,10 @@ docker compose -f docker-compose.deploy.yml --profile obs up -d
 | WAS 가 기동 직후 죽음                                                          | AES 키 미주입. `Illegal base64 character 24` 는 `${AES_SECRET_KEY}` 가 치환되지 않았다는 뜻                                                                    |
 | WEB 이 기동 직후 죽음<br>`Client id of registration 'kakao' must not be empty` | `.env` 에 소셜 자격증명을 **빈 값**으로 두면 안 된다. `${VAR:not-configured}` 기본값은 변수가 _없을 때만_ 적용된다. 주석 처리해 아예 없애거나 실제 값을 넣는다 |
 | DB 가 unhealthy · init 이 중간에 끊김                                          | `db/init/*.sh` 에 실행권한이 없으면 엔트리포인트가 source 로 읽어, 스크립트의 `exit` 가 초기화 전체를 끊는다. `chmod +x` 로 커밋돼 있어야 한다                 |
-| `ddl-auto: validate` 실패                                                      | Flyway 마이그레이션이 실패했거나 아직 적용 전이다 → §4, `docs/development/12_OPERATIONS.md` §9                                                                 |
+| `ddl-auto: validate` 실패                                                      | Flyway 마이그레이션이 실패했거나 아직 적용 전이다 → §4, 아래 Flyway 항목                                                                 |
+| `FlywayValidateException` · `Migration checksum mismatch` | 적용된 마이그레이션 파일(`V1__…`·`V2__…`)을 배포 뒤에 손으로 고쳤다. `git checkout` 으로 원본을 되돌리고, 바꿔야 하면 새 버전 파일(`V9__…`)을 추가한다. `flyway repair` 는 실제 스키마와 일치하는지 확인한 뒤의 최후 수단 |
+| `Found non-empty schema without schema history table` | 기존(Flyway 이전) DB 에 `baseline-on-migrate` 가 안 먹었다. `spring.flyway.baseline-version` 과 `flyway.enabled: true` 를 확인 → §4 |
+| `relation "guide" already exists` 류 | baseline 없이 V1 이 다시 돌았다. `flyway_schema_history` 를 확인하고 설정을 고쳐 다시 기동한다 — 히스토리 테이블을 손으로 조작하지 말 것 |
 
 ### 로그인·계정
 

@@ -25,14 +25,14 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 /**
  * WEB 보안 설정 (SPA 대응 — F1-05·08·10).
  *
- * <p>v2의 Thymeleaf 방식(리다이렉트)에서 <b>SPA용 JSON 계약</b>으로 전환한다.
+ * <p>화면 이동을 SPA 라우터가 맡으므로, 인증 흐름은 리다이렉트가 아니라 <b>JSON 계약</b>으로 응답한다.
  * <ul>
  *   <li>미인증 접근 → 302 리다이렉트 대신 <b>401 JSON</b> (SPA 라우터가 /login 으로 유도)</li>
  *   <li>로그인 성공/실패 → 리다이렉트 대신 <b>JSON</b> (성공 시 사용자 정보 / 실패 시 사유)</li>
  *   <li>CSRF → 쿠키 기반(XSRF-TOKEN). SPA가 쿠키를 읽어 X-XSRF-TOKEN 헤더로 전송</li>
  *   <li>정적 자원·SPA 라우트는 permitAll, 화면 접근 제어는 프론트 가드 + API 레벨 권한이 담당</li>
  * </ul>
- * 세션 동시성 1개(중복 로그인 방지, F1-08)와 WAS 인증 위임은 v2 그대로 유지한다.
+ * 세션 동시성은 1개로 제한하고(중복 로그인 방지, F1-08), 자격 증명 확인은 WAS 에 위임한다.
  */
 @Configuration
 @EnableWebSecurity

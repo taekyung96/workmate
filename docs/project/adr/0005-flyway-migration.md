@@ -1,7 +1,7 @@
 # ADR-0005. 스키마 관리를 Flyway 마이그레이션으로 전환
 
 - **상태**: 채택
-- **맥락 문서**: [11. 배포 가이드](../../development/11_DEPLOYMENT_GUIDE.md) · [12. 운영 가이드](../../development/12_OPERATIONS.md)
+- **맥락 문서**: [11. 배포 가이드](../../development/11_DEPLOYMENT_GUIDE.md)
 - **관련 ADR**: [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)(3-tier·WAS 은닉)
 
 ## 맥락 (Context)
@@ -46,7 +46,7 @@ V2__seed_reference_data.sql   pg_dump --data-only    (guide·vector_store·commo
 ```
 
 **검증**: 두 방식으로 각각 만든 DB 의 `pg_dump --schema-only` 결과가 1,193줄 전체에서
-바이트 단위로 일치함을 확인했다. 옛 파일은 대조용으로 `db/init/legacy/` 에 남겨 두었다.
+바이트 단위로 일치함을 확인했다. 대조를 마친 옛 파일은 삭제했다(깃 이력에 남아 있다).
 
 **② 이미 떠 있는 DB 는 baseline 으로 물려받는다.**
 
@@ -95,5 +95,5 @@ Flyway 는 기본적으로 SQL 안의 `${...}` 를 자기 플레이스홀더로 
 
 ## 후속 과제
 
-- [ ] `db/init/legacy/` 는 대조가 더 필요 없어지면 삭제한다
+- [x] `db/init/legacy/` 삭제 (2026-10-23)
 - [ ] 마이그레이션이 늘어나면 `V1` 스냅샷을 다시 뜨는 시점(squash)을 검토한다
