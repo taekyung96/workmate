@@ -20,7 +20,7 @@
 | 문서                                              | 내용                                                                |
 | :------------------------------------------------ | :------------------------------------------------------------------ |
 | [아키텍처](development/01_ARCHITECTURE.md)        | 모듈 구성 · 빌드 · 에러 처리 · 테스트                               |
-| [API·DB 명세](development/03_API_DB_SPEC.md)      | 엔드포인트와 테이블                                                 |
+| [API 명세](development/03_API_SPEC.md) | 엔드포인트 — 인증 경로는 WEB/WAS 가 다르다 |
 | [배포 가이드](development/11_DEPLOYMENT_GUIDE.md) | GHCR 이미지 배포 · Cloudflare Tunnel · Flyway 반영 · 자주 막히는 곳 |
 
 ## 측정과 분석
@@ -28,12 +28,10 @@
 | 문서                                                                           | 내용                                              |
 | :----------------------------------------------------------------------------- | :------------------------------------------------ |
 | [RAG 평가 하네스 설계](features/rag-eval/RAG_EVAL_HARNESS_DESIGN.md)           | 골든셋 · 지표(Hit@K · MRR) · 파라미터 격자        |
-| [RAG 평가 리포트 2026-07-29](features/rag-eval/REPORT-2026-07-29.md)           | 첫 평가 — 23문항 · 코퍼스 17건, 전 구간 포화      |
-| [RAG 평가 리포트 2026-08-28](features/rag-eval/REPORT-2026-08-28.md)           | 재평가 — 33문항 · 코퍼스 34건, 운영 기본값의 근거 |
-| [RAG 평가 리포트 2026-09-04](features/rag-eval/REPORT-2026-09-04.md)           | 오탐 측정 추가 — threshold 0.4 → 0.5 의 근거      |
+| [RAG 평가 리포트](features/rag-eval/REPORT.md) | 33문항 + 오탐 8문항 스윕 — threshold 0.5 · topK 4 의 근거 |
 | [임베딩 쿼터(429) 분석](architecture/RAG_VECTORSTORE_EMBEDDING_QUOTA_GUIDE.md) | 무료 티어 한도에 걸린 원인과 대응                 |
-| [부하 테스트 리포트](features/loadtest/REPORT-2026-09-04.md)                   | k6 · 동시 50/200 · 포화 지점과 한계 요인          |
-| [Redis 도입 전후 검증](features/redis/REPORT-2026-09-02.md)                    | 인스턴스 2개에서 세션 · 중복 로그인 · 레이트리밋  |
+| [부하 테스트 리포트](features/loadtest/REPORT.md)                   | k6 · 동시 50/200 · 포화 지점과 한계 요인          |
+| [Redis 도입 전후 검증](features/redis/REPORT.md)                    | 인스턴스 2개에서 세션 · 중복 로그인 · 레이트리밋  |
 
 ## 그 밖에
 

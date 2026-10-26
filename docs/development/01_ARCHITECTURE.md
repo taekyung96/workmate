@@ -41,7 +41,7 @@ PostgreSQL 17 + pgvector          Redis (세션 · 중복 로그인 · 레이트
 Groq 은 OpenAI 호환 엔드포인트라 Spring AI 의 OpenAI 스타터에 주소만 바꿔 붙였다.
 모든 호출의 토큰은 `llm_usage` 에 남겨 사용자별 사용량과 비용을 본다.
 
-RAG 흐름과 파라미터를 정한 근거는 [README](../../README.md#핵심-판단)와 [평가 리포트](../features/rag-eval/REPORT-2026-09-04.md)에 있다.
+RAG 흐름과 파라미터를 정한 근거는 [README](../../README.md#핵심-판단)와 [평가 리포트](../features/rag-eval/REPORT.md)에 있다.
 
 ## 3. 인증
 
