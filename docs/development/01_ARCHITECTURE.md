@@ -58,13 +58,13 @@ RAG 흐름과 파라미터를 정한 근거는 [README](../../README.md#핵심-�
 | 개발 | Vite dev server(:5173)가 `/api` 를 WEB(:8080)으로 프록시한다. 핫 리로드를 쓰면서 실제 API 를 호출한다                                      |
 | 운영 | WEB 의 Gradle `processResources` 단계에서 `npm run build` 를 돌리고 `dist` 를 `static/` 으로 복사한다. WEB jar 하나에 SPA 가 함께 들어간다 |
 
-배포는 GitHub Actions 가 `main` 머지 때 이미지를 GHCR 에 올리고, 서버는 받기만 한다([배포 가이드](11_DEPLOYMENT_GUIDE.md)).
+배포는 GitHub Actions 가 `main` 머지 때 이미지를 GHCR 에 올리고 서버는 받기만 한다([배포 가이드](11_DEPLOYMENT_GUIDE.md)).
 
 ## 5. 데이터
 
 - 스키마는 **Flyway 마이그레이션으로만** 바꾼다. JPA 는 `ddl-auto: validate` 로 대조만 한다 ([ADR-0005](../project/adr/0005-flyway-migration.md))
 - 모든 테이블과 컬럼에 `COMMENT ON` 을 단다. 테이블 관계는 [README 의 ERD](../../README.md#db-스키마) 참고
-- 이메일·전화번호는 AES-256 으로 암호화해 저장하고, 비밀번호는 BCrypt 로 해시한다
+- 이메일·전화번호는 AES-256 으로 암호화해 저장하고 비밀번호는 BCrypt 로 해시한다
 
 ## 6. 에러 처리
 
