@@ -37,7 +37,7 @@ Vue3 단독 SPA(프론트) · 얇은 BFF(세션·프록시) · AI 비즈니스 �
 - **회의록 요약** — 회의 음성을 받아 STT + AI 요약으로 회의록을 만들고, 원본 오디오와 함께 이력으로 보관한다.
 - **관리자** — 사용자 관리와 감사 로그.
 
-인증은 JWT가 아니라 세션(Spring Security, httpOnly 쿠키, CSRF 적용)으로 처리한다. 이유는 [ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md)에 적어 뒀다.
+인증은 JWT가 아니라 세션(Spring Security, httpOnly 쿠키, CSRF 적용)으로 처리한다. 이유는 [ADR-0001](docs/project/adr/0001-spa-bff-session-auth.md)에 적어 뒀다.
 
 ## 구조
 
@@ -214,11 +214,11 @@ docker compose up -d db              # DB 컨테이너만 (스키마는 아직 �
 
 | 결정                                                                             | 채택                        | 기각한 대안 → 이유                                                                                                                         |
 | -------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 서버 구성 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md))          | 얇은 WEB(BFF) + 내부망 WAS  | **단일 Spring Boot 통합** → 주인공인 WAS 에 세션·SPA 서빙을 얹어야 함 · **SPA 가 WAS 직접 호출** → WAS 노출 + 인증 재설계                  |
-| 인증 ([ADR-0001](docs/project/adr/0001-hybrid-ssr-to-vue3-spa.md))               | 세션(httpOnly 쿠키)         | **JWT** → stateless 라 계정잠금·중복로그인 차단에 필요한 **즉시 무효화**가 어려움. 대가로 CSRF 방어가 필요해져 Spring Security CSRF 활성화 |
+| 서버 구성 ([ADR-0001](docs/project/adr/0001-spa-bff-session-auth.md))          | 얇은 WEB(BFF) + 내부망 WAS  | **단일 Spring Boot 통합** → 주인공인 WAS 에 세션·SPA 서빙을 얹어야 함 · **SPA 가 WAS 직접 호출** → WAS 가 외부에 노출됨                  |
+| 인증 ([ADR-0001](docs/project/adr/0001-spa-bff-session-auth.md))               | 세션(httpOnly 쿠키)         | **JWT** → stateless 라 계정잠금·중복로그인 차단에 필요한 **즉시 무효화**가 어려움. 대가로 CSRF 방어가 필요해져 Spring Security CSRF 활성화 |
 | 프론트 구조 ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md))     | 기능별 모듈                 | **타입별 구조** → 현 규모엔 무난하나 모듈 경계·콜로케이션 이점을 못 살림                                                                   |
 | UI ([ADR-0002](docs/project/adr/0002-frontend-structure-and-ui.md))              | shadcn-vue + Tailwind v4    | **순수 CSS 유지** → 완성도 대비 시간 소모가 커 AI 작업 시간을 잠식                                                                         |
-| 권한 ([ADR-0003](docs/project/adr/0003-was-modifiable-and-guide-admin-authz.md)) | WAS 에서 소유자+관리자 판정 | **프론트에서 버튼만 숨김** → 화면과 동작 불일치 · **WEB 에서 권한 판단** → 로직이 중계 계층으로 새어 3-tier 위반                           |
+| 권한 ([ADR-0003](docs/project/adr/0003-guide-authz-in-was.md)) | WAS 에서 소유자+관리자 판정 | **프론트에서 버튼만 숨김** → 화면과 동작 불일치 · **WEB 에서 권한 판단** → 로직이 중계 계층으로 새어 3-tier 위반                           |
 
 ## 문서
 

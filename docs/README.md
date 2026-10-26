@@ -8,9 +8,9 @@
 
 | 문서                                                                 | 내용                                                 |
 | :------------------------------------------------------------------- | :--------------------------------------------------- |
-| [ADR-0001](project/adr/0001-hybrid-ssr-to-vue3-spa.md)               | Vue3 SPA + 얇은 WEB(BFF) + 세션 인증                 |
+| [ADR-0001](project/adr/0001-spa-bff-session-auth.md)               | Vue3 SPA + 얇은 WEB(BFF) + 세션 인증                 |
 | [ADR-0002](project/adr/0002-frontend-structure-and-ui.md)            | 프론트 구조(기능별 모듈) · UI(shadcn-vue + Tailwind) |
-| [ADR-0003](project/adr/0003-was-modifiable-and-guide-admin-authz.md) | 권한 판정은 WAS 에서 — 소유자 + 관리자               |
+| [ADR-0003](project/adr/0003-guide-authz-in-was.md) | 권한 판정은 WAS 에서 — 소유자 + 관리자               |
 | [ADR-0004](project/adr/0004-github-flow-branching.md)                | 브랜치 전략 — GitHub Flow, PR + CI 로 main 보호      |
 | [ADR-0005](project/adr/0005-flyway-migration.md)                     | 스키마 관리를 Flyway 마이그레이션 하나로             |
 | [ADR-0006](project/adr/0006-redis-distributed-state.md)              | 세션 · 중복 로그인 차단 · 레이트리밋을 Redis 로 공유 |
