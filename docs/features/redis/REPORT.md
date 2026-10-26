@@ -1,6 +1,5 @@
 # Redis 분산 상태 저장소 도입 전후 검증 리포트
 
-- 실행일: 2026-09-02
 - 대상: 세션 · `SessionRegistry`(F1-08 중복 로그인 차단) · `ChatRateLimiter`(F2-11)
 - 관련: [ADR-0006](../../project/adr/0006-redis-distributed-state.md)
 
@@ -33,7 +32,7 @@
 
 | 항목               | 방법                                                                                 | 근거                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| ①② 세션·레지스트리 | **Redis 이전에 빌드된 이미지** `workmate-v3-web:latest`(2026-08-31 빌드) 를 2개 띄움 | 이미지의 `app.jar` 를 풀어 확인: `spring-session`·`spring-data-redis`·`RedisSessionConfig` **모두 없음** |
+| ①② 세션·레지스트리 | **Redis 이전에 빌드된 이미지** `workmate-v3-web:latest` 를 2개 띄움 | 이미지의 `app.jar` 를 풀어 확인: `spring-session`·`spring-data-redis`·`RedisSessionConfig` **모두 없음** |
 | ③ 레이트리밋       | 현재 이미지에서 `RATE_LIMIT_STORE=memory` 로 전환                                    | 측정 중 Redis 에 `workmate:ratelimit:*` 키가 **0개** — 인메모리 구현이 실제로 쓰였다는 증거              |
 
 이미지 검증에 쓴 명령:
