@@ -79,3 +79,7 @@ workmate-vue/playwright-report/
 
 # Archify 다이어그램 작업 폴더 (스킬이 생성하는 초안·검증 산출물)
 .archify/
+
+# 로컬 전용 — AI 작업 지침과 humanize 작업 폴더
+CLAUDE.md
+_workspace/

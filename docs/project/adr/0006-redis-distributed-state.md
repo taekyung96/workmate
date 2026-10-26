@@ -1,7 +1,7 @@
 # ADR-0006. 분산 상태를 Redis 로 옮긴다 (세션 · SessionRegistry · 레이트리밋)
 
 - **상태**: 채택
-- **맥락 문서**: [검증 리포트](../../features/redis/REPORT-2026-09-02.md) · [12. 운영 가이드](../../development/12_OPERATIONS.md)
+- **맥락 문서**: [검증 리포트](../../features/redis/REPORT-2026-09-02.md)
 - **관련 ADR**: [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)(세션 인증·WAS 은닉)
 
 ## 맥락 (Context)
@@ -146,4 +146,4 @@ Redis 도 같은 방식을 쓴다. compose 가 `6379:6379` 로 열고, 테스트
 - 레이트리밋 fail-open 발생률을 Prometheus 지표로 노출
 - Redis 자체의 가용성(단일 인스턴스다) — 지금 규모에서는 과한 투자라 다루지 않는다
 - **WEB→WAS 신원 전달은 이번 작업으로 해결되지 않았다.** `X-User-Seq` 는 여전히 서명 없는 평문 헤더이고,
-  WAS 인스턴스가 늘어난 만큼 재검토 시점이 가까워졌다([HANDOVER 알려진 한계](../HANDOVER.md) 참고)
+  WAS 인스턴스가 늘어난 만큼 재검토 시점이 가까워졌다
