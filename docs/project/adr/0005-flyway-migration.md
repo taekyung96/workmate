@@ -2,7 +2,7 @@
 
 - **상태**: 채택
 - **맥락 문서**: [11. 배포 가이드](../../development/11_DEPLOYMENT_GUIDE.md)
-- **관련 ADR**: [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)(3-tier·WAS 은닉)
+- **관련 ADR**: [ADR-0001](0001-spa-bff-session-auth.md)(3-tier·WAS 은닉)
 
 ## 맥락 (Context)
 

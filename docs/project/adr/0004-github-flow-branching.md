@@ -2,7 +2,7 @@
 
 - **상태**: 채택
 - **맥락 문서**: [CI 워크플로](../../../.github/workflows/ci.yml) · [아키텍처](../../development/01_ARCHITECTURE.md)
-- **관련 ADR**: [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)
+- **관련 ADR**: [ADR-0001](0001-spa-bff-session-auth.md)
 
 ## 맥락 (Context)
 

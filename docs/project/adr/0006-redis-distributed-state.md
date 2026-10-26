@@ -2,7 +2,7 @@
 
 - **상태**: 채택
 - **맥락 문서**: [검증 리포트](../../features/redis/REPORT-2026-09-02.md)
-- **관련 ADR**: [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)(세션 인증·WAS 은닉)
+- **관련 ADR**: [ADR-0001](0001-spa-bff-session-auth.md)(세션 인증·WAS 은닉)
 
 ## 맥락 (Context)
 
@@ -46,7 +46,7 @@ workmate:ratelimit:*   (WAS — ChatRateLimiter)
 두 모듈이 공유하는 Java 코드는 없다. 각자 붙고, 섞이지 않게 프리픽스로만 나눈다.
 인스턴스를 둘로 나누면 운영 대상이 하나 더 늘 뿐 얻는 게 없다.
 
-배포에서는 **호스트에 6379 를 열지 않는다** — WAS 를 내부망에 두는 [ADR-0001](0001-hybrid-ssr-to-vue3-spa.md)과 같은 원칙이다.
+배포에서는 **호스트에 6379 를 열지 않는다** — WAS 를 내부망에 두는 [ADR-0001](0001-spa-bff-session-auth.md)과 같은 원칙이다.
 `appendonly yes` 를 켠다. 세션이 여기 있으므로 재시작에 전부 날아가면 로그인한 사용자가 모두 튕긴다.
 
 ### D2. `SpringSessionBackedSessionRegistry` — `repository-type: indexed` 가 필수다

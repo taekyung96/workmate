@@ -2,7 +2,7 @@
 
 > 서버는 GHCR 이미지를 **받기만** 한다. 소스 빌드가 없으므로 **JDK·Node·Gradle 이 필요 없다.**
 
-- **관련**: [ADR-0001](../project/adr/0001-hybrid-ssr-to-vue3-spa.md)(3-tier·WAS 은닉) · [CI 워크플로](../../.github/workflows/ci.yml)
+- **관련**: [ADR-0001](../project/adr/0001-spa-bff-session-auth.md)(3-tier·WAS 은닉) · [CI 워크플로](../../.github/workflows/ci.yml)
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 1. 개요 (Overview)
 
-Workmate v3 시스템은 PostgreSQL `pgvector`와 Spring AI를 활용하여 사내 업무 가이드 문서를 수치 벡터(768차원)로 변환한 뒤 `vector_store` 테이블에 저장하고, 사용자 질문 시 코사인 유사도 기반 RAG(Retrieval-Augmented Generation, 검색 증강 생성) 검색을 제공합니다.
+Workmate 는 PostgreSQL `pgvector`와 Spring AI를 활용하여 사내 업무 가이드 문서를 수치 벡터(768차원)로 변환한 뒤 `vector_store` 테이블에 저장하고, 사용자 질문 시 코사인 유사도 기반 RAG(Retrieval-Augmented Generation, 검색 증강 생성) 검색을 제공합니다.
 
 본 문서는 RAG 문서 임베딩 적재 과정에서 발생한 Google Gemini Embedding API **429 (Too Many Requests)** 쿼터 제한 이슈의 근본 원인을 분석하고, 백엔드 아키텍처상의 개선 대안 및 **로컬 임베딩 AI 모델(Local Embedding)** 도입 가이드를 정리합니다.
 
